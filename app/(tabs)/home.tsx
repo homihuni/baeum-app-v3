@@ -1,6 +1,8 @@
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
 
 export default function HomeScreen() {
+  const router = useRouter();
   const weekDays = ['일', '월', '화', '수', '목', '금', '토'];
   const days = Array.from({ length: 28 }, (_, i) => i + 1);
 
@@ -41,7 +43,7 @@ export default function HomeScreen() {
           <Text style={styles.cardSubText}>이번 달 학습일: 5일</Text>
         </View>
 
-        <TouchableOpacity style={styles.button}>
+        <TouchableOpacity style={styles.button} onPress={() => router.push('/study/questions')}>
           <Text style={styles.buttonText}>학습하기 📝</Text>
         </TouchableOpacity>
       </ScrollView>

@@ -8,11 +8,11 @@ export default function LoginScreen() {
     <View style={styles.container}>
       <Text style={styles.title}>배움학습</Text>
 
-      <TouchableOpacity style={styles.googleButton}>
+      <TouchableOpacity style={styles.googleButton} onPress={() => router.push('/(auth)/create-profile')}>
         <Text style={styles.googleButtonText}>Google로 시작하기</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.appleButton}>
+      <TouchableOpacity style={styles.appleButton} onPress={() => router.push('/(auth)/create-profile')}>
         <Text style={styles.appleButtonText}>Apple로 시작하기</Text>
       </TouchableOpacity>
 

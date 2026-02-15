@@ -1,6 +1,8 @@
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
 
 export default function QuestionsScreen() {
+  const router = useRouter();
   const choices = [
     { id: 1, text: '① 나' },
     { id: 2, text: '② 강' },
@@ -13,7 +15,9 @@ export default function QuestionsScreen() {
       <View style={styles.topBar}>
         <Text style={styles.topBarSubject}>국어</Text>
         <Text style={styles.topBarProgress}>1 / 3</Text>
-        <Text style={styles.topBarClose}>✕</Text>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Text style={styles.topBarClose}>✕</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.progressBarContainer}>
@@ -36,7 +40,7 @@ export default function QuestionsScreen() {
       </View>
 
       <View style={styles.bottomButtonContainer}>
-        <TouchableOpacity style={styles.submitButton}>
+        <TouchableOpacity style={styles.submitButton} onPress={() => router.push('/study/result')}>
           <Text style={styles.submitButtonText}>정답 확인</Text>
         </TouchableOpacity>
       </View>

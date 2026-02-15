@@ -1,22 +1,24 @@
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
 
 export default function StudyScreen() {
+  const router = useRouter();
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>과목 선택</Text>
       <Text style={styles.subtitle}>오늘 공부할 과목을 선택하세요</Text>
 
-      <TouchableOpacity style={styles.card}>
+      <TouchableOpacity style={styles.card} onPress={() => router.push('/study/questions')}>
         <Text style={styles.cardLeft}>📖 국어</Text>
         <Text style={styles.cardRight}>남은 3문제</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.card}>
+      <TouchableOpacity style={styles.card} onPress={() => router.push('/study/questions')}>
         <Text style={styles.cardLeft}>🔢 수학</Text>
         <Text style={styles.cardRight}>남은 3문제</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.card}>
+      <TouchableOpacity style={styles.card} onPress={() => router.push('/study/questions')}>
         <Text style={styles.cardLeft}>🌈 통합교과</Text>
         <Text style={styles.cardRight}>남은 3문제</Text>
       </TouchableOpacity>

@@ -1,17 +1,20 @@
-import { View, Text, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
 
 export default function MenuScreen() {
+  const router = useRouter();
+
   const menuItems = [
-    { icon: '👶', label: '자녀 관리' },
-    { icon: '⭐', label: '등급 관리' },
-    { icon: '🔑', label: '시리얼번호 입력' },
-    { icon: '💎', label: '구독 관리' },
-    { icon: '📊', label: '학습 리포트' },
-    { icon: '🔔', label: '알림 설정' },
-    { icon: '💬', label: '1:1 문의' },
-    { icon: '📢', label: '공지사항' },
-    { icon: '📋', label: '이용약관' },
-    { icon: '🔒', label: '개인정보처리방침' },
+    { icon: '👶', label: '자녀 관리', route: '/settings/children' },
+    { icon: '⭐', label: '등급 관리', route: '/settings/grade' },
+    { icon: '🔑', label: '시리얼번호 입력', route: '/settings/serial' },
+    { icon: '💎', label: '구독 관리', route: '/settings/subscribe' },
+    { icon: '📊', label: '학습 리포트', route: '/settings/report' },
+    { icon: '🔔', label: '알림 설정', route: '/settings/notifications' },
+    { icon: '💬', label: '1:1 문의', route: '/settings/inquiry-list' },
+    { icon: '📢', label: '공지사항', route: '/settings/notice-list' },
+    { icon: '📋', label: '이용약관', route: '/settings/terms' },
+    { icon: '🔒', label: '개인정보처리방침', route: '/settings/privacy' },
   ];
 
   return (
@@ -23,11 +26,11 @@ export default function MenuScreen() {
         </View>
 
         {menuItems.map((item, index) => (
-          <View key={index} style={styles.menuItem}>
+          <TouchableOpacity key={index} style={styles.menuItem} onPress={() => router.push(item.route)}>
             <Text style={styles.menuText}>
               {item.icon}  {item.label}
             </Text>
-          </View>
+          </TouchableOpacity>
         ))}
 
         <View style={styles.menuItem}>
@@ -37,9 +40,9 @@ export default function MenuScreen() {
           </View>
         </View>
 
-        <View style={styles.menuItem}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/settings/withdraw')}>
           <Text style={styles.deleteText}>🚪  회원탈퇴</Text>
-        </View>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );

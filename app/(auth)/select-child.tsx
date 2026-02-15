@@ -1,12 +1,14 @@
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
 
 export default function SelectChildScreen() {
+  const router = useRouter();
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>누가 공부할까요?</Text>
       <Text style={styles.subtitle}>학습할 자녀를 선택하세요</Text>
 
-      <View style={styles.profileCard}>
+      <TouchableOpacity style={styles.profileCard} onPress={() => router.replace('/(tabs)/home')}>
         <View style={styles.profileCircle}>
           <Text style={styles.profileEmoji}>🍓</Text>
         </View>
@@ -15,7 +17,7 @@ export default function SelectChildScreen() {
         <View style={styles.badge}>
           <Text style={styles.badgeText}>무료회원</Text>
         </View>
-      </View>
+      </TouchableOpacity>
 
       <TouchableOpacity style={styles.addButton}>
         <Text style={styles.addButtonPlus}>+</Text>
@@ -23,7 +25,9 @@ export default function SelectChildScreen() {
       </TouchableOpacity>
 
       <View style={styles.bottomSection}>
-        <Text style={styles.parentSettingText}>부모님 설정</Text>
+        <TouchableOpacity onPress={() => router.push('/settings')}>
+          <Text style={styles.parentSettingText}>부모님 설정</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );

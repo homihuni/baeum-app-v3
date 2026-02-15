@@ -1,6 +1,8 @@
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
 
 export default function ResultScreen() {
+  const router = useRouter();
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
@@ -17,10 +19,10 @@ export default function ResultScreen() {
       </View>
 
       <View style={styles.buttonsContainer}>
-        <TouchableOpacity style={styles.nextButton}>
+        <TouchableOpacity style={styles.nextButton} onPress={() => router.push('/study/complete')}>
           <Text style={styles.nextButtonText}>다음 문제 →</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.quitButton}>
+        <TouchableOpacity style={styles.quitButton} onPress={() => router.replace('/(tabs)/home')}>
           <Text style={styles.quitButtonText}>학습 그만하기</Text>
         </TouchableOpacity>
       </View>

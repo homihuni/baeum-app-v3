@@ -1,6 +1,8 @@
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
 
 export default function CompleteScreen() {
+  const router = useRouter();
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
@@ -26,10 +28,10 @@ export default function CompleteScreen() {
       </View>
 
       <View style={styles.buttonsContainer}>
-        <TouchableOpacity style={styles.continueButton}>
+        <TouchableOpacity style={styles.continueButton} onPress={() => router.replace('/(tabs)/study')}>
           <Text style={styles.continueButtonText}>다른 과목 풀기</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.homeButton}>
+        <TouchableOpacity style={styles.homeButton} onPress={() => router.replace('/(tabs)/home')}>
           <Text style={styles.homeButtonText}>홈으로</Text>
         </TouchableOpacity>
       </View>

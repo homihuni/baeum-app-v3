@@ -1,7 +1,9 @@
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TextInput, TouchableOpacity } from 'react-native';
 import { useState } from 'react';
+import { useRouter } from 'expo-router';
 
 export default function CreateProfileScreen() {
+  const router = useRouter();
   const [selectedGrade, setSelectedGrade] = useState('3학년');
   const [selectedGender, setSelectedGender] = useState('남자');
 
@@ -84,7 +86,7 @@ export default function CreateProfileScreen() {
         </View>
 
         <View style={styles.bottomButtonContainer}>
-          <TouchableOpacity style={styles.submitButton}>
+          <TouchableOpacity style={styles.submitButton} onPress={() => router.replace('/(auth)/select-child')}>
             <Text style={styles.submitButtonText}>프로필 만들기</Text>
           </TouchableOpacity>
         </View>
