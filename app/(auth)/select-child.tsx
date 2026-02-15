@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 
 export default function SelectChildScreen() {
@@ -19,7 +19,7 @@ export default function SelectChildScreen() {
         </View>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.addButton}>
+      <TouchableOpacity style={styles.addButton} onPress={() => Alert.alert('알림', '추가 프로필은 배움 등급 이상부터 가능합니다')}>
         <Text style={styles.addButtonPlus}>+</Text>
         <Text style={styles.addButtonText}>프로필 추가</Text>
       </TouchableOpacity>
