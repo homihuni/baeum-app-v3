@@ -1,6 +1,9 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
 
 export default function LoginScreen() {
+  const router = useRouter();
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>배움학습</Text>
@@ -11,6 +14,10 @@ export default function LoginScreen() {
 
       <TouchableOpacity style={styles.appleButton}>
         <Text style={styles.appleButtonText}>Apple로 시작하기</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity onPress={() => router.replace('/(tabs)/home')}>
+        <Text style={styles.testButton}>[테스트] 홈으로 이동</Text>
       </TouchableOpacity>
     </View>
   );
@@ -56,5 +63,10 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+  testButton: {
+    color: '#9E9E9E',
+    fontSize: 12,
+    marginTop: 30,
   },
 });
