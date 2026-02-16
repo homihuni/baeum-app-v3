@@ -87,39 +87,15 @@ export default function TabLayout() {
           tabBarIcon: ({ focused }) => {
             const c = focused ? '#5BBFAA' : '#B0BEC5';
             return (
-              <View style={{
-                alignItems: 'center',
-                justifyContent: 'flex-end',
-                width: 70,
-                height: 42,
-              }}>
-                <View style={{
-                  height: 24,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}>
-                  <View style={{
-                    width: 16,
-                    height: 16,
-                    flexDirection: 'row',
-                    flexWrap: 'wrap',
-                    justifyContent: 'space-between',
-                    alignContent: 'space-between',
-                  }}>
-                    <View style={{ width: 7, height: 7, borderRadius: 1.5, backgroundColor: c }} />
-                    <View style={{ width: 7, height: 7, borderRadius: 1.5, backgroundColor: c }} />
-                    <View style={{ width: 7, height: 7, borderRadius: 1.5, backgroundColor: c }} />
-                    <View style={{ width: 7, height: 7, borderRadius: 1.5, backgroundColor: c }} />
+              <View style={{ alignItems: 'center', justifyContent: 'flex-end', width: 70, height: 42 }}>
+                <View style={{ height: 24, alignItems: 'center', justifyContent: 'center' }}>
+                  <View style={{ width: 18, height: 14, justifyContent: 'space-between' }}>
+                    <View style={{ width: 18, height: 2, borderRadius: 1, backgroundColor: c }} />
+                    <View style={{ width: 18, height: 2, borderRadius: 1, backgroundColor: c }} />
+                    <View style={{ width: 18, height: 2, borderRadius: 1, backgroundColor: c }} />
                   </View>
                 </View>
-                <Text style={{
-                  fontSize: 10,
-                  fontWeight: '600',
-                  color: c,
-                  marginTop: 2,
-                }}>
-                  전체메뉴
-                </Text>
+                <Text style={{ fontSize: 10, fontWeight: '600', color: c, marginTop: 2 }}>전체메뉴</Text>
               </View>
             );
           },
