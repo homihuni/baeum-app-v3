@@ -67,21 +67,24 @@ export const deleteChild = async (parentId: string, childId: string) => {
 };
 
 // ===== RECORDS =====
-export const createRecord = async (parentId: string, childId: string, data: {
-  subject: string;
-  grade: number;
-  questionId: string;
-  questionType: string;
-  isCorrect: boolean;
-  userAnswer: string;
-  correctAnswer: string;
-  solvedAt?: any;
-}) => {
+export const createRecord = async (parentId: string, childId: string, data: any) => {
   const recordRef = doc(collection(db, 'Parents', parentId, 'Children', childId, 'Records'));
+
+  // data에 date가 있으면 그대로 사용, 없으면 KST 기준 생성
+  let dateStr = data.date;
+  if (!dateStr) {
+    const now = new Date();
+    const kstTime = now.getTime() + (9 * 60 * 60 * 1000);
+    const kstDate = new Date(kstTime);
+    dateStr = kstDate.getUTCFullYear() + '-' + String(kstDate.getUTCMonth() + 1).padStart(2, '0') + '-' + String(kstDate.getUTCDate()).padStart(2, '0');
+  }
+
+  console.log("=== createRecord 저장 date ===", dateStr);
+
   await setDoc(recordRef, {
     ...data,
+    date: dateStr,
     solvedAt: Timestamp.now(),
-    date: new Date().toISOString().split('T')[0],
   });
   return recordRef.id;
 };
