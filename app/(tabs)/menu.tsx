@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function MenuScreen() {
   const router = useRouter();
@@ -53,20 +54,23 @@ export default function MenuScreen() {
     { icon: '⭐', label: '등급 관리', route: '/settings/grade' },
     { icon: '🔑', label: '시리얼번호 입력', route: '/serial/enter' },
     { icon: '💎', label: '구독 관리', route: '/settings/subscribe' },
-    { icon: '📊', label: '학습 리포트', route: '/settings/report' },
-    { icon: '🔔', label: '알림 설정', route: '/settings/notifications' },
-    { icon: '💬', label: '1:1 문의', route: '/settings/inquiry-list' },
     { icon: '📢', label: '공지사항', route: '/settings/notice-list' },
-    { icon: '📋', label: '이용약관', route: '/settings/terms' },
-    { icon: '🔒', label: '개인정보처리방침', route: '/settings/privacy' },
   ];
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView>
         <View style={styles.profileSection}>
-          <Text style={styles.profileName}>{childEmoji} {parentName || '부모님'}</Text>
-          <Text style={styles.profileEmail}>{parentEmail || ''}</Text>
+          <View style={styles.profileInfo}>
+            <Text style={styles.profileName}>{childEmoji} {parentName || '부모님'}</Text>
+            <Text style={styles.profileEmail}>{parentEmail || ''}</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.settingsButton}
+            onPress={() => router.push('/settings/detail')}
+          >
+            <Ionicons name="settings-outline" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
         </View>
 
         {menuItems.map((item, index) => (
@@ -76,17 +80,6 @@ export default function MenuScreen() {
             </Text>
           </TouchableOpacity>
         ))}
-
-        <View style={styles.menuItem}>
-          <View style={styles.versionRow}>
-            <Text style={styles.menuText}>ℹ️  앱 버전</Text>
-            <Text style={styles.versionText}>1.0.0</Text>
-          </View>
-        </View>
-
-        <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/settings/withdraw')}>
-          <Text style={styles.deleteText}>🚪  회원탈퇴</Text>
-        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -102,6 +95,12 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     margin: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  profileInfo: {
+    flex: 1,
   },
   profileName: {
     fontSize: 16,
@@ -113,6 +112,9 @@ const styles = StyleSheet.create({
     color: '#666666',
     marginTop: 4,
   },
+  settingsButton: {
+    padding: 4,
+  },
   menuItem: {
     paddingVertical: 14,
     paddingHorizontal: 16,
@@ -122,18 +124,5 @@ const styles = StyleSheet.create({
   menuText: {
     fontSize: 15,
     color: '#333333',
-  },
-  versionRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  versionText: {
-    fontSize: 15,
-    color: '#9E9E9E',
-  },
-  deleteText: {
-    fontSize: 15,
-    color: '#FF6B6B',
   },
 });
