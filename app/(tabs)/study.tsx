@@ -73,7 +73,7 @@ export default function StudyScreen() {
             <TouchableOpacity
               key={subjectKey}
               style={styles.subjectCard}
-              onPress={() => router.push('/study/questions')}
+              onPress={() => router.push({ pathname: '/study/questions', params: { subject: subjectKey, grade: String(childGrade), tier: childTier } })}
             >
               <View style={styles.subjectLeft}>
                 <Text style={styles.subjectEmoji}>{config.emoji}</Text>
