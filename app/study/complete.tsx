@@ -24,7 +24,9 @@ export default function CompleteScreen() {
         <Text style={styles.subtitle}>수고했어요! 오늘도 잘했습니다</Text>
 
         <View style={styles.statsCard}>
-          <Text style={styles.statsSubject}>{SUBJECT_LABELS[subject] || subject} · {total}문제</Text>
+          <View style={styles.subjectBadge}>
+            <Text style={styles.statsSubject}>{SUBJECT_LABELS[subject] || subject} · {total}문제</Text>
+          </View>
           <View style={styles.statsRow}>
             <Text style={styles.statsLabel}>정답</Text>
             <Text style={styles.statsValue}>{correctFinal}/{total}</Text>
@@ -63,7 +65,8 @@ const styles = StyleSheet.create({
   title: { fontSize: 28, fontWeight: 'bold', color: '#7ED4C0', marginBottom: 8 },
   subtitle: { fontSize: 15, color: '#9E9E9E', marginBottom: 32 },
   statsCard: { width: '100%', backgroundColor: '#F5F5F5', borderRadius: 16, padding: 20 },
-  statsSubject: { fontSize: 14, color: '#666', marginBottom: 16, textDecorationLine: 'underline' },
+  subjectBadge: { backgroundColor: '#FFFFFF', borderRadius: 20, paddingHorizontal: 20, paddingVertical: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 3, elevation: 2, alignSelf: 'flex-start', marginBottom: 16 },
+  statsSubject: { fontSize: 15, color: '#333', fontWeight: 'bold' },
   statsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
   statsLabel: { fontSize: 15, fontWeight: 'bold', color: '#333' },
   statsValue: { fontSize: 15, fontWeight: 'bold', color: '#333' },
