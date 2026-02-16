@@ -60,9 +60,16 @@ export default function HomeScreen() {
         const data = docSnap.data();
         const day = parseInt(data.date.split('-')[2]);
         daysSet.add(day);
-        if (data.isCorrect !== undefined) { problems++; if (data.isCorrect) correct++; }
-        if (data.score !== undefined) { totalScore += data.score; scoreCount++; }
+        if (data.totalQuestions !== undefined) {
+          problems += data.totalQuestions;
+          correct += data.correctCount || 0;
+        }
+        if (data.score !== undefined) {
+          totalScore += data.score;
+          scoreCount++;
+        }
       });
+
       setStudyDays(daysSet);
       setAccessDays(daysSet.size);
       setTotalProblems(problems);
