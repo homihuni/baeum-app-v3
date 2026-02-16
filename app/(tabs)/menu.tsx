@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useState, useEffect } from 'react';
+import { useRouter, useFocusEffect } from 'expo-router';
+import { useState, useCallback } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -11,14 +11,19 @@ export default function MenuScreen() {
   const [parentEmail, setParentEmail] = useState('');
   const [childEmoji, setChildEmoji] = useState('🍎');
 
-  useEffect(() => {
-    loadProfile();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadProfile();
+    }, [])
+  );
 
   const loadProfile = async () => {
     try {
+      console.log('=== 전체메뉴 프로필 로드 시작 ===');
       const parentId = await AsyncStorage.getItem('parentId');
       const childId = await AsyncStorage.getItem('childId');
+      console.log('parentId:', parentId);
+      console.log('childId:', childId);
 
       if (parentId) {
         const parentDoc = await getDoc(doc(db, 'Parents', parentId));
@@ -26,6 +31,7 @@ export default function MenuScreen() {
           const data = parentDoc.data();
           setParentName(data.name || '부모님');
           setParentEmail(data.email || '');
+          console.log('부모 이름:', data.name);
         }
       }
 
@@ -33,6 +39,7 @@ export default function MenuScreen() {
         const childDoc = await getDoc(doc(db, 'Parents', parentId, 'Children', childId));
         if (childDoc.exists()) {
           const data = childDoc.data();
+          console.log('settings avatar:', data.avatar);
           setChildEmoji(data.avatar || '🍎');
         }
       }
