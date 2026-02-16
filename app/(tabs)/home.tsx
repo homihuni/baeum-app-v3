@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useState, useEffect } from 'react';
+import { useRouter, useFocusEffect } from 'expo-router';
+import { useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
@@ -36,7 +36,11 @@ export default function HomeScreen() {
     loadChildData();
   }, []);
 
-  useEffect(() => { loadMonthlyData(); }, [currentYear, currentMonth]);
+  useFocusEffect(
+    useCallback(() => {
+      loadMonthlyData();
+    }, [currentYear, currentMonth])
+  );
 
   const loadMonthlyData = async () => {
     try {
