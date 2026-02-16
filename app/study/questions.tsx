@@ -59,12 +59,20 @@ export default function QuestionsScreen() {
       const parentId = await AsyncStorage.getItem('parentId');
       const childId = await AsyncStorage.getItem('childId');
       if (parentId && childId) {
-        // 한국 시간(KST, UTC+9) 기준으로 날짜 생성
+        // 한국 시간(KST, UTC+9) 기준 날짜 생성
         const now = new Date();
-        const kstOffset = 9 * 60 * 60 * 1000;
-        const kstDate = new Date(now.getTime() + kstOffset);
-        const dateStr = kstDate.toISOString().split('T')[0];
-        console.log("=== 학습 기록 저장 날짜(KST) ===", dateStr);
+        const kstTime = now.getTime() + (9 * 60 * 60 * 1000);
+        const kstDate = new Date(kstTime);
+        const year = kstDate.getUTCFullYear();
+        const month = String(kstDate.getUTCMonth() + 1).padStart(2, '0');
+        const day = String(kstDate.getUTCDate()).padStart(2, '0');
+        const dateStr = year + '-' + month + '-' + day;
+
+        console.log("=== KST 날짜 계산 ===");
+        console.log("UTC now:", now.toISOString());
+        console.log("KST time:", kstDate.toISOString());
+        console.log("저장할 dateStr:", dateStr);
+
         const score = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
         await createRecord(parentId, childId, {
           subject: subject as string,
@@ -73,9 +81,10 @@ export default function QuestionsScreen() {
           correctCount: correctCount,
           wrongCount: wrongCount,
           score: score,
-          completedAt: new Date().toISOString(),
+          completedAt: now.toISOString(),
           grade: grade
         } as any);
+        console.log("=== 기록 저장 완료 === date:", dateStr, "score:", score);
       }
     } catch (error) {
       console.log('결과 저장 실패:', error);
