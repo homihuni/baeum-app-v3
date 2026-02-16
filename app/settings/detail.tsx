@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
   sectionHeader: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#888888',
+    color: '#444444',
     paddingLeft: 16,
     paddingTop: 20,
     paddingBottom: 8,
@@ -155,15 +155,18 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   logoutButton: {
-    height: 52,
-    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#CCCCCC',
+    borderRadius: 10,
+    paddingVertical: 14,
+    marginHorizontal: 16,
     alignItems: 'center',
-    paddingVertical: 16,
+    backgroundColor: '#FFFFFF',
   },
   logoutText: {
     fontSize: 16,
-    fontWeight: '500',
-    color: '#666666',
+    fontWeight: '600',
+    color: '#555555',
     textAlign: 'center',
   },
 });
