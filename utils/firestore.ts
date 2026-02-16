@@ -159,3 +159,30 @@ export const getBanners = async () => {
   const snap = await getDocs(q);
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 };
+
+// ===== SERIAL NUMBER =====
+export const getSerialCode = async (code: string) => {
+  const snap = await getDoc(doc(db, 'Serials', code));
+  return snap.exists() ? snap.data() : null;
+};
+
+export const useSerialCode = async (code: string, childId: string) => {
+  await updateDoc(doc(db, 'Serials', code), {
+    isUsed: true,
+    usedBy: childId,
+  });
+};
+
+export const upgradeChildTier = async (
+  parentId: string,
+  childId: string,
+  tier: string,
+  serialNumber: string,
+  serialExpiry: string
+) => {
+  await updateDoc(doc(db, 'Parents', parentId, 'Children', childId), {
+    tier,
+    serialNumber,
+    serialExpiry,
+  });
+};
