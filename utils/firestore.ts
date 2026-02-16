@@ -1,4 +1,4 @@
-import { db, collection, doc, setDoc, getDoc, getDocs, query, where, orderBy, addDoc, updateDoc, Timestamp } from './firebase';
+import { db, collection, doc, setDoc, getDoc, getDocs, query, where, orderBy, addDoc, updateDoc, deleteDoc, Timestamp } from './firebase';
 
 // ===== PARENTS =====
 export const createParent = async (parentId: string, data: {
@@ -56,6 +56,14 @@ export const getChild = async (parentId: string, childId: string) => {
 
 export const updateChild = async (parentId: string, childId: string, data: any) => {
   await updateDoc(doc(db, 'Parents', parentId, 'Children', childId), data);
+};
+
+export const deleteChild = async (parentId: string, childId: string) => {
+  const recordsSnap = await getDocs(collection(db, 'Parents', parentId, 'Children', childId, 'Records'));
+  for (const recordDoc of recordsSnap.docs) {
+    await deleteDoc(recordDoc.ref);
+  }
+  await deleteDoc(doc(db, 'Parents', parentId, 'Children', childId));
 };
 
 // ===== RECORDS =====

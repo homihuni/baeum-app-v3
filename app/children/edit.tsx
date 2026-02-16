@@ -1,0 +1,465 @@
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useState, useEffect } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getChild, updateChild, deleteChild } from '../../utils/firestore';
+
+const AVATAR_OPTIONS = ['🍓', '🍎', '🍊', '🍋', '🍇', '🍉', '🍑', '🍒', '🫐', '🥝', '🐶', '🐱', '🐰', '🐻', '🦊', '🐼', '🐨', '🦁', '🐯', '🐸'];
+const SUBJECT_OPTIONS = [
+  { key: 'korean', label: '국어' },
+  { key: 'math', label: '수학' },
+  { key: 'integrated', label: '통합교과' },
+];
+
+export default function EditChildScreen() {
+  const router = useRouter();
+  const { childId } = useLocalSearchParams();
+  const [parentId, setParentId] = useState('');
+  const [avatar, setAvatar] = useState('🍓');
+  const [name, setName] = useState('');
+  const [grade, setGrade] = useState(1);
+  const [gender, setGender] = useState<'male' | 'female'>('male');
+  const [birthDate, setBirthDate] = useState('');
+  const [subjects, setSubjects] = useState<string[]>(['korean', 'math', 'integrated']);
+  const [questionsPerSubject, setQuestionsPerSubject] = useState(3);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadChildData();
+  }, []);
+
+  const loadChildData = async () => {
+    try {
+      const pId = await AsyncStorage.getItem('parentId');
+      if (!pId || !childId) return;
+
+      setParentId(pId);
+      const childData = await getChild(pId, childId as string) as any;
+
+      if (childData) {
+        setAvatar(childData.avatar || '🍓');
+        setName(childData.name || '');
+        setGrade(childData.grade || 1);
+        setGender(childData.gender || 'male');
+        setBirthDate(childData.birthDate || '');
+        setSubjects(childData.subjects || ['korean', 'math', 'integrated']);
+        setQuestionsPerSubject(childData.questionsPerSubject || 3);
+      }
+    } catch (error) {
+      console.log('Load child error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleSubject = (subjectKey: string) => {
+    if (subjects.includes(subjectKey)) {
+      setSubjects(subjects.filter(s => s !== subjectKey));
+    } else {
+      setSubjects([...subjects, subjectKey]);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!name.trim()) {
+      Alert.alert('오류', '이름을 입력해주세요.');
+      return;
+    }
+
+    if (subjects.length === 0) {
+      Alert.alert('오류', '최소 1개 이상의 과목을 선택해주세요.');
+      return;
+    }
+
+    try {
+      await updateChild(parentId, childId as string, {
+        avatar,
+        name: name.trim(),
+        grade,
+        gender,
+        subjects,
+        questionsPerSubject,
+      });
+
+      Alert.alert('성공', '자녀 정보가 수정되었습니다.', [
+        { text: '확인', onPress: () => router.back() }
+      ]);
+    } catch (error) {
+      console.log('Update child error:', error);
+      Alert.alert('오류', '자녀 정보 수정에 실패했습니다.');
+    }
+  };
+
+  const handleDelete = () => {
+    Alert.alert(
+      '자녀 삭제',
+      '정말 삭제하시겠습니까? 삭제된 자녀의 모든 학습 기록이 함께 삭제됩니다.',
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '삭제',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const currentChildId = await AsyncStorage.getItem('childId');
+
+              await deleteChild(parentId, childId as string);
+
+              if (currentChildId === childId) {
+                await AsyncStorage.removeItem('childId');
+                Alert.alert('알림', '현재 선택된 자녀가 삭제되었습니다. 자녀를 다시 선택해주세요.', [
+                  { text: '확인', onPress: () => router.replace('/(auth)/select-child') }
+                ]);
+              } else {
+                Alert.alert('성공', '자녀가 삭제되었습니다.', [
+                  { text: '확인', onPress: () => router.back() }
+                ]);
+              }
+            } catch (error) {
+              console.log('Delete child error:', error);
+              Alert.alert('오류', '자녀 삭제에 실패했습니다.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Text style={styles.loadingText}>로딩 중...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#333" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>자녀 정보 수정</Text>
+        <View style={styles.backButton} />
+      </View>
+
+      <ScrollView style={styles.content}>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>아바타</Text>
+          <View style={styles.avatarGrid}>
+            {AVATAR_OPTIONS.map((emoji) => (
+              <TouchableOpacity
+                key={emoji}
+                style={[styles.avatarOption, avatar === emoji && styles.avatarOptionSelected]}
+                onPress={() => setAvatar(emoji)}
+              >
+                <Text style={styles.avatarEmoji}>{emoji}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>이름</Text>
+          <TextInput
+            style={styles.input}
+            value={name}
+            onChangeText={setName}
+            placeholder="이름 입력"
+            placeholderTextColor="#999"
+          />
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>학년</Text>
+          <View style={styles.gradeGrid}>
+            {[1, 2, 3, 4, 5, 6].map((g) => (
+              <TouchableOpacity
+                key={g}
+                style={[styles.gradeButton, grade === g && styles.gradeButtonSelected]}
+                onPress={() => setGrade(g)}
+              >
+                <Text style={[styles.gradeButtonText, grade === g && styles.gradeButtonTextSelected]}>
+                  {g}학년
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>성별</Text>
+          <View style={styles.genderRow}>
+            <TouchableOpacity
+              style={[styles.genderButton, gender === 'male' && styles.genderButtonSelected]}
+              onPress={() => setGender('male')}
+            >
+              <Text style={[styles.genderButtonText, gender === 'male' && styles.genderButtonTextSelected]}>
+                남자
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.genderButton, gender === 'female' && styles.genderButtonSelected]}
+              onPress={() => setGender('female')}
+            >
+              <Text style={[styles.genderButtonText, gender === 'female' && styles.genderButtonTextSelected]}>
+                여자
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>생년월일</Text>
+          <View style={styles.readOnlyBox}>
+            <Text style={styles.readOnlyText}>{birthDate}</Text>
+            <Text style={styles.readOnlySubtext}>(수정 불가)</Text>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>학습 과목</Text>
+          {SUBJECT_OPTIONS.map((subject) => (
+            <TouchableOpacity
+              key={subject.key}
+              style={styles.checkboxRow}
+              onPress={() => toggleSubject(subject.key)}
+            >
+              <View style={styles.checkbox}>
+                {subjects.includes(subject.key) && (
+                  <Ionicons name="checkmark" size={18} color="#5BBFAA" />
+                )}
+              </View>
+              <Text style={styles.checkboxLabel}>{subject.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>과목당 문제 수</Text>
+          <View style={styles.questionGrid}>
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+              <TouchableOpacity
+                key={num}
+                style={[styles.questionButton, questionsPerSubject === num && styles.questionButtonSelected]}
+                onPress={() => setQuestionsPerSubject(num)}
+              >
+                <Text style={[styles.questionButtonText, questionsPerSubject === num && styles.questionButtonTextSelected]}>
+                  {num}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+          <Text style={styles.saveButtonText}>저장</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+          <Text style={styles.deleteButtonText}>자녀 삭제</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  content: {
+    flex: 1,
+    padding: 16,
+  },
+  loadingText: {
+    textAlign: 'center',
+    color: '#999',
+    marginTop: 20,
+  },
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 12,
+  },
+  avatarGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  avatarOption: {
+    width: 50,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 25,
+    backgroundColor: '#F5F5F5',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  avatarOptionSelected: {
+    borderColor: '#5BBFAA',
+    backgroundColor: '#F0F9F7',
+  },
+  avatarEmoji: {
+    fontSize: 28,
+  },
+  input: {
+    backgroundColor: '#F5F5F5',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    color: '#333',
+  },
+  gradeGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  gradeButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: '#F5F5F5',
+  },
+  gradeButtonSelected: {
+    backgroundColor: '#5BBFAA',
+  },
+  gradeButtonText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#666',
+  },
+  gradeButtonTextSelected: {
+    color: '#FFFFFF',
+  },
+  genderRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  genderButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    backgroundColor: '#F5F5F5',
+    alignItems: 'center',
+  },
+  genderButtonSelected: {
+    backgroundColor: '#5BBFAA',
+  },
+  genderButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#666',
+  },
+  genderButtonTextSelected: {
+    color: '#FFFFFF',
+  },
+  readOnlyBox: {
+    backgroundColor: '#F5F5F5',
+    borderRadius: 8,
+    padding: 12,
+  },
+  readOnlyText: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 4,
+  },
+  readOnlySubtext: {
+    fontSize: 12,
+    color: '#999',
+  },
+  checkboxRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: '#5BBFAA',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  checkboxLabel: {
+    fontSize: 16,
+    color: '#333',
+  },
+  questionGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  questionButton: {
+    width: 50,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 25,
+    backgroundColor: '#F5F5F5',
+  },
+  questionButtonSelected: {
+    backgroundColor: '#5BBFAA',
+  },
+  questionButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#666',
+  },
+  questionButtonTextSelected: {
+    color: '#FFFFFF',
+  },
+  saveButton: {
+    backgroundColor: '#5BBFAA',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  saveButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  deleteButton: {
+    backgroundColor: '#FF6B6B',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  deleteButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+});

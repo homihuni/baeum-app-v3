@@ -82,23 +82,13 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
-        name="settings"
+        name="menu"
         options={{
-          tabBarIcon: ({ focused }) => {
-            const c = focused ? '#5BBFAA' : '#B0BEC5';
-            return (
-              <View style={{ alignItems: 'center', justifyContent: 'flex-end', width: 70, height: 42 }}>
-                <View style={{ height: 24, alignItems: 'center', justifyContent: 'center' }}>
-                  <View style={{ width: 18, height: 14, justifyContent: 'space-between' }}>
-                    <View style={{ width: 18, height: 2, borderRadius: 1, backgroundColor: c }} />
-                    <View style={{ width: 18, height: 2, borderRadius: 1, backgroundColor: c }} />
-                    <View style={{ width: 18, height: 2, borderRadius: 1, backgroundColor: c }} />
-                  </View>
-                </View>
-                <Text style={{ fontSize: 10, fontWeight: '600', color: c, marginTop: 2 }}>전체메뉴</Text>
-              </View>
-            );
-          },
+          tabBarIcon: ({ focused }) => (
+            <TabIcon label="전체메뉴" focused={focused}>
+              <Ionicons name="menu" size={22} color={focused ? ACTIVE : INACTIVE} />
+            </TabIcon>
+          ),
         }}
       />
 
