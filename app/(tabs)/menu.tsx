@@ -1,8 +1,45 @@
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useState, useEffect } from 'react';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../utils/firebase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function MenuScreen() {
   const router = useRouter();
+  const [parentName, setParentName] = useState('');
+  const [parentEmail, setParentEmail] = useState('');
+  const [childEmoji, setChildEmoji] = useState('🍎');
+
+  useEffect(() => {
+    loadProfile();
+  }, []);
+
+  const loadProfile = async () => {
+    try {
+      const parentId = await AsyncStorage.getItem('parentId');
+      const childId = await AsyncStorage.getItem('childId');
+
+      if (parentId) {
+        const parentDoc = await getDoc(doc(db, 'Parents', parentId));
+        if (parentDoc.exists()) {
+          const data = parentDoc.data();
+          setParentName(data.name || '부모님');
+          setParentEmail(data.email || '');
+        }
+      }
+
+      if (parentId && childId) {
+        const childDoc = await getDoc(doc(db, 'Parents', parentId, 'Children', childId));
+        if (childDoc.exists()) {
+          const data = childDoc.data();
+          setChildEmoji(data.avatar || '🍎');
+        }
+      }
+    } catch (error) {
+      console.log('Profile load error:', error);
+    }
+  };
 
   const menuItems = [
     { icon: '👶', label: '자녀 관리', route: '/settings/children' },
@@ -21,8 +58,8 @@ export default function MenuScreen() {
     <SafeAreaView style={styles.container}>
       <ScrollView>
         <View style={styles.profileSection}>
-          <Text style={styles.profileName}>🍓 김배움의 부모님</Text>
-          <Text style={styles.profileEmail}>dknp10@gmail.com</Text>
+          <Text style={styles.profileName}>{childEmoji} {parentName || '부모님'}</Text>
+          <Text style={styles.profileEmail}>{parentEmail || ''}</Text>
         </View>
 
         {menuItems.map((item, index) => (
