@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, TextInput, Alert, Modal } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, TextInput, Modal } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
@@ -39,45 +39,30 @@ export default function EditChildScreen() {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     console.log('=== 저장 버튼 클릭 ===');
     console.log('selectedAvatar:', avatar);
     console.log('name:', name);
 
     if (!name.trim()) {
-      Alert.alert('오류', '이름을 입력해주세요.');
       return;
     }
 
-    Alert.alert(
-      '수정 확인',
-      '자녀 정보를 수정하시겠습니까?',
-      [
-        { text: '취소', style: 'cancel' },
-        {
-          text: '확인',
-          onPress: async () => {
-            try {
-              console.log('=== Firebase 저장 시도 ===');
-              console.log('parentId:', parentId);
-              console.log('childId:', childId);
-              console.log('데이터:', { avatar, name: name.trim() });
+    try {
+      console.log('=== Firebase 저장 시도 ===');
+      console.log('parentId:', parentId);
+      console.log('childId:', childId);
 
-              await updateChild(parentId, childId as string, {
-                avatar,
-                name: name.trim(),
-              });
+      await updateChild(parentId, childId as string, {
+        avatar,
+        name: name.trim(),
+      });
 
-              console.log('=== Firebase 저장 성공 ===');
-              setShowCompleteModal(true);
-            } catch (error) {
-              console.log('=== Firebase 저장 실패 ===', error);
-              Alert.alert('오류', '자녀 정보 수정에 실패했습니다.');
-            }
-          }
-        }
-      ]
-    );
+      console.log('=== Firebase 저장 성공 ===');
+      setShowCompleteModal(true);
+    } catch (error) {
+      console.log('=== Firebase 저장 실패 ===', error);
+    }
   };
 
   if (loading) {
