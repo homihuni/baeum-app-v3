@@ -113,6 +113,9 @@ export default function EnterSerialScreen() {
       await upgradeChildTier(parentId, childId, 'baeum', trimmedCode, '2026-12-31');
       console.log('=== 등급 업그레이드 성공 ===');
 
+      await AsyncStorage.setItem('childTier', 'baeum');
+      console.log("AsyncStorage childTier 저장: baeum");
+
       setIsVerified(true);
       console.log('인증 완료, isVerified:', true);
       showSuccessModal('등록 완료', '배움회원으로 업그레이드되었습니다 🎉');

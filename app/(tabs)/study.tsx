@@ -77,6 +77,8 @@ export default function StudyScreen() {
             setChildTier(data.tier);
             setQuestionsPerSubject(getQuestionsPerSubject(data.tier));
             console.log("스터디 tier:", data.tier, "문제수:", getQuestionsPerSubject(data.tier));
+            await AsyncStorage.setItem('childTier', data.tier || 'free');
+            await AsyncStorage.setItem('childGrade', String(data.grade || 1));
           }
         }
       }

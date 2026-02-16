@@ -40,10 +40,15 @@ export default function GrowthScreen() {
       const now = new Date();
       const todayStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
       const monthStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+      console.log("=== 성장 리포트 오늘 날짜 ===", todayStr);
 
       // Today data
       const todayQ = query(recordsRef, where('date', '==', todayStr));
       const todaySnap = await getDocs(todayQ);
+      console.log("=== 오늘 학습 기록 수 ===", todaySnap.size);
+      todaySnap.forEach((d) => {
+        console.log("=== 오늘 기록 데이터 ===", d.data());
+      });
       const todayMap: Record<string,{correct:number,wrong:number}> = {};
       todaySnap.forEach((d) => {
         const data = d.data();
@@ -57,6 +62,7 @@ export default function GrowthScreen() {
       // Monthly data
       const monthQ = query(recordsRef, where('date', '>=', monthStr + '-01'), where('date', '<=', monthStr + '-31'));
       const monthSnap = await getDocs(monthQ);
+      console.log("=== 이번달 기록 수 ===", monthSnap.size);
       const daysSet = new Set<string>();
       let total = 0, correct = 0, totalScore = 0, scoreCount = 0;
       monthSnap.forEach((d) => {
@@ -68,16 +74,24 @@ export default function GrowthScreen() {
       });
       const avg = scoreCount > 0 ? Math.round(totalScore / scoreCount) : 0;
       setMonthlyStats({accessDays:daysSet.size, totalProblems:total, correctCount:correct, average:avg});
+      console.log("=== 이번달 학습일 ===", Array.from(daysSet));
 
       // Streak calculation
       let streak = 0;
       const checkDate = new Date(now);
       for (let i = 0; i < 30; i++) {
         const ds = checkDate.getFullYear() + '-' + String(checkDate.getMonth()+1).padStart(2,'0') + '-' + String(checkDate.getDate()).padStart(2,'0');
+        console.log("=== streak 확인 날짜 ===", ds, "존재:", daysSet.has(ds));
         if (daysSet.has(ds)) { streak++; checkDate.setDate(checkDate.getDate()-1); }
         else break;
       }
       setStreakDays(streak);
+      console.log("=== 성장 최종 ===", {
+        todayRecords: Object.keys(todayStats).length,
+        monthDays: daysSet.size,
+        totalProblems: total,
+        streak: streak
+      });
 
       // AI Comment
       if (total === 0) setAiComment('아직 이번 달 학습 기록이 없어요. 오늘부터 시작해볼까요? 💪');
