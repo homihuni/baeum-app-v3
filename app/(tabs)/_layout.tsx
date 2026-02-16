@@ -6,9 +6,29 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: styles.tabBar,
+        tabBarStyle: {
+          height: 80,
+          backgroundColor: '#FFFFFF',
+          borderTopWidth: 1,
+          borderTopColor: '#E8E8E8',
+          paddingTop: 8,
+          paddingBottom: 16,
+          elevation: 8,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.08,
+          shadowRadius: 4,
+        },
         tabBarActiveTintColor: '#7ED4C0',
-        tabBarInactiveTintColor: '#9E9E9E',
+        tabBarInactiveTintColor: '#999999',
+        tabBarLabelStyle: {
+          fontSize: 13,
+          fontWeight: '600',
+          marginTop: 4,
+        },
+        tabBarIconStyle: {
+          marginTop: 4,
+        },
       }}>
       <Tabs.Screen
         name="home"
@@ -51,12 +71,7 @@ export default function TabLayout() {
 }
 
 const styles = StyleSheet.create({
-  tabBar: {
-    backgroundColor: '#FFFFFF',
-    borderTopColor: '#E0E0E0',
-    borderTopWidth: 1,
-  },
   iconText: {
-    fontSize: 20,
+    fontSize: 28,
   },
 });
