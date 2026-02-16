@@ -49,24 +49,6 @@ export default function QuestionsScreen() {
     setIsAnswered(true);
     if (correct) setCorrectCount(prev => prev + 1);
     else setWrongCount(prev => prev + 1);
-
-    try {
-      const parentId = await AsyncStorage.getItem('parentId');
-      const childId = await AsyncStorage.getItem('childId');
-      if (parentId && childId) {
-        await createRecord(parentId, childId, {
-          subject,
-          grade,
-          questionId: currentProblem.id,
-          questionType: currentProblem.questionType,
-          isCorrect: correct,
-          userAnswer: selectedAnswer,
-          correctAnswer: currentProblem.correctAnswer,
-        });
-      }
-    } catch (error) {
-      console.log('Record save error:', error);
-    }
   };
 
   const saveResult = async (correctCount: number, wrongCount: number, totalQuestions: number) => {
@@ -84,7 +66,8 @@ export default function QuestionsScreen() {
           correctCount: correctCount,
           wrongCount: wrongCount,
           score: score,
-          completedAt: new Date().toISOString()
+          completedAt: new Date().toISOString(),
+          grade: grade
         } as any);
       }
     } catch (error) {
