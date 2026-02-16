@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../utils/firebase';
 
 const TIER_LABELS: Record<string, string> = { free: '무료회원', baeum: '배움회원', sky: '스카이회원' };
 
@@ -29,26 +31,51 @@ const getQuestionsPerSubject = (tier: string) => {
 export default function StudyScreen() {
   const router = useRouter();
   const [childName, setChildName] = useState('');
+  const [childAvatar, setChildAvatar] = useState('🍎');
   const [childGrade, setChildGrade] = useState(1);
   const [childTier, setChildTier] = useState('free');
   const [subjects, setSubjects] = useState<string[]>([]);
   const [questionsPerSubject, setQuestionsPerSubject] = useState(3);
 
-  useEffect(() => {
-    const loadData = async () => {
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [])
+  );
+
+  const loadData = async () => {
+    try {
+      console.log('=== 스터디 화면 데이터 로드 시작 ===');
+      const parentId = await AsyncStorage.getItem('parentId');
+      const childId = await AsyncStorage.getItem('childId');
       const name = await AsyncStorage.getItem('childName');
       const grade = await AsyncStorage.getItem('childGrade');
       const tier = await AsyncStorage.getItem('childTier');
+
+      console.log('parentId:', parentId);
+      console.log('childId:', childId);
+
       const g = grade ? parseInt(grade) : 1;
       const t = tier || 'free';
+
       if (name) setChildName(name);
       setChildGrade(g);
       setChildTier(t);
       setSubjects(getSubjectsForGrade(g));
       setQuestionsPerSubject(getQuestionsPerSubject(t));
-    };
-    loadData();
-  }, []);
+
+      if (parentId && childId) {
+        const childDoc = await getDoc(doc(db, 'Parents', parentId, 'Children', childId));
+        if (childDoc.exists()) {
+          const data = childDoc.data();
+          console.log('study avatar:', data.avatar);
+          setChildAvatar(data.avatar || '🍎');
+        }
+      }
+    } catch (error) {
+      console.log('Study data load error:', error);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -58,7 +85,7 @@ export default function StudyScreen() {
 
         <View style={styles.profileCard}>
           <View style={styles.profileRow}>
-            <Text style={styles.profileName}>🍎 {childName || '학생'}</Text>
+            <Text style={styles.profileName}>{childAvatar} {childName || '학생'}</Text>
             <View style={styles.gradeBadge}>
               <Text style={styles.gradeText}>{childGrade}학년</Text>
             </View>
