@@ -40,6 +40,10 @@ export default function EditChildScreen() {
   };
 
   const handleSave = () => {
+    console.log('=== 저장 버튼 클릭 ===');
+    console.log('selectedAvatar:', avatar);
+    console.log('name:', name);
+
     if (!name.trim()) {
       Alert.alert('오류', '이름을 입력해주세요.');
       return;
@@ -54,15 +58,20 @@ export default function EditChildScreen() {
           text: '확인',
           onPress: async () => {
             try {
-              console.log('Saving avatar:', avatar);
+              console.log('=== Firebase 저장 시도 ===');
+              console.log('parentId:', parentId);
+              console.log('childId:', childId);
+              console.log('데이터:', { avatar, name: name.trim() });
+
               await updateChild(parentId, childId as string, {
                 avatar,
                 name: name.trim(),
               });
 
+              console.log('=== Firebase 저장 성공 ===');
               setShowCompleteModal(true);
             } catch (error) {
-              console.log('Update child error:', error);
+              console.log('=== Firebase 저장 실패 ===', error);
               Alert.alert('오류', '자녀 정보 수정에 실패했습니다.');
             }
           }
@@ -127,13 +136,13 @@ export default function EditChildScreen() {
             <Text style={styles.modalTitle}>수정 완료</Text>
             <Text style={styles.modalMessage}>자녀 정보가 수정되었습니다</Text>
             <TouchableOpacity
-              style={styles.modalButton}
+              style={styles.modalConfirmBtn}
               onPress={() => {
                 setShowCompleteModal(false);
                 router.back();
               }}
             >
-              <Text style={styles.modalButtonText}>확인</Text>
+              <Text style={styles.modalConfirmText}>확인</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -249,15 +258,15 @@ const styles = StyleSheet.create({
     color: '#666',
     marginBottom: 20,
   },
-  modalButton: {
+  modalConfirmBtn: {
     backgroundColor: '#5BBFAA',
     paddingVertical: 10,
     paddingHorizontal: 40,
     borderRadius: 8,
   },
-  modalButtonText: {
+  modalConfirmText: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: 'white',
+    color: '#fff',
   },
 });
