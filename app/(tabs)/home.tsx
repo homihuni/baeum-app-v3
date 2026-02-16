@@ -70,8 +70,10 @@ export default function HomeScreen() {
           const childData = childDoc.data();
           console.log('홈 화면 avatar:', childData.avatar);
           console.log('홈 화면 name:', childData.name);
+          console.log('홈 화면 tier:', childData.tier);
           if (childData.avatar) setChildAvatar(childData.avatar);
           if (childData.name) setChildName(childData.name);
+          if (childData.tier) setChildTier(childData.tier);
         }
       }
     } catch (error) {

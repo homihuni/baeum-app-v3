@@ -18,6 +18,7 @@ export default function EnterSerialScreen() {
   const [modalTitle, setModalTitle] = useState('');
   const [modalMessage, setModalMessage] = useState('');
   const [modalType, setModalType] = useState<'error' | 'success'>('error');
+  const [isVerified, setIsVerified] = useState(false);
 
   useEffect(() => {
     loadChildData();
@@ -106,6 +107,8 @@ export default function EnterSerialScreen() {
       await upgradeChildTier(parentId, childId, 'baeum', trimmedCode, '2026-12-31');
       console.log('=== 등급 업그레이드 성공 ===');
 
+      setIsVerified(true);
+      console.log('인증 완료, isVerified:', true);
       showSuccessModal('등록 완료', '배움회원으로 업그레이드되었습니다 🎉');
     } catch (error) {
       console.log('=== 인증 에러 ===', error);
@@ -116,7 +119,7 @@ export default function EnterSerialScreen() {
   const handleModalConfirm = () => {
     setShowModal(false);
     if (modalType === 'success') {
-      router.back();
+      router.replace('/(tabs)/home');
     }
   };
 
@@ -152,13 +155,14 @@ export default function EnterSerialScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>시리얼번호</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, isVerified && styles.inputDisabled]}
             value={serialCode}
             onChangeText={setSerialCode}
             placeholder="JH26A7K3"
             placeholderTextColor="#999"
             maxLength={8}
             autoCapitalize="characters"
+            editable={!isVerified}
           />
           <Text style={styles.charCount}>{serialCode.length}/8</Text>
         </View>
@@ -168,8 +172,14 @@ export default function EnterSerialScreen() {
           <Text style={styles.guideWarning}>⚠️ 해당 시리얼은 학년이 끝나는 12월 31일에 만료됩니다. 새 학년에는 새 배움달력의 시리얼번호를 등록해주세요.</Text>
         </View>
 
-        <TouchableOpacity style={styles.verifyButton} onPress={handleVerify}>
-          <Text style={styles.verifyButtonText}>인증하기</Text>
+        <TouchableOpacity
+          style={[styles.verifyButton, isVerified && styles.verifyButtonDisabled]}
+          onPress={handleVerify}
+          disabled={isVerified}
+        >
+          <Text style={styles.verifyButtonText}>
+            {isVerified ? '✅ 인증완료' : '인증하기'}
+          </Text>
         </TouchableOpacity>
       </ScrollView>
 
@@ -273,6 +283,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     letterSpacing: 1,
   },
+  inputDisabled: {
+    backgroundColor: '#E0E0E0',
+    color: '#999',
+  },
   charCount: {
     textAlign: 'right',
     fontSize: 12,
@@ -304,6 +318,9 @@ const styles = StyleSheet.create({
     padding: 16,
     alignItems: 'center',
     marginBottom: 24,
+  },
+  verifyButtonDisabled: {
+    backgroundColor: '#B0BEC5',
   },
   verifyButtonText: {
     fontSize: 16,
