@@ -204,7 +204,7 @@ export default function HomeScreen() {
         </View>
 
         {/* 6. LEARN BUTTON */}
-        <TouchableOpacity style={styles.learnButton} onPress={() => router.push('/study/questions')}>
+        <TouchableOpacity style={styles.learnButton} onPress={() => router.replace('/(tabs)/study')}>
           <Text style={styles.learnButtonText}>학습하기 📝</Text>
         </TouchableOpacity>
       </ScrollView>
