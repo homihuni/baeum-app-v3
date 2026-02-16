@@ -32,18 +32,27 @@ export default function GrowthScreen() {
       const childId = await AsyncStorage.getItem('childId');
       if (!parentId || !childId) return;
 
-      const parentDoc = await getDoc(doc(db, 'Parents', parentId));
-      if (parentDoc.exists()) {
-        const parentData = parentDoc.data();
-        const userTier = parentData.tier || 'free';
-        setTier(userTier);
-        console.log('=== 성장 리포트 진입, tier:', userTier);
-      }
-
       const childDoc = await getDoc(doc(db, 'Parents', parentId, 'Children', childId));
       if (childDoc.exists()) {
         const childData = childDoc.data();
+        console.log('=== growth.tsx Firebase childData.tier:', childData?.tier);
+        console.log('=== growth.tsx Firebase childData:', childData);
+
         if (childData.name) setChildName(childData.name);
+
+        if (childData.tier) {
+          setTier(childData.tier);
+          console.log('=== growth.tsx 최종 tier state:', childData.tier);
+        } else {
+          const parentDoc = await getDoc(doc(db, 'Parents', parentId));
+          if (parentDoc.exists()) {
+            const parentData = parentDoc.data();
+            const userTier = parentData.tier || 'free';
+            setTier(userTier);
+            console.log('=== growth.tsx Parent tier:', userTier);
+            console.log('=== growth.tsx 최종 tier state:', userTier);
+          }
+        }
       }
 
       // 한국 시간(KST) 기준 오늘 날짜
@@ -129,6 +138,8 @@ export default function GrowthScreen() {
   };
 
   const renderAIComment = () => {
+    console.log('=== growth.tsx 렌더링 시 tier:', tier, 'free 여부:', tier === 'free');
+
     if (tier === 'free') {
       return (
         <View style={styles.aiCommentContainer}>
@@ -142,7 +153,7 @@ export default function GrowthScreen() {
             <View style={styles.blurOverlay} />
             <View style={styles.lockMessageContainer}>
               <Ionicons name="lock-closed" size={16} color="#4CAF50" />
-              <Text style={styles.lockText1}>배움회원으로 업그레이드하면</Text>
+              <Text style={styles.lockText1}>배움회원 이상 업그레이드 하면</Text>
               <Text style={styles.lockText2}>AI 맞춤 학습 분석을 볼 수 있어요</Text>
             </View>
           </View>
@@ -270,7 +281,6 @@ export default function GrowthScreen() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>배움회원 전용</Text>
             <Text style={styles.modalMessage}>
               상세 리포트는 배움회원 이상만{'\n'}이용할 수 있어요.
             </Text>
@@ -323,8 +333,7 @@ const styles = StyleSheet.create({
   membershipText:{fontSize:16,fontWeight:'bold',color:'#4CAF50'},
   modalOverlay:{flex:1,backgroundColor:'rgba(0,0,0,0.5)',justifyContent:'center',alignItems:'center'},
   modalContent:{backgroundColor:'#FFFFFF',borderRadius:20,padding:32,width:'80%',alignItems:'center'},
-  modalTitle:{fontSize:18,fontWeight:'bold',color:'#333',marginBottom:16},
-  modalMessage:{fontSize:15,color:'#666',textAlign:'center',lineHeight:24,marginBottom:24},
+  modalMessage:{fontSize:15,color:'#333',textAlign:'center',lineHeight:24,marginBottom:24},
   modalButton:{backgroundColor:'#4CAF50',borderRadius:12,paddingVertical:14,paddingHorizontal:40},
   modalButtonText:{fontSize:16,fontWeight:'bold',color:'#FFFFFF'},
 });
