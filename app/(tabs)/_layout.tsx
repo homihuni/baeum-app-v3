@@ -7,13 +7,20 @@ const INACTIVE = '#B0BEC5';
 
 function TabIcon({ children, label, focused }: { children: React.ReactNode; label: string; focused: boolean }) {
   return (
-    <View style={{ alignItems: 'center', justifyContent: 'center', minWidth: 60, paddingTop: 6 }}>
-      {children}
+    <View style={{
+      alignItems: 'center',
+      justifyContent: 'flex-end',
+      width: 70,
+      height: 42,
+    }}>
+      <View style={{ height: 24, alignItems: 'center', justifyContent: 'center' }}>
+        {children}
+      </View>
       <Text style={{
         fontSize: 10,
         fontWeight: '600',
         color: focused ? ACTIVE : INACTIVE,
-        marginTop: 3,
+        marginTop: 2,
       }}>
         {label}
       </Text>
@@ -27,11 +34,17 @@ export default function TabLayout() {
       headerShown: false,
       tabBarShowLabel: false,
       tabBarStyle: {
-        height: Platform.OS === 'ios' ? 85 : 65,
+        height: Platform.OS === 'ios' ? 80 : 60,
         backgroundColor: '#FFFFFF',
         borderTopWidth: 1,
         borderTopColor: '#D4EDE7',
-        paddingBottom: Platform.OS === 'ios' ? 25 : 5,
+        paddingTop: 10,
+        paddingBottom: Platform.OS === 'ios' ? 20 : 5,
+        elevation: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
       },
     }}>
 
@@ -62,11 +75,7 @@ export default function TabLayout() {
         options={{
           tabBarIcon: ({ focused }) => (
             <TabIcon label="성장" focused={focused}>
-              <View style={{ flexDirection: 'row', gap: 1 }}>
-                <Ionicons name="star" size={9} color={focused ? ACTIVE : INACTIVE} />
-                <Ionicons name="star" size={9} color={focused ? ACTIVE : INACTIVE} />
-                <Ionicons name="star" size={9} color={focused ? ACTIVE : INACTIVE} />
-              </View>
+              <Ionicons name={focused ? 'star' : 'star-outline'} size={22} color={focused ? ACTIVE : INACTIVE} />
             </TabIcon>
           ),
         }}
@@ -79,11 +88,18 @@ export default function TabLayout() {
             const c = focused ? ACTIVE : INACTIVE;
             return (
               <TabIcon label="전체메뉴" focused={focused}>
-                <View style={{ width: 20, height: 20, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: 2 }}>
-                  <View style={{ width: 7, height: 7, borderRadius: 1.5, backgroundColor: c }} />
-                  <View style={{ width: 7, height: 7, borderRadius: 1.5, backgroundColor: c }} />
-                  <View style={{ width: 7, height: 7, borderRadius: 1.5, backgroundColor: c }} />
-                  <View style={{ width: 7, height: 7, borderRadius: 1.5, backgroundColor: c }} />
+                <View style={{
+                  width: 18,
+                  height: 18,
+                  flexDirection: 'row',
+                  flexWrap: 'wrap',
+                  justifyContent: 'space-between',
+                  alignContent: 'space-between',
+                }}>
+                  <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: c }} />
+                  <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: c }} />
+                  <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: c }} />
+                  <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: c }} />
                 </View>
               </TabIcon>
             );
