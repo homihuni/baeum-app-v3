@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -11,11 +12,13 @@ const SUBJECT_LABELS: Record<string,string> = {korean:'국어',math:'수학',int
 export default function GrowthScreen() {
   const router = useRouter();
   const [childName, setChildName] = useState('');
+  const [tier, setTier] = useState('free');
   const [loading, setLoading] = useState(true);
   const [todayStats, setTodayStats] = useState<Record<string,{correct:number,wrong:number}>>({});
   const [monthlyStats, setMonthlyStats] = useState({accessDays:0,totalProblems:0,correctCount:0,average:0});
   const [streakDays, setStreakDays] = useState(0);
   const [aiComment, setAiComment] = useState('');
+  const [showFreeModal, setShowFreeModal] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -28,6 +31,14 @@ export default function GrowthScreen() {
       const parentId = await AsyncStorage.getItem('parentId');
       const childId = await AsyncStorage.getItem('childId');
       if (!parentId || !childId) return;
+
+      const parentDoc = await getDoc(doc(db, 'Parents', parentId));
+      if (parentDoc.exists()) {
+        const parentData = parentDoc.data();
+        const userTier = parentData.tier || 'free';
+        setTier(userTier);
+        console.log('=== 성장 리포트 진입, tier:', userTier);
+      }
 
       const childDoc = await getDoc(doc(db, 'Parents', parentId, 'Children', childId));
       if (childDoc.exists()) {
@@ -117,6 +128,77 @@ export default function GrowthScreen() {
     finally { setLoading(false); }
   };
 
+  const renderAIComment = () => {
+    if (tier === 'free') {
+      return (
+        <View style={styles.aiCommentContainer}>
+          <Text style={styles.aiTextFree}>오늘 수학 정답률이 높아요! 잘하고 있어요! 👏</Text>
+          <View style={styles.blurContainer}>
+            <Text style={styles.dummyText}>
+              과목별 상세 분석 내용이 여기에 표시됩니다...{'\n'}
+              더 자세한 학습 분석과 맞춤 코멘트를 확인할 수 있어요.{'\n'}
+              배움회원이 되면 AI가 학습 패턴을 분석해드려요.
+            </Text>
+            <View style={styles.blurOverlay} />
+            <View style={styles.lockMessageContainer}>
+              <Ionicons name="lock-closed" size={16} color="#4CAF50" />
+              <Text style={styles.lockText1}>배움회원으로 업그레이드하면</Text>
+              <Text style={styles.lockText2}>AI 맞춤 학습 분석을 볼 수 있어요</Text>
+            </View>
+          </View>
+        </View>
+      );
+    } else if (tier === 'baeum') {
+      return (
+        <Text style={styles.aiTextPaid}>
+          {childName || '지훈'}이는 오늘 수학에서 높은 정답률을 보여줬어요! 👏{'\n\n'}
+          📊 과목별 분석{'\n'}
+          • 수학: 덧셈과 뺄셈의 정확도가 매우 높아요. 시계 읽기 문제에서 가끔 실수가 있으니 긴 바늘과 짧은 바늘 구분을 연습해보세요.{'\n'}
+          • 국어: 받아쓰기 정확도가 지난주보다 향상되었어요. 겹받침 단어를 좀 더 연습하면 좋겠어요.{'\n'}
+          • 통합교과: 계절과 날씨 관련 문제를 잘 풀고 있어요.{'\n\n'}
+          💡 이번 주는 수학에 집중하는 패턴이 보여요. 국어도 병행하면 균형 잡힌 학습이 될 거예요!
+        </Text>
+      );
+    } else if (tier === 'sky') {
+      return (
+        <View>
+          <Text style={styles.aiTextPaid}>
+            {childName || '지훈'}이는 오늘 수학에서 높은 정답률을 보여줬어요! 👏{'\n\n'}
+            📊 과목별 분석{'\n'}
+            • 수학: 덧셈과 뺄셈의 정확도가 매우 높아요. 시계 읽기 문제에서 가끔 실수가 있으니 긴 바늘과 짧은 바늘 구분을 연습해보세요.{'\n'}
+            • 국어: 받아쓰기 정확도가 지난주보다 향상되었어요. 겹받침 단어를 좀 더 연습하면 좋겠어요.{'\n'}
+            • 통합교과: 계절과 날씨 관련 문제를 잘 풀고 있어요.{'\n\n'}
+            💡 이번 주는 수학에 집중하는 패턴이 보여요. 국어도 병행하면 균형 잡힌 학습이 될 거예요!
+          </Text>
+          <View style={styles.skyTipBox}>
+            <Text style={styles.aiTextPaid}>
+              🎯 AI 맞춤 학습 팁{'\n'}
+              • {childName || '지훈'}이는 오후 시간대에 집중력이 높은 편이에요. 수학처럼 사고력이 필요한 과목은 오후에 풀어보세요.{'\n'}
+              • 한 번에 5문제씩 짧게 자주 학습하는 것이 {childName || '지훈'}이에게 잘 맞아요.{'\n'}
+              • 틀린 문제를 다음 날 한 번 더 풀어보면 기억에 오래 남아요.
+            </Text>
+          </View>
+        </View>
+      );
+    }
+    return null;
+  };
+
+  const handleReportPress = () => {
+    console.log('상세 리포트 클릭, tier:', tier);
+    if (tier === 'free') {
+      console.log('무료회원 상세 리포트 차단 모달');
+      setShowFreeModal(true);
+    } else {
+      router.push('/growth/report');
+    }
+  };
+
+  const handleMembershipPress = () => {
+    console.log('회원 등급 안내 클릭');
+    router.push('/growth/membership');
+  };
+
   if (loading) return (<SafeAreaView style={styles.container}><ActivityIndicator size="large" color="#7ED4C0" style={{marginTop:100}}/></SafeAreaView>);
 
   return (
@@ -125,56 +207,82 @@ export default function GrowthScreen() {
         <Text style={styles.title}>성장 리포트</Text>
         <Text style={styles.subtitle}>{childName || '학생'}의 학습 현황</Text>
 
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>🤖 AI 학습 코멘트</Text>
-          <Text style={styles.aiText}>{aiComment}</Text>
+        <View style={styles.aiCard}>
+          <Text style={styles.cardTitleSmall}>🤖 AI 학습 코멘트</Text>
+          {renderAIComment()}
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>📊 오늘의 학습</Text>
+        <View style={styles.cardSmall}>
+          <Text style={styles.cardTitleSmall}>📊 오늘의 학습</Text>
           {Object.keys(todayStats).length === 0 ? (
             <Text style={styles.emptyText}>오늘 아직 학습 기록이 없어요</Text>
           ) : (
             Object.entries(todayStats).map(([subj, stat]) => (
               <View key={subj} style={styles.subjectRow}>
-                <Text style={styles.subjectName}>{SUBJECT_LABELS[subj] || subj}</Text>
+                <Text style={styles.subjectNameSmall}>{SUBJECT_LABELS[subj] || subj}</Text>
                 <View style={styles.subjectStats}>
-                  <Text style={styles.correctText}>✅ {stat.correct}</Text>
-                  <Text style={styles.wrongText}>❌ {stat.wrong}</Text>
+                  <Text style={styles.correctTextSmall}>✅ {stat.correct}</Text>
+                  <Text style={styles.wrongTextSmall}>❌ {stat.wrong}</Text>
                 </View>
               </View>
             ))
           )}
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>📅 2월 학습 통계</Text>
+        <View style={styles.cardSmall}>
+          <Text style={styles.cardTitleSmall}>📅 2월 학습 통계</Text>
           <View style={styles.statsGrid}>
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>{monthlyStats.accessDays}일</Text>
-              <Text style={styles.statLabel}>학습일</Text>
+              <Text style={styles.statValueSmall}>{monthlyStats.accessDays}일</Text>
+              <Text style={styles.statLabelSmall}>학습일</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>{monthlyStats.totalProblems}개</Text>
-              <Text style={styles.statLabel}>문제풀이수</Text>
+              <Text style={styles.statValueSmall}>{monthlyStats.totalProblems}개</Text>
+              <Text style={styles.statLabelSmall}>문제풀이수</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={[styles.statValue,{color:'#7ED4C0'}]}>{monthlyStats.average}점</Text>
-              <Text style={styles.statLabel}>평균 정답률</Text>
+              <Text style={[styles.statValueSmall,{color:'#7ED4C0'}]}>{monthlyStats.average}점</Text>
+              <Text style={styles.statLabelSmall}>평균 정답률</Text>
             </View>
           </View>
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>🔥 연속 학습</Text>
-          <Text style={styles.streakValue}>{streakDays}일 연속 학습 중!</Text>
-          <Text style={styles.streakSub}>{streakDays >= 7 ? '일주일 넘게 연속 학습 중! 대단해요! 🎉' : streakDays >= 3 ? '잘하고 있어요! 7일 연속에 도전해봐요!' : '매일 꾸준히 학습해봐요!'}</Text>
+        <View style={styles.cardSmall}>
+          <Text style={styles.cardTitleSmall}>🔥 연속 학습</Text>
+          <Text style={styles.streakValueSmall}>{streakDays}일 연속 학습 중!</Text>
+          <Text style={styles.streakSubSmall}>{streakDays >= 7 ? '일주일 넘게 연속 학습 중! 대단해요! 🎉' : streakDays >= 3 ? '잘하고 있어요! 7일 연속에 도전해봐요!' : '매일 꾸준히 학습해봐요!'}</Text>
         </View>
 
-        <TouchableOpacity style={styles.reportBtn} onPress={() => router.push('/settings/report')}>
+        <TouchableOpacity style={styles.reportBtn} onPress={handleReportPress}>
           <Text style={styles.reportText}>상세 리포트 보기</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity style={styles.membershipBtn} onPress={handleMembershipPress}>
+          <Text style={styles.membershipText}>회원 등급 안내</Text>
+        </TouchableOpacity>
       </ScrollView>
+
+      <Modal
+        visible={showFreeModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowFreeModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>배움회원 전용</Text>
+            <Text style={styles.modalMessage}>
+              상세 리포트는 배움회원 이상만{'\n'}이용할 수 있어요.
+            </Text>
+            <TouchableOpacity
+              style={styles.modalButton}
+              onPress={() => setShowFreeModal(false)}
+            >
+              <Text style={styles.modalButtonText}>확인</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -184,21 +292,39 @@ const styles = StyleSheet.create({
   scroll:{padding:20,paddingBottom:40},
   title:{fontSize:24,fontWeight:'bold',color:'#333'},
   subtitle:{fontSize:14,color:'#666',marginTop:4,marginBottom:16},
-  card:{backgroundColor:'#FFFFFF',borderRadius:16,padding:20,marginBottom:12,shadowColor:'#000',shadowOffset:{width:0,height:1},shadowOpacity:0.05,shadowRadius:4,elevation:2},
-  cardTitle:{fontSize:16,fontWeight:'bold',color:'#333',marginBottom:12},
-  aiText:{fontSize:14,color:'#555',lineHeight:22},
+  aiCard:{backgroundColor:'#FFFFFF',borderRadius:16,padding:20,marginBottom:12,shadowColor:'#000',shadowOffset:{width:0,height:1},shadowOpacity:0.05,shadowRadius:4,elevation:2},
+  cardSmall:{backgroundColor:'#FFFFFF',borderRadius:16,padding:16,paddingVertical:10,marginBottom:8,shadowColor:'#000',shadowOffset:{width:0,height:1},shadowOpacity:0.05,shadowRadius:4,elevation:2},
+  cardTitleSmall:{fontSize:14,fontWeight:'bold',color:'#333',marginBottom:8},
+  aiCommentContainer:{},
+  aiTextFree:{fontSize:14,color:'#333',lineHeight:22,marginBottom:8},
+  blurContainer:{height:80,position:'relative',marginTop:8},
+  dummyText:{fontSize:13,color:'#DDD',lineHeight:20},
+  blurOverlay:{position:'absolute',top:0,left:0,right:0,bottom:0,backgroundColor:'rgba(255,255,255,0.85)'},
+  lockMessageContainer:{position:'absolute',top:0,left:0,right:0,bottom:0,justifyContent:'center',alignItems:'center',gap:4},
+  lockText1:{fontSize:13,color:'#666',textAlign:'center'},
+  lockText2:{fontSize:13,color:'#4CAF50',fontWeight:'bold',textAlign:'center'},
+  aiTextPaid:{fontSize:14,color:'#333',lineHeight:22},
+  skyTipBox:{backgroundColor:'#F0F8FF',borderRadius:12,padding:12,marginTop:12},
   emptyText:{fontSize:14,color:'#999',textAlign:'center',paddingVertical:12},
-  subjectRow:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',paddingVertical:10,borderBottomWidth:1,borderBottomColor:'#F0F0F0'},
-  subjectName:{fontSize:15,fontWeight:'600',color:'#333'},
+  subjectRow:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',paddingVertical:6,borderBottomWidth:1,borderBottomColor:'#F0F0F0'},
+  subjectNameSmall:{fontSize:13,fontWeight:'600',color:'#333'},
   subjectStats:{flexDirection:'row',gap:16},
-  correctText:{fontSize:14,color:'#4CAF50',fontWeight:'bold'},
-  wrongText:{fontSize:14,color:'#FF6B6B',fontWeight:'bold'},
-  statsGrid:{flexDirection:'row',justifyContent:'space-around'},
+  correctTextSmall:{fontSize:14,color:'#4CAF50',fontWeight:'bold'},
+  wrongTextSmall:{fontSize:14,color:'#FF6B6B',fontWeight:'bold'},
+  statsGrid:{flexDirection:'row',justifyContent:'space-around',marginTop:4},
   statItem:{alignItems:'center'},
-  statValue:{fontSize:22,fontWeight:'bold',color:'#333'},
-  statLabel:{fontSize:12,color:'#999',marginTop:4},
-  streakValue:{fontSize:20,fontWeight:'bold',color:'#FF9800',textAlign:'center'},
-  streakSub:{fontSize:13,color:'#666',textAlign:'center',marginTop:8},
-  reportBtn:{backgroundColor:'#7ED4C0',borderRadius:16,paddingVertical:16,alignItems:'center',marginTop:8},
+  statValueSmall:{fontSize:20,fontWeight:'bold',color:'#333'},
+  statLabelSmall:{fontSize:10,color:'#999',marginTop:2},
+  streakValueSmall:{fontSize:18,fontWeight:'bold',color:'#FF9800',textAlign:'center',marginTop:4},
+  streakSubSmall:{fontSize:12,color:'#666',textAlign:'center',marginTop:6},
+  reportBtn:{backgroundColor:'#4CAF50',borderRadius:12,paddingVertical:14,marginHorizontal:16,alignItems:'center',marginBottom:10,marginTop:8},
   reportText:{fontSize:16,fontWeight:'bold',color:'#FFFFFF'},
+  membershipBtn:{backgroundColor:'#FFFFFF',borderWidth:1.5,borderColor:'#4CAF50',borderRadius:12,paddingVertical:14,marginHorizontal:16,alignItems:'center',marginBottom:20},
+  membershipText:{fontSize:16,fontWeight:'bold',color:'#4CAF50'},
+  modalOverlay:{flex:1,backgroundColor:'rgba(0,0,0,0.5)',justifyContent:'center',alignItems:'center'},
+  modalContent:{backgroundColor:'#FFFFFF',borderRadius:20,padding:32,width:'80%',alignItems:'center'},
+  modalTitle:{fontSize:18,fontWeight:'bold',color:'#333',marginBottom:16},
+  modalMessage:{fontSize:15,color:'#666',textAlign:'center',lineHeight:24,marginBottom:24},
+  modalButton:{backgroundColor:'#4CAF50',borderRadius:12,paddingVertical:14,paddingHorizontal:40},
+  modalButtonText:{fontSize:16,fontWeight:'bold',color:'#FFFFFF'},
 });
