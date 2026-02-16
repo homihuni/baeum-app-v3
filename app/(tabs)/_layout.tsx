@@ -1,35 +1,38 @@
 import { Tabs } from 'expo-router';
-import { Text, StyleSheet, Platform } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          height: Platform.OS === 'ios' ? 88 : 72,
+          height: 60 + insets.bottom,
           backgroundColor: '#FFFFFF',
           borderTopWidth: 1,
-          borderTopColor: '#E8E8E8',
+          borderTopColor: '#D4EDE7',
           paddingTop: 8,
-          paddingBottom: Platform.OS === 'ios' ? 28 : 12,
+          paddingBottom: insets.bottom,
           elevation: 8,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: -2 },
           shadowOpacity: 0.08,
           shadowRadius: 4,
         },
-        tabBarActiveTintColor: '#7ED4C0',
-        tabBarInactiveTintColor: '#999999',
+        tabBarActiveTintColor: '#5BBFAA',
+        tabBarInactiveTintColor: '#B0BEC5',
         tabBarLabelStyle: {
           fontSize: 13,
           fontWeight: '600',
           marginTop: 2,
-          marginBottom: 0,
+          marginBottom: 4,
         },
         tabBarIconStyle: {
-          marginTop: 2,
+          marginTop: 4,
           marginBottom: 0,
         },
       }}>
@@ -55,8 +58,8 @@ export default function TabLayout() {
         name="growth"
         options={{
           title: '성장',
-          tabBarIcon: ({ color }) => (
-            <Text style={[styles.iconText, { color }]}>📊</Text>
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'trending-up' : 'trending-up-outline'} size={26} color={color} />
           ),
         }}
       />
