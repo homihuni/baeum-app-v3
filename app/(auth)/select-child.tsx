@@ -1,132 +1,111 @@
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Alert } from 'react-native';
+import { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { getChildren } from '../../utils/firestore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const TIER_LABELS: Record<string, string> = { free: '무료회원', baeum: '배움회원', sky: '스카이회원' };
+const TIER_COLORS: Record<string, string> = { free: '#7ED4C0', baeum: '#F5A5B8', sky: '#87CEEB' };
 
 export default function SelectChildScreen() {
   const router = useRouter();
+  const [children, setChildren] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadChildren();
+  }, []);
+
+  const loadChildren = async () => {
+    try {
+      const parentId = await AsyncStorage.getItem('parentId');
+      if (!parentId) {
+        router.replace('/(auth)/login');
+        return;
+      }
+      const kids = await getChildren(parentId);
+      setChildren(kids);
+    } catch (error: any) {
+      Alert.alert('오류', '자녀 정보를 불러올 수 없습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const selectChild = async (child: any) => {
+    await AsyncStorage.setItem('childId', child.id);
+    await AsyncStorage.setItem('childName', child.name);
+    await AsyncStorage.setItem('childGrade', String(child.grade));
+    await AsyncStorage.setItem('childTier', child.tier);
+    router.replace('/(tabs)/home');
+  };
+
+  const handleAddChild = async () => {
+    const tier = children.length > 0 ? children[0].tier : 'free';
+    if (tier === 'free') {
+      Alert.alert('알림', '무료회원은 자녀 1명만 등록할 수 있습니다.\n배움 등급 이상으로 업그레이드해주세요.');
+      return;
+    }
+    if (children.length >= 3) {
+      Alert.alert('알림', '최대 3명까지 등록할 수 있습니다.');
+      return;
+    }
+    router.push('/(auth)/create-profile');
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ActivityIndicator size="large" color="#7ED4C0" style={{ marginTop: 100 }} />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>누가 공부할까요?</Text>
       <Text style={styles.subtitle}>학습할 자녀를 선택하세요</Text>
 
-      <TouchableOpacity style={styles.profileCard} onPress={() => router.replace('/(tabs)/home')}>
-        <View style={styles.profileCircle}>
-          <Text style={styles.profileEmoji}>🍓</Text>
-        </View>
-        <Text style={styles.profileName}>김배움</Text>
-        <Text style={styles.profileInfo}>3학년</Text>
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>무료회원</Text>
-        </View>
-      </TouchableOpacity>
+      <View style={styles.cardContainer}>
+        {children.map((child) => (
+          <TouchableOpacity key={child.id} style={styles.childCard} onPress={() => selectChild(child)}>
+            <Text style={styles.avatar}>{child.avatar || '🍓'}</Text>
+            <Text style={styles.childName}>{child.name}</Text>
+            <Text style={styles.childGrade}>{child.grade}학년</Text>
+            <View style={[styles.tierBadge, { backgroundColor: TIER_COLORS[child.tier] || '#7ED4C0' }]}>
+              <Text style={styles.tierText}>{TIER_LABELS[child.tier] || '무료회원'}</Text>
+            </View>
+          </TouchableOpacity>
+        ))}
 
-      <TouchableOpacity style={styles.addButton} onPress={() => Alert.alert('알림', '추가 프로필은 배움 등급 이상부터 가능합니다')}>
-        <Text style={styles.addButtonPlus}>+</Text>
-        <Text style={styles.addButtonText}>프로필 추가</Text>
-      </TouchableOpacity>
-
-      <View style={styles.bottomSection}>
-        <TouchableOpacity onPress={() => router.push('/settings')}>
-          <Text style={styles.parentSettingText}>부모님 설정</Text>
+        <TouchableOpacity style={styles.addCard} onPress={handleAddChild}>
+          <Text style={styles.addIcon}>+</Text>
+          <Text style={styles.addText}>프로필 추가</Text>
         </TouchableOpacity>
       </View>
+
+      <TouchableOpacity style={styles.parentBtn} onPress={() => router.push('/settings')}>
+        <Text style={styles.parentText}>부모님 설정</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F5F5F5',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333333',
-    textAlign: 'center',
-    marginTop: 40,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#999999',
-    textAlign: 'center',
-    marginTop: 8,
-  },
-  profileCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    padding: 24,
-    width: 140,
-    alignItems: 'center',
-    alignSelf: 'center',
-    marginTop: 40,
-  },
-  profileCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#7ED4C0',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  profileEmoji: {
-    fontSize: 32,
-  },
-  profileName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333333',
-    marginTop: 12,
-  },
-  profileInfo: {
-    fontSize: 13,
-    color: '#999999',
-    marginTop: 4,
-  },
-  badge: {
-    backgroundColor: '#E0E0E0',
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    marginTop: 6,
-  },
-  badgeText: {
-    fontSize: 11,
-    color: '#666666',
-  },
-  addButton: {
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    borderColor: '#9E9E9E',
-    borderRadius: 16,
-    width: 140,
-    padding: 24,
-    alignItems: 'center',
-    alignSelf: 'center',
-    marginTop: 20,
-  },
-  addButtonPlus: {
-    fontSize: 24,
-    color: '#9E9E9E',
-  },
-  addButtonText: {
-    fontSize: 13,
-    color: '#9E9E9E',
-    marginTop: 4,
-  },
-  bottomSection: {
-    position: 'absolute',
-    bottom: 40,
-    width: '100%',
-    alignItems: 'center',
-  },
-  parentSettingText: {
-    fontSize: 14,
-    color: '#999999',
-    textDecorationLine: 'underline',
-  },
+  container: { flex: 1, backgroundColor: '#F5F5F5', alignItems: 'center', paddingTop: 60 },
+  title: { fontSize: 24, fontWeight: 'bold', color: '#333' },
+  subtitle: { fontSize: 14, color: '#7ED4C0', marginTop: 8 },
+  cardContainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', marginTop: 40, gap: 16, paddingHorizontal: 20 },
+  childCard: { width: 140, backgroundColor: '#FFFFFF', borderRadius: 16, padding: 20, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
+  avatar: { fontSize: 40, marginBottom: 8 },
+  childName: { fontSize: 16, fontWeight: 'bold', color: '#333' },
+  childGrade: { fontSize: 13, color: '#666', marginTop: 4 },
+  tierBadge: { marginTop: 8, paddingHorizontal: 10, paddingVertical: 3, borderRadius: 10 },
+  tierText: { fontSize: 11, fontWeight: 'bold', color: '#FFFFFF' },
+  addCard: { width: 140, borderRadius: 16, padding: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#D0D0D0', borderStyle: 'dashed' },
+  addIcon: { fontSize: 28, color: '#9E9E9E' },
+  addText: { fontSize: 13, color: '#9E9E9E', marginTop: 4 },
+  parentBtn: { position: 'absolute', bottom: 50 },
+  parentText: { fontSize: 14, color: '#7ED4C0', textDecorationLine: 'underline' },
 });
