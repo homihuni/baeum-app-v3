@@ -40,8 +40,8 @@ export default function GrowthScreen() {
         const data = d.data();
         const subj = data.subject || 'unknown';
         if (!todayMap[subj]) todayMap[subj] = {correct:0,wrong:0};
-        if (data.isCorrect) todayMap[subj].correct++;
-        else todayMap[subj].wrong++;
+        todayMap[subj].correct += data.correctCount || 0;
+        todayMap[subj].wrong += data.wrongCount || 0;
       });
       setTodayStats(todayMap);
 
@@ -49,14 +49,15 @@ export default function GrowthScreen() {
       const monthQ = query(recordsRef, where('date', '>=', monthStr + '-01'), where('date', '<=', monthStr + '-31'));
       const monthSnap = await getDocs(monthQ);
       const daysSet = new Set<string>();
-      let total = 0, correct = 0;
+      let total = 0, correct = 0, totalScore = 0, scoreCount = 0;
       monthSnap.forEach((d) => {
         const data = d.data();
         daysSet.add(data.date);
-        total++;
-        if (data.isCorrect) correct++;
+        total += data.totalQuestions || 0;
+        correct += data.correctCount || 0;
+        if (data.score !== undefined) { totalScore += data.score; scoreCount++; }
       });
-      const avg = total > 0 ? Math.round((correct/total)*100) : 0;
+      const avg = scoreCount > 0 ? Math.round(totalScore / scoreCount) : 0;
       setMonthlyStats({accessDays:daysSet.size, totalProblems:total, correctCount:correct, average:avg});
 
       // Streak calculation
