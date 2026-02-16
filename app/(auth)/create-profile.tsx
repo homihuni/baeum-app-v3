@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { createChild } from '../../utils/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const AVATARS = ['🍓', '🍊', '🍋', '🍇', '🍎'];
+const AVATARS = ['🍓', '🍎', '🍊', '🍋', '🍇', '🍉', '🍑', '🍒', '🫐', '🥝', '🐶', '🐱', '🐰', '🐻', '🦊', '🐼', '🐨', '🦁', '🐯', '🐸'];
 const GRADES = [1, 2, 3, 4, 5, 6];
 
 export default function CreateProfileScreen() {
@@ -34,6 +34,7 @@ export default function CreateProfileScreen() {
         router.replace('/(auth)/login');
         return;
       }
+      console.log('Saving avatar:', avatar);
       const childId = await createChild(parentId, {
         name: name.trim(),
         birthDate: birthDate.trim(),

@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createChild } from '../../utils/firestore';
 
-const AVATAR_OPTIONS = ['🍓', '🍎', '🍊', '🍋', '🍇', '🍉', '🍑', '🍒', '🫐', '🥝', '🐶', '🐱', '🐰', '🐻', '🦊', '🐼', '🐨', '🦁', '🐯', '🐸'];
+const AVATARS = ['🍓', '🍎', '🍊', '🍋', '🍇', '🍉', '🍑', '🍒', '🫐', '🥝', '🐶', '🐱', '🐰', '🐻', '🦊', '🐼', '🐨', '🦁', '🐯', '🐸'];
 const SUBJECT_OPTIONS = [
   { key: 'korean', label: '국어' },
   { key: 'math', label: '수학' },
@@ -59,6 +59,7 @@ export default function AddChildScreen() {
         return;
       }
 
+      console.log('Saving avatar:', avatar);
       await createChild(parentId, {
         avatar,
         name: name.trim(),
@@ -90,7 +91,7 @@ export default function AddChildScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>아바타</Text>
           <View style={styles.avatarGrid}>
-            {AVATAR_OPTIONS.map((emoji) => (
+            {AVATARS.map((emoji) => (
               <TouchableOpacity
                 key={emoji}
                 style={[styles.avatarOption, avatar === emoji && styles.avatarOptionSelected]}
