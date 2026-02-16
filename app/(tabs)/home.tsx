@@ -2,6 +2,8 @@ import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity } fr
 import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { db } from '../../utils/firebase';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -13,6 +15,11 @@ export default function HomeScreen() {
   const [childGrade, setChildGrade] = useState('');
   const [childTier, setChildTier] = useState('free');
   const [childAvatar, setChildAvatar] = useState('🍓');
+  const [studyDays, setStudyDays] = useState<Set<number>>(new Set());
+  const [totalProblems, setTotalProblems] = useState(0);
+  const [monthlyAverage, setMonthlyAverage] = useState(0);
+  const [accessDays, setAccessDays] = useState(0);
+  const [correctCount, setCorrectCount] = useState(0);
 
   const TIER_LABELS: Record<string, string> = { free: '무료회원', baeum: '배움회원', sky: '스카이회원' };
   const TIER_COLORS: Record<string, string> = { free: '#7ED4C0', baeum: '#F5A5B8', sky: '#87CEEB' };
@@ -29,9 +36,38 @@ export default function HomeScreen() {
     loadChildData();
   }, []);
 
+  useEffect(() => { loadMonthlyData(); }, [currentYear, currentMonth]);
+
+  const loadMonthlyData = async () => {
+    try {
+      const parentId = await AsyncStorage.getItem('parentId');
+      const childId = await AsyncStorage.getItem('childId');
+      if (!parentId || !childId) return;
+      const recordsRef = collection(db, 'Parents', parentId, 'Children', childId, 'Records');
+      const monthStr = currentYear + '-' + String(currentMonth).padStart(2, '0');
+      const q = query(recordsRef, where('date', '>=', monthStr + '-01'), where('date', '<=', monthStr + '-31'));
+      const snapshot = await getDocs(q);
+      const daysSet = new Set<number>();
+      let problems = 0;
+      let correct = 0;
+      let totalScore = 0;
+      let scoreCount = 0;
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        const day = parseInt(data.date.split('-')[2]);
+        daysSet.add(day);
+        if (data.isCorrect !== undefined) { problems++; if (data.isCorrect) correct++; }
+        if (data.score !== undefined) { totalScore += data.score; scoreCount++; }
+      });
+      setStudyDays(daysSet);
+      setAccessDays(daysSet.size);
+      setTotalProblems(problems);
+      setCorrectCount(correct);
+      setMonthlyAverage(scoreCount > 0 ? Math.round(totalScore / scoreCount) : 0);
+    } catch (error) { console.log('Load error:', error); }
+  };
+
   const weekDays = ['일', '월', '화', '수', '목', '금', '토'];
-  const completedDays = [2, 5, 10];
-  const missedDays = [3, 9];
 
   const firstDay = new Date(currentYear, currentMonth - 1, 1).getDay();
   const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
@@ -69,12 +105,14 @@ export default function HomeScreen() {
       const dayOfWeek = (firstDay + day - 1) % 7;
       const isToday = isCurrentMonth && day === todayDate;
       const isSelected = day === selectedDate && !isToday;
-      const hasCompleted = completedDays.includes(day);
-      const hasMissed = missedDays.includes(day);
+      const hasCompleted = studyDays.has(day);
+      const hasMissed = isCurrentMonth && day < todayDate && !studyDays.has(day);
 
       let textColor = '#333333';
       if (dayOfWeek === 0) textColor = '#FF6B6B';
       else if (dayOfWeek === 6) textColor = '#4A90D9';
+
+      const showDot = !isToday && (hasCompleted || hasMissed);
 
       days.push(
         <TouchableOpacity
@@ -90,7 +128,7 @@ export default function HomeScreen() {
               {day}
             </Text>
           </View>
-          {(hasCompleted || hasMissed) && !isToday && (
+          {showDot && (
             <View style={[styles.dot, { backgroundColor: hasCompleted ? '#4CAF50' : '#FF6B6B' }]} />
           )}
         </TouchableOpacity>
@@ -131,17 +169,17 @@ export default function HomeScreen() {
         <View style={styles.statsCard}>
           <View style={styles.statColumn}>
             <Text style={styles.statLabel}>이번달 접속</Text>
-            <Text style={[styles.statValue, { color: '#7ED4C0' }]}>1일</Text>
+            <Text style={[styles.statValue, { color: '#7ED4C0' }]}>{accessDays}일</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statColumn}>
             <Text style={styles.statLabel}>학습결과</Text>
-            <Text style={[styles.statValue, { color: '#FF6B6B' }]}>0일</Text>
+            <Text style={[styles.statValue, { color: '#FF6B6B' }]}>{totalProblems > 0 ? Math.round((correctCount/totalProblems)*100) : 0}점</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statColumn}>
             <Text style={styles.statLabel}>문제 수</Text>
-            <Text style={[styles.statValue, { color: '#87CEEB' }]}>3개</Text>
+            <Text style={[styles.statValue, { color: '#87CEEB' }]}>{totalProblems}개</Text>
           </View>
         </View>
 
@@ -199,8 +237,8 @@ export default function HomeScreen() {
         <View style={styles.dateStatsCard}>
           <Text style={styles.dateStatsTitle}>오늘의 학습</Text>
           <Text style={styles.dateStatsText}>남은 문제: 3문제</Text>
-          <Text style={styles.dateStatsText}>이번 달 학습일: 5일</Text>
-          <Text style={[styles.dateStatsText, styles.dateStatsAverage]}>이번 달 평균: 91점</Text>
+          <Text style={styles.dateStatsText}>이번 달 학습일: {accessDays}일</Text>
+          <Text style={[styles.dateStatsText, styles.dateStatsAverage]}>이번 달 평균: {monthlyAverage}점</Text>
         </View>
 
         {/* 6. LEARN BUTTON */}
