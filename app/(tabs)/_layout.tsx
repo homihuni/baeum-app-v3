@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router';
 import { Text, StyleSheet, Platform } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function TabLayout() {
   return (
@@ -7,10 +8,10 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#FFFFFF',
-          borderTopColor: '#D4EDE7',
           height: Platform.OS === 'ios' ? 88 : 72,
+          backgroundColor: '#FFFFFF',
           borderTopWidth: 1,
+          borderTopColor: '#E8E8E8',
           paddingTop: 8,
           paddingBottom: Platform.OS === 'ios' ? 28 : 12,
           elevation: 8,
@@ -19,23 +20,25 @@ export default function TabLayout() {
           shadowOpacity: 0.08,
           shadowRadius: 4,
         },
-        tabBarActiveTintColor: '#5BBFAA',
-        tabBarInactiveTintColor: '#B0BEC5',
+        tabBarActiveTintColor: '#7ED4C0',
+        tabBarInactiveTintColor: '#999999',
         tabBarLabelStyle: {
           fontSize: 13,
           fontWeight: '600',
-          marginTop: 4,
+          marginTop: 2,
+          marginBottom: 0,
         },
         tabBarIconStyle: {
-          marginTop: 4,
+          marginTop: 2,
+          marginBottom: 0,
         },
       }}>
       <Tabs.Screen
         name="home"
         options={{
           title: '홈',
-          tabBarIcon: ({ color }) => (
-            <Text style={[styles.iconText, { color }]}>🏠</Text>
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'home' : 'home-outline'} size={26} color={color} />
           ),
         }}
       />
@@ -43,8 +46,8 @@ export default function TabLayout() {
         name="study"
         options={{
           title: '스터디',
-          tabBarIcon: ({ color }) => (
-            <Text style={[styles.iconText, { color }]}>📚</Text>
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'book' : 'book-outline'} size={26} color={color} />
           ),
         }}
       />
@@ -60,9 +63,9 @@ export default function TabLayout() {
       <Tabs.Screen
         name="menu"
         options={{
-          title: '전체',
-          tabBarIcon: ({ color }) => (
-            <Text style={[styles.iconText, { color }]}>☰</Text>
+          title: '전체메뉴',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'grid' : 'grid-outline'} size={26} color={color} />
           ),
         }}
       />
