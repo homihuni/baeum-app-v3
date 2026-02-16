@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -8,6 +9,25 @@ export default function HomeScreen() {
   const [selectedDate, setSelectedDate] = useState(today.getDate());
   const [currentYear, setCurrentYear] = useState(2026);
   const [currentMonth, setCurrentMonth] = useState(2);
+  const [childName, setChildName] = useState('');
+  const [childGrade, setChildGrade] = useState('');
+  const [childTier, setChildTier] = useState('free');
+  const [childAvatar, setChildAvatar] = useState('🍓');
+
+  const TIER_LABELS: Record<string, string> = { free: '무료회원', baeum: '배움회원', sky: '스카이회원' };
+  const TIER_COLORS: Record<string, string> = { free: '#7ED4C0', baeum: '#F5A5B8', sky: '#87CEEB' };
+
+  useEffect(() => {
+    const loadChildData = async () => {
+      const name = await AsyncStorage.getItem('childName');
+      const grade = await AsyncStorage.getItem('childGrade');
+      const tier = await AsyncStorage.getItem('childTier');
+      if (name) setChildName(name);
+      if (grade) setChildGrade(grade);
+      if (tier) setChildTier(tier);
+    };
+    loadChildData();
+  }, []);
 
   const weekDays = ['일', '월', '화', '수', '목', '금', '토'];
   const completedDays = [2, 5, 10];
@@ -92,10 +112,10 @@ export default function HomeScreen() {
         {/* 1. PROFILE HEADER BAR */}
         <View style={styles.profileHeader}>
           <View style={styles.profileLeft}>
-            <Text style={styles.profileEmoji}>🍓</Text>
-            <Text style={styles.profileName}>김배움</Text>
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>무료회원</Text>
+            <Text style={styles.profileEmoji}>{childAvatar}</Text>
+            <Text style={styles.profileName}>{childName || '김배움'}</Text>
+            <View style={[styles.badge, { backgroundColor: TIER_COLORS[childTier] || '#7ED4C0' }]}>
+              <Text style={styles.badgeText}>{TIER_LABELS[childTier] || '무료회원'}</Text>
             </View>
           </View>
           <Text style={styles.bellIcon}>🔔</Text>
@@ -220,7 +240,6 @@ const styles = StyleSheet.create({
     color: '#333333',
   },
   badge: {
-    backgroundColor: '#7ED4C0',
     paddingHorizontal: 10,
     paddingVertical: 3,
     borderRadius: 10,
