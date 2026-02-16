@@ -16,7 +16,11 @@ export default function HomeScreen() {
   const firstDay = new Date(currentYear, currentMonth - 1, 1).getDay();
   const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
 
+  const isAtMinMonth = currentYear === 2026 && currentMonth === 1;
+  const isPastMonth = currentYear < 2026 || (currentYear === 2026 && currentMonth < 2);
+
   const previousMonth = () => {
+    if (isAtMinMonth) return;
     if (currentMonth === 1) {
       setCurrentMonth(12);
       setCurrentYear(currentYear - 1);
@@ -25,13 +29,9 @@ export default function HomeScreen() {
     }
   };
 
-  const nextMonth = () => {
-    if (currentMonth === 12) {
-      setCurrentMonth(1);
-      setCurrentYear(currentYear + 1);
-    } else {
-      setCurrentMonth(currentMonth + 1);
-    }
+  const goToCurrentMonth = () => {
+    setCurrentYear(2026);
+    setCurrentMonth(2);
   };
 
   const renderCalendarDays = () => {
@@ -41,12 +41,10 @@ export default function HomeScreen() {
     const todayYear = today.getFullYear();
     const isCurrentMonth = currentYear === todayYear && currentMonth === todayMonth;
 
-    // Empty cells for days before the first day of month
     for (let i = 0; i < firstDay; i++) {
-      days.push(<View key={`empty-${i}`} style={styles.dayCell} />);
+      days.push(<View key={`empty-start-${i}`} style={styles.dayCell} />);
     }
 
-    // Actual days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const dayOfWeek = (firstDay + day - 1) % 7;
       const isToday = isCurrentMonth && day === todayDate;
@@ -55,8 +53,8 @@ export default function HomeScreen() {
       const hasMissed = missedDays.includes(day);
 
       let textColor = '#333333';
-      if (dayOfWeek === 0) textColor = '#FF6B6B'; // Sunday
-      else if (dayOfWeek === 6) textColor = '#4A90D9'; // Saturday
+      if (dayOfWeek === 0) textColor = '#FF6B6B';
+      else if (dayOfWeek === 6) textColor = '#4A90D9';
 
       days.push(
         <TouchableOpacity
@@ -79,6 +77,12 @@ export default function HomeScreen() {
       );
     }
 
+    const totalCells = firstDay + daysInMonth;
+    const emptyCellsAtEnd = 42 - totalCells;
+    for (let i = 0; i < emptyCellsAtEnd; i++) {
+      days.push(<View key={`empty-end-${i}`} style={styles.dayCell} />);
+    }
+
     return days;
   };
 
@@ -90,13 +94,11 @@ export default function HomeScreen() {
           <View style={styles.profileLeft}>
             <Text style={styles.profileEmoji}>🍓</Text>
             <Text style={styles.profileName}>김배움</Text>
-          </View>
-          <View style={styles.profileRight}>
             <View style={styles.badge}>
               <Text style={styles.badgeText}>무료회원</Text>
             </View>
-            <Text style={styles.bellIcon}>🔔</Text>
           </View>
+          <Text style={styles.bellIcon}>🔔</Text>
         </View>
 
         {/* 2. BANNER AREA */}
@@ -108,12 +110,12 @@ export default function HomeScreen() {
         {/* 3. MONTHLY STATS ROW */}
         <View style={styles.statsCard}>
           <View style={styles.statColumn}>
-            <Text style={styles.statLabel}>월별 학습</Text>
+            <Text style={styles.statLabel}>이번달 접속</Text>
             <Text style={[styles.statValue, { color: '#7ED4C0' }]}>1일</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statColumn}>
-            <Text style={styles.statLabel}>연속 학습</Text>
+            <Text style={styles.statLabel}>학습결과</Text>
             <Text style={[styles.statValue, { color: '#FF6B6B' }]}>0일</Text>
           </View>
           <View style={styles.statDivider} />
@@ -127,21 +129,26 @@ export default function HomeScreen() {
         <View style={styles.calendarCard}>
           {/* Calendar Header */}
           <View style={styles.calendarHeader}>
-            <TouchableOpacity onPress={previousMonth}>
-              <Text style={styles.arrowText}>{'<'}</Text>
+            <TouchableOpacity onPress={previousMonth} disabled={isAtMinMonth}>
+              <Text style={[styles.arrowText, isAtMinMonth && { color: '#D0D0D0' }]}>{'<'}</Text>
             </TouchableOpacity>
-            <Text style={styles.monthTitle}>{currentYear}년 {currentMonth}월</Text>
-            <TouchableOpacity onPress={nextMonth}>
-              <Text style={styles.arrowText}>{'>'}</Text>
-            </TouchableOpacity>
+            <View style={styles.monthTitleContainer}>
+              <Text style={styles.monthTitle}>{currentYear}년 {currentMonth}월</Text>
+              {isPastMonth && (
+                <TouchableOpacity onPress={goToCurrentMonth} style={styles.currentMonthButton}>
+                  <Text style={styles.currentMonthText}>이번 달</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+            <View style={styles.emptySpace} />
           </View>
 
           {/* Week Days Header */}
           <View style={styles.weekRow}>
             {weekDays.map((day, index) => {
               let color = '#9E9E9E';
-              if (index === 0) color = '#FF6B6B'; // Sunday
-              else if (index === 6) color = '#4A90D9'; // Saturday
+              if (index === 0) color = '#FF6B6B';
+              else if (index === 6) color = '#4A90D9';
               return (
                 <View key={index} style={styles.dayCell}>
                   <Text style={[styles.weekDayText, { color }]}>{day}</Text>
@@ -154,6 +161,18 @@ export default function HomeScreen() {
           <View style={styles.daysGrid}>
             {renderCalendarDays()}
           </View>
+
+          {/* Calendar Legend */}
+          <View style={styles.legendRow}>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: '#4CAF50' }]} />
+              <Text style={styles.legendText}>완료</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: '#FF6B6B' }]} />
+              <Text style={styles.legendText}>미완료</Text>
+            </View>
+          </View>
         </View>
 
         {/* 5. SELECTED DATE STATS */}
@@ -161,7 +180,7 @@ export default function HomeScreen() {
           <Text style={styles.dateStatsTitle}>오늘의 학습</Text>
           <Text style={styles.dateStatsText}>남은 문제: 3문제</Text>
           <Text style={styles.dateStatsText}>이번 달 학습일: 5일</Text>
-          <Text style={[styles.dateStatsText, { color: '#7ED4C0' }]}>학습 결과: 2일 100점, 1일 80점</Text>
+          <Text style={[styles.dateStatsText, styles.dateStatsAverage]}>이번 달 평균: 91점</Text>
         </View>
 
         {/* 6. LEARN BUTTON */}
@@ -200,19 +219,15 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333333',
   },
-  profileRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
   badge: {
     backgroundColor: '#7ED4C0',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginRight: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 10,
+    marginLeft: 8,
   },
   badgeText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: 'bold',
     color: '#FFFFFF',
   },
@@ -259,7 +274,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#9E9E9E',
     marginBottom: 4,
   },
@@ -296,10 +311,25 @@ const styles = StyleSheet.create({
     color: '#333333',
     paddingHorizontal: 12,
   },
+  monthTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   monthTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#333333',
+  },
+  currentMonthButton: {
+    marginLeft: 12,
+  },
+  currentMonthText: {
+    fontSize: 12,
+    color: '#7ED4C0',
+    textDecorationLine: 'underline',
+  },
+  emptySpace: {
+    width: 42,
   },
   weekRow: {
     flexDirection: 'row',
@@ -312,10 +342,11 @@ const styles = StyleSheet.create({
   daysGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    height: 264,
   },
   dayCell: {
     width: '14.28%',
-    aspectRatio: 1,
+    height: 44,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -344,6 +375,26 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     marginTop: 2,
   },
+  legendRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 8,
+    gap: 16,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  legendDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  legendText: {
+    fontSize: 11,
+    color: '#9E9E9E',
+    marginLeft: 4,
+  },
   // 5. Date Stats Card
   dateStatsCard: {
     marginHorizontal: 20,
@@ -367,6 +418,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666666',
     marginTop: 4,
+  },
+  dateStatsAverage: {
+    fontWeight: 'bold',
+    color: '#7ED4C0',
   },
   // 6. Learn Button
   learnButton: {
