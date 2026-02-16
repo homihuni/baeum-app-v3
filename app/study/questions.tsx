@@ -69,8 +69,32 @@ export default function QuestionsScreen() {
     }
   };
 
-  const handleNext = () => {
+  const saveResult = async (correctCount: number, wrongCount: number, totalQuestions: number) => {
+    try {
+      const parentId = await AsyncStorage.getItem('parentId');
+      const childId = await AsyncStorage.getItem('childId');
+      if (parentId && childId) {
+        const today = new Date();
+        const dateStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+        const score = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
+        await createRecord(parentId, childId, {
+          subject: subject as string,
+          date: dateStr,
+          totalQuestions: totalQuestions,
+          correctCount: correctCount,
+          wrongCount: wrongCount,
+          score: score,
+          completedAt: new Date().toISOString()
+        } as any);
+      }
+    } catch (error) {
+      console.log('결과 저장 실패:', error);
+    }
+  };
+
+  const handleNext = async () => {
     if (currentIndex + 1 >= problems.length) {
+      await saveResult(correctCount, wrongCount, problems.length);
       router.replace({
         pathname: '/study/complete',
         params: {
