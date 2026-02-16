@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, TextInput, Alert, Modal } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,6 +14,7 @@ export default function EditChildScreen() {
   const [avatar, setAvatar] = useState('🍓');
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(true);
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
 
   useEffect(() => {
     loadChildData();
@@ -59,9 +60,7 @@ export default function EditChildScreen() {
                 name: name.trim(),
               });
 
-              Alert.alert('저장 완료', '자녀 정보가 수정되었습니다.', [
-                { text: '확인', onPress: () => router.back() }
-              ]);
+              setShowCompleteModal(true);
             } catch (error) {
               console.log('Update child error:', error);
               Alert.alert('오류', '자녀 정보 수정에 실패했습니다.');
@@ -121,6 +120,24 @@ export default function EditChildScreen() {
           <Text style={styles.saveButtonText}>저장</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      <Modal visible={showCompleteModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>수정 완료</Text>
+            <Text style={styles.modalMessage}>자녀 정보가 수정되었습니다</Text>
+            <TouchableOpacity
+              style={styles.modalButton}
+              onPress={() => {
+                setShowCompleteModal(false);
+                router.back();
+              }}
+            >
+              <Text style={styles.modalButtonText}>확인</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -208,5 +225,39 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#FFFFFF',
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalBox: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 24,
+    width: 280,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  modalMessage: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 20,
+  },
+  modalButton: {
+    backgroundColor: '#5BBFAA',
+    paddingVertical: 10,
+    paddingHorizontal: 40,
+    borderRadius: 8,
+  },
+  modalButtonText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: 'white',
   },
 });
