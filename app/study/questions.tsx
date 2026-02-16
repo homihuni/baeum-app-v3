@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { getProblemsForSubject } from '../../utils/sampleProblems';
@@ -25,6 +25,8 @@ export default function QuestionsScreen() {
   const [isCorrect, setIsCorrect] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
   const [wrongCount, setWrongCount] = useState(0);
+  const [showExitModal, setShowExitModal] = useState(false);
+  const [showNoAnswerModal, setShowNoAnswerModal] = useState(false);
 
   useEffect(() => {
     const allProblems = getProblemsForSubject(subject, grade);
@@ -42,7 +44,7 @@ export default function QuestionsScreen() {
 
   const handleCheckAnswer = async () => {
     if (!selectedAnswer) {
-      Alert.alert('알림', '답을 선택해주세요.');
+      setShowNoAnswerModal(true);
       return;
     }
     const correct = selectedAnswer === currentProblem.correctAnswer;
@@ -99,14 +101,16 @@ export default function QuestionsScreen() {
   };
 
   const handleClose = () => {
-    Alert.alert(
-      '학습 중단',
-      '학습을 중단하시겠어요?\n진행한 문제는 저장됩니다.',
-      [
-        { text: '계속하기', style: 'cancel' },
-        { text: '중단하기', onPress: () => router.replace('/(tabs)/home') },
-      ]
-    );
+    setShowExitModal(true);
+  };
+
+  const handleExitConfirm = () => {
+    setShowExitModal(false);
+    router.replace('/(tabs)/study');
+  };
+
+  const handleExitCancel = () => {
+    setShowExitModal(false);
   };
 
   if (problems.length === 0) {
@@ -201,6 +205,37 @@ export default function QuestionsScreen() {
           </TouchableOpacity>
         )}
       </View>
+
+      <Modal visible={showExitModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>학습 중단</Text>
+            <Text style={styles.modalMessage}>학습을 중단하시겠어요?{'\n'}진행한 문제는 저장됩니다.</Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity style={styles.modalCancelBtn} onPress={handleExitCancel}>
+                <Text style={styles.modalCancelText}>계속하기</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalConfirmBtn} onPress={handleExitConfirm}>
+                <Text style={styles.modalConfirmText}>중단하기</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={showNoAnswerModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>알림</Text>
+            <Text style={styles.modalMessage}>답을 선택해주세요.</Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity style={styles.modalSingleBtn} onPress={() => setShowNoAnswerModal(false)}>
+                <Text style={styles.modalConfirmText}>확인</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -239,4 +274,14 @@ const styles = StyleSheet.create({
   nextBtnText: { fontSize: 16, fontWeight: 'bold', color: '#FFFFFF' },
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyText: { fontSize: 16, color: '#9E9E9E' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
+  modalContainer: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 24, width: '85%', maxWidth: 400 },
+  modalTitle: { fontSize: 20, fontWeight: 'bold', color: '#333', marginBottom: 12, textAlign: 'center' },
+  modalMessage: { fontSize: 15, color: '#666', lineHeight: 22, textAlign: 'center', marginBottom: 24 },
+  modalButtons: { flexDirection: 'row', gap: 12 },
+  modalCancelBtn: { flex: 1, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: '#E0E0E0', backgroundColor: '#FFFFFF', alignItems: 'center' },
+  modalCancelText: { fontSize: 15, fontWeight: '600', color: '#666' },
+  modalConfirmBtn: { flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: '#7ED4C0', alignItems: 'center' },
+  modalConfirmText: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
+  modalSingleBtn: { flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: '#7ED4C0', alignItems: 'center' },
 });
