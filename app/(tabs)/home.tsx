@@ -185,7 +185,7 @@ export default function HomeScreen() {
           <View style={styles.statDivider} />
           <View style={styles.statColumn}>
             <Text style={styles.statLabel}>학습결과</Text>
-            <Text style={[styles.statValue, { color: '#FF6B6B' }]}>{totalProblems > 0 ? Math.round((correctCount/totalProblems)*100) : 0}점</Text>
+            <Text style={[styles.statValue, { color: '#FF6B6B' }]}>{monthlyAverage}점</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statColumn}>
