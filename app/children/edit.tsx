@@ -38,26 +38,38 @@ export default function EditChildScreen() {
     }
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!name.trim()) {
       Alert.alert('오류', '이름을 입력해주세요.');
       return;
     }
 
-    try {
-      console.log('Saving avatar:', avatar);
-      await updateChild(parentId, childId as string, {
-        avatar,
-        name: name.trim(),
-      });
+    Alert.alert(
+      '수정 확인',
+      '자녀 정보를 수정하시겠습니까?',
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '확인',
+          onPress: async () => {
+            try {
+              console.log('Saving avatar:', avatar);
+              await updateChild(parentId, childId as string, {
+                avatar,
+                name: name.trim(),
+              });
 
-      Alert.alert('성공', '자녀 정보가 수정되었습니다.', [
-        { text: '확인', onPress: () => router.back() }
-      ]);
-    } catch (error) {
-      console.log('Update child error:', error);
-      Alert.alert('오류', '자녀 정보 수정에 실패했습니다.');
-    }
+              Alert.alert('저장 완료', '자녀 정보가 수정되었습니다.', [
+                { text: '확인', onPress: () => router.back() }
+              ]);
+            } catch (error) {
+              console.log('Update child error:', error);
+              Alert.alert('오류', '자녀 정보 수정에 실패했습니다.');
+            }
+          }
+        }
+      ]
+    );
   };
 
   if (loading) {

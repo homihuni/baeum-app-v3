@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity } fr
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
 
 export default function HomeScreen() {
@@ -26,12 +26,28 @@ export default function HomeScreen() {
 
   useEffect(() => {
     const loadChildData = async () => {
-      const name = await AsyncStorage.getItem('childName');
-      const grade = await AsyncStorage.getItem('childGrade');
-      const tier = await AsyncStorage.getItem('childTier');
-      if (name) setChildName(name);
-      if (grade) setChildGrade(grade);
-      if (tier) setChildTier(tier);
+      try {
+        const parentId = await AsyncStorage.getItem('parentId');
+        const childId = await AsyncStorage.getItem('childId');
+        const name = await AsyncStorage.getItem('childName');
+        const grade = await AsyncStorage.getItem('childGrade');
+        const tier = await AsyncStorage.getItem('childTier');
+
+        if (name) setChildName(name);
+        if (grade) setChildGrade(grade);
+        if (tier) setChildTier(tier);
+
+        if (parentId && childId) {
+          const childDoc = await getDoc(doc(db, 'Parents', parentId, 'Children', childId));
+          if (childDoc.exists()) {
+            const childData = childDoc.data();
+            console.log('홈 화면 avatar:', childData.avatar);
+            if (childData.avatar) setChildAvatar(childData.avatar);
+          }
+        }
+      } catch (error) {
+        console.log('Load child data error:', error);
+      }
     };
     loadChildData();
   }, []);
@@ -39,8 +55,26 @@ export default function HomeScreen() {
   useFocusEffect(
     useCallback(() => {
       loadMonthlyData();
+      refreshChildAvatar();
     }, [currentYear, currentMonth])
   );
+
+  const refreshChildAvatar = async () => {
+    try {
+      const parentId = await AsyncStorage.getItem('parentId');
+      const childId = await AsyncStorage.getItem('childId');
+      if (parentId && childId) {
+        const childDoc = await getDoc(doc(db, 'Parents', parentId, 'Children', childId));
+        if (childDoc.exists()) {
+          const childData = childDoc.data();
+          console.log('홈 화면 avatar:', childData.avatar);
+          if (childData.avatar) setChildAvatar(childData.avatar);
+        }
+      }
+    } catch (error) {
+      console.log('Refresh avatar error:', error);
+    }
+  };
 
   const loadMonthlyData = async () => {
     try {
