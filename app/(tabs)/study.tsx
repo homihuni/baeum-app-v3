@@ -48,7 +48,6 @@ export default function StudyScreen() {
       console.log('=== 스터디 화면 데이터 로드 시작 ===');
       const parentId = await AsyncStorage.getItem('parentId');
       const childId = await AsyncStorage.getItem('childId');
-      const name = await AsyncStorage.getItem('childName');
       const grade = await AsyncStorage.getItem('childGrade');
       const tier = await AsyncStorage.getItem('childTier');
 
@@ -58,7 +57,6 @@ export default function StudyScreen() {
       const g = grade ? parseInt(grade) : 1;
       const t = tier || 'free';
 
-      if (name) setChildName(name);
       setChildGrade(g);
       setChildTier(t);
       setSubjects(getSubjectsForGrade(g));
@@ -69,7 +67,9 @@ export default function StudyScreen() {
         if (childDoc.exists()) {
           const data = childDoc.data();
           console.log('study avatar:', data.avatar);
+          console.log('study name:', data.name);
           setChildAvatar(data.avatar || '🍎');
+          setChildName(data.name || '학생');
         }
       }
     } catch (error) {

@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { useRouter, useFocusEffect } from 'expo-router';
+import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -17,15 +17,24 @@ export default function GrowthScreen() {
   const [streakDays, setStreakDays] = useState(0);
   const [aiComment, setAiComment] = useState('');
 
-  useEffect(() => { loadData(); }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [])
+  );
 
   const loadData = async () => {
     try {
       const parentId = await AsyncStorage.getItem('parentId');
       const childId = await AsyncStorage.getItem('childId');
-      const name = await AsyncStorage.getItem('childName');
-      if (name) setChildName(name);
       if (!parentId || !childId) return;
+
+      const childDoc = await getDoc(doc(db, 'Parents', parentId, 'Children', childId));
+      if (childDoc.exists()) {
+        const childData = childDoc.data();
+        console.log('growth name:', childData.name);
+        if (childData.name) setChildName(childData.name);
+      }
 
       const recordsRef = collection(db, 'Parents', parentId, 'Children', childId, 'Records');
       const now = new Date();

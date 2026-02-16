@@ -107,7 +107,9 @@ export default function EditChildScreen() {
             onChangeText={setName}
             placeholder="이름 입력"
             placeholderTextColor="#999"
+            maxLength={10}
           />
+          <Text style={styles.charCount}>{name.length}/10</Text>
         </View>
 
         <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
@@ -207,6 +209,12 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 16,
     color: '#333',
+  },
+  charCount: {
+    textAlign: 'right',
+    fontSize: 12,
+    color: '#999',
+    marginTop: 4,
   },
   saveButton: {
     backgroundColor: '#5BBFAA',

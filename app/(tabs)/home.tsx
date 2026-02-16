@@ -25,32 +25,33 @@ export default function HomeScreen() {
   const TIER_COLORS: Record<string, string> = { free: '#7ED4C0', baeum: '#F5A5B8', sky: '#87CEEB' };
 
   useEffect(() => {
-    const loadChildData = async () => {
-      try {
-        const parentId = await AsyncStorage.getItem('parentId');
-        const childId = await AsyncStorage.getItem('childId');
-        const name = await AsyncStorage.getItem('childName');
-        const grade = await AsyncStorage.getItem('childGrade');
-        const tier = await AsyncStorage.getItem('childTier');
-
-        if (name) setChildName(name);
-        if (grade) setChildGrade(grade);
-        if (tier) setChildTier(tier);
-
-        if (parentId && childId) {
-          const childDoc = await getDoc(doc(db, 'Parents', parentId, 'Children', childId));
-          if (childDoc.exists()) {
-            const childData = childDoc.data();
-            console.log('홈 화면 avatar:', childData.avatar);
-            if (childData.avatar) setChildAvatar(childData.avatar);
-          }
-        }
-      } catch (error) {
-        console.log('Load child data error:', error);
-      }
-    };
     loadChildData();
   }, []);
+
+  const loadChildData = async () => {
+    try {
+      const parentId = await AsyncStorage.getItem('parentId');
+      const childId = await AsyncStorage.getItem('childId');
+      const grade = await AsyncStorage.getItem('childGrade');
+      const tier = await AsyncStorage.getItem('childTier');
+
+      if (grade) setChildGrade(grade);
+      if (tier) setChildTier(tier);
+
+      if (parentId && childId) {
+        const childDoc = await getDoc(doc(db, 'Parents', parentId, 'Children', childId));
+        if (childDoc.exists()) {
+          const childData = childDoc.data();
+          console.log('홈 화면 avatar:', childData.avatar);
+          console.log('홈 화면 name:', childData.name);
+          if (childData.avatar) setChildAvatar(childData.avatar);
+          if (childData.name) setChildName(childData.name);
+        }
+      }
+    } catch (error) {
+      console.log('Load child data error:', error);
+    }
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -68,7 +69,9 @@ export default function HomeScreen() {
         if (childDoc.exists()) {
           const childData = childDoc.data();
           console.log('홈 화면 avatar:', childData.avatar);
+          console.log('홈 화면 name:', childData.name);
           if (childData.avatar) setChildAvatar(childData.avatar);
+          if (childData.name) setChildName(childData.name);
         }
       }
     } catch (error) {
@@ -189,6 +192,8 @@ export default function HomeScreen() {
     return days;
   };
 
+  const displayName = childName.length > 5 ? childName.substring(0, 5) + '..' : childName;
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -196,7 +201,7 @@ export default function HomeScreen() {
         <View style={styles.profileHeader}>
           <View style={styles.profileLeft}>
             <Text style={styles.profileEmoji}>{childAvatar}</Text>
-            <Text style={styles.profileName}>{childName || '김배움'}</Text>
+            <Text style={styles.profileName}>{displayName || '김배움'}</Text>
             <View style={[styles.badge, { backgroundColor: TIER_COLORS[childTier] || '#7ED4C0' }]}>
               <Text style={styles.badgeText}>{TIER_LABELS[childTier] || '무료회원'}</Text>
             </View>
