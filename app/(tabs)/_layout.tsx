@@ -1,23 +1,26 @@
 import { Tabs } from 'expo-router';
-import { StyleSheet, Platform } from 'react-native';
+import { StyleSheet, Platform, View, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
-  const bottomPadding = Math.max(insets.bottom, Platform.OS === 'ios' ? 20 : 10);
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          height: 56 + bottomPadding,
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: 50 + insets.bottom,
           backgroundColor: '#FFFFFF',
           borderTopWidth: 1,
           borderTopColor: '#D4EDE7',
+          paddingBottom: insets.bottom,
           paddingTop: 6,
-          paddingBottom: bottomPadding,
           elevation: 8,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: -2 },
@@ -27,15 +30,14 @@ export default function TabLayout() {
         tabBarActiveTintColor: '#5BBFAA',
         tabBarInactiveTintColor: '#B0BEC5',
         tabBarLabelStyle: {
-          fontSize: 11,
+          fontSize: 10,
           fontWeight: '600',
-          marginTop: 0,
-          marginBottom: 2,
-          includeFontPadding: false,
-        },
-        tabBarIconStyle: {
           marginTop: 2,
-          marginBottom: 0,
+          paddingBottom: 0,
+        },
+        tabBarItemStyle: {
+          paddingTop: 4,
+          paddingBottom: 4,
         },
       }}>
       <Tabs.Screen
@@ -43,7 +45,7 @@ export default function TabLayout() {
         options={{
           title: '홈',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'home' : 'home-outline'} size={22} color={color} />
+            <Ionicons name={focused ? 'home' : 'home-outline'} size={20} color={color} />
           ),
         }}
       />
@@ -52,7 +54,7 @@ export default function TabLayout() {
         options={{
           title: '스터디',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'book' : 'book-outline'} size={22} color={color} />
+            <Ionicons name={focused ? 'book' : 'book-outline'} size={20} color={color} />
           ),
         }}
       />
@@ -60,8 +62,12 @@ export default function TabLayout() {
         name="growth"
         options={{
           title: '성장',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'star' : 'star-outline'} size={22} color={color} />
+          tabBarIcon: ({ color }) => (
+            <View style={{ flexDirection: 'row', gap: 1 }}>
+              <Ionicons name="star" size={10} color={color} />
+              <Ionicons name="star" size={10} color={color} />
+              <Ionicons name="star" size={10} color={color} />
+            </View>
           ),
         }}
       />
@@ -69,8 +75,13 @@ export default function TabLayout() {
         name="settings"
         options={{
           title: '전체메뉴',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'grid' : 'grid-outline'} size={22} color={color} />
+          tabBarIcon: ({ color }) => (
+            <View style={{ width: 20, height: 20, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: 2 }}>
+              <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: color }} />
+              <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: color }} />
+              <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: color }} />
+              <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: color }} />
+            </View>
           ),
         }}
       />
