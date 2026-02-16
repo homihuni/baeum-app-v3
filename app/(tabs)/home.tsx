@@ -285,15 +285,7 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* 5. SELECTED DATE STATS */}
-        <View style={styles.dateStatsCard}>
-          <Text style={styles.dateStatsTitle}>오늘의 학습</Text>
-          <Text style={styles.dateStatsText}>남은 문제: 3문제</Text>
-          <Text style={styles.dateStatsText}>이번 달 학습일: {accessDays}일</Text>
-          <Text style={[styles.dateStatsText, styles.dateStatsAverage]}>이번 달 평균: {monthlyAverage}점</Text>
-        </View>
-
-        {/* 6. LEARN BUTTON */}
+        {/* 5. LEARN BUTTON */}
         <TouchableOpacity style={styles.learnButton} onPress={() => router.replace('/(tabs)/study')}>
           <Text style={styles.learnButtonText}>학습하기 📝</Text>
         </TouchableOpacity>
@@ -504,35 +496,7 @@ const styles = StyleSheet.create({
     color: '#9E9E9E',
     marginLeft: 4,
   },
-  // 5. Date Stats Card
-  dateStatsCard: {
-    marginHorizontal: 20,
-    marginTop: 12,
-    borderRadius: 12,
-    padding: 16,
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  dateStatsTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333333',
-    marginBottom: 8,
-  },
-  dateStatsText: {
-    fontSize: 14,
-    color: '#666666',
-    marginTop: 4,
-  },
-  dateStatsAverage: {
-    fontWeight: 'bold',
-    color: '#7ED4C0',
-  },
-  // 6. Learn Button
+  // 5. Learn Button
   learnButton: {
     marginHorizontal: 20,
     marginTop: 16,
