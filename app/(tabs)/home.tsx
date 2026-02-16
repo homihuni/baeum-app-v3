@@ -178,7 +178,7 @@ export default function HomeScreen() {
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statColumn}>
-            <Text style={styles.statLabel}>문제 수</Text>
+            <Text style={styles.statLabel}>문제풀이수</Text>
             <Text style={[styles.statValue, { color: '#87CEEB' }]}>{totalProblems}개</Text>
           </View>
         </View>
