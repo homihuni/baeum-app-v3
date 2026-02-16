@@ -68,8 +68,16 @@ export default function StudyScreen() {
           const data = childDoc.data();
           console.log('study avatar:', data.avatar);
           console.log('study name:', data.name);
+          console.log('study tier from Firebase:', data.tier);
           setChildAvatar(data.avatar || '🍎');
           setChildName(data.name || '학생');
+
+          // Firebase에서 최신 tier 읽기
+          if (data.tier) {
+            setChildTier(data.tier);
+            setQuestionsPerSubject(getQuestionsPerSubject(data.tier));
+            console.log("스터디 tier:", data.tier, "문제수:", getQuestionsPerSubject(data.tier));
+          }
         }
       }
     } catch (error) {

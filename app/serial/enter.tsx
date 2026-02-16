@@ -131,6 +131,8 @@ export default function EnterSerialScreen() {
     );
   }
 
+  console.log("현재 isVerified:", isVerified);
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
