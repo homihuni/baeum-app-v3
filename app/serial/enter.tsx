@@ -42,6 +42,12 @@ export default function EnterSerialScreen() {
         setChildName(childData.name || '학생');
         setChildAvatar(childData.avatar || '🍎');
         setChildGrade(childData.grade?.toString() || '1');
+
+        if (childData.tier === 'baeum' || childData.tier === 'sky') {
+          setIsVerified(true);
+          setSerialCode(childData.serialNumber || '');
+          console.log("이미 인증된 회원:", childData.tier);
+        }
       }
     } catch (error) {
       console.log('Load child error:', error);
@@ -118,9 +124,6 @@ export default function EnterSerialScreen() {
 
   const handleModalConfirm = () => {
     setShowModal(false);
-    if (modalType === 'success') {
-      router.replace('/(tabs)/home');
-    }
   };
 
   if (loading) {

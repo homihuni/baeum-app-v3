@@ -29,6 +29,7 @@ export default function QuestionsScreen() {
   useEffect(() => {
     const allProblems = getProblemsForSubject(subject, grade);
     const maxQuestions = tier === 'sky' ? 10 : tier === 'baeum' ? 5 : 3;
+    console.log("문제풀이 tier:", tier, "총문제:", maxQuestions);
     setProblems(allProblems.slice(0, maxQuestions));
   }, []);
 
