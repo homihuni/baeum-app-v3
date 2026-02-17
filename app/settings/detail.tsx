@@ -260,18 +260,18 @@ export default function SettingsDetailScreen() {
             <Text style={styles.modalFinalConfirm}>
               마지막 확인입니다.{'\n'}정말 배움학습을 탈퇴하시겠습니까?
             </Text>
-            <View style={styles.modalButtons}>
+            <View style={styles.modalButtonsColumn}>
               <TouchableOpacity
-                style={styles.modalStayButton}
+                style={styles.modalStayButtonFull}
                 onPress={() => setWithdrawConfirmModalVisible(false)}
               >
-                <Text style={styles.modalStayText}>아니요, 계속 이용할게요</Text>
+                <Text style={styles.modalStayTextFull}>아니요, 계속 이용할게요</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={styles.modalConfirmButton}
+                style={styles.modalConfirmButtonFull}
                 onPress={confirmWithdraw}
               >
-                <Text style={styles.modalConfirmText}>네, 탈퇴합니다</Text>
+                <Text style={styles.modalConfirmTextFull}>네, 탈퇴합니다</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -520,5 +520,36 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#FFFFFF',
+  },
+  modalButtonsColumn: {
+    flexDirection: 'column',
+    marginTop: 20,
+  },
+  modalStayButtonFull: {
+    backgroundColor: '#4CAF50',
+    borderRadius: 10,
+    paddingVertical: 14,
+    width: '100%',
+    alignItems: 'center',
+  },
+  modalStayTextFull: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    textAlign: 'center',
+  },
+  modalConfirmButtonFull: {
+    backgroundColor: '#FF4444',
+    borderRadius: 10,
+    paddingVertical: 14,
+    width: '100%',
+    marginTop: 10,
+    alignItems: 'center',
+  },
+  modalConfirmTextFull: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    textAlign: 'center',
   },
 });
