@@ -30,7 +30,8 @@ export default function SettingsDetailScreen() {
       await AsyncStorage.multiRemove(keysToRemove);
       console.log('=== 로그아웃 완료, AsyncStorage 초기화 ===');
       setLogoutModalVisible(false);
-      router.replace('/(tabs)/home');
+      console.log('=== 로그아웃 → 로그인 화면 이동 ===');
+      router.replace('/(auth)/login');
     } catch (error) {
       console.error('로그아웃 에러:', error);
     }
@@ -285,7 +286,8 @@ export default function SettingsDetailScreen() {
         animationType="fade"
         onRequestClose={() => {
           setWithdrawCompleteModalVisible(false);
-          router.replace('/(tabs)/home');
+          console.log('=== 회원탈퇴 → 로그인 화면 이동 ===');
+          router.replace('/(auth)/login');
         }}
       >
         <View style={styles.modalOverlay}>
@@ -297,7 +299,8 @@ export default function SettingsDetailScreen() {
               style={styles.modalSingleButton}
               onPress={() => {
                 setWithdrawCompleteModalVisible(false);
-                router.replace('/(tabs)/home');
+                console.log('=== 회원탈퇴 → 로그인 화면 이동 ===');
+                router.replace('/(auth)/login');
               }}
             >
               <Text style={styles.modalSingleButtonText}>확인</Text>
