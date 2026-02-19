@@ -51,9 +51,7 @@ export default function MenuScreen() {
 
   const menuItems = [
     { icon: '👦👧', label: '자녀 관리', route: '/children/manage' },
-    { icon: '⭐', label: '등급 관리', route: '/settings/grade' },
-    { icon: '🔑', label: '시리얼번호 입력', route: '/serial/enter' },
-    { icon: '💎', label: '구독 관리', route: '/settings/subscribe' },
+    { icon: '📋', label: '학습 플랜', route: '/settings/grade' },
     { icon: '📢', label: '공지사항', route: '/settings/notice-list' },
   ];
 
