@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { getProblemsForSubject } from '../../utils/sampleProblems';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../../utils/firebase';
 import { createRecord } from '../../utils/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -29,10 +30,60 @@ export default function QuestionsScreen() {
   const [showNoAnswerModal, setShowNoAnswerModal] = useState(false);
 
   useEffect(() => {
-    const allProblems = getProblemsForSubject(subject, grade);
-    const maxQuestions = tier === 'sky' ? 10 : tier === 'baeum' ? 5 : 3;
-    console.log("문제풀이 tier:", tier, "총문제:", maxQuestions);
-    setProblems(allProblems.slice(0, maxQuestions));
+    const loadProblems = async () => {
+      try {
+        console.log('=== Firestore 문제 로드 시작 ===');
+        console.log('grade:', grade, 'subject:', subject, 'tier:', tier);
+
+        const q = query(
+          collection(db, 'Problems'),
+          where('grade', '==', grade),
+          where('subject', '==', subject)
+        );
+
+        const snap = await getDocs(q);
+        console.log('Firestore 문제 수:', snap.size);
+
+        if (snap.empty) {
+          console.log('=== 문제가 없습니다! grade:', grade, 'subject:', subject);
+          setProblems([]);
+          return;
+        }
+
+        // Firestore 문서를 앱에서 사용하는 형태로 변환
+        const allProblems = snap.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            question: data.question,
+            choices: data.options || [],
+            correctAnswer: data.options && data.options[data.answer] ? data.options[data.answer] : '',
+            explanation: data.explanation || '해설이 없습니다.',
+            questionType: data.type === 'multiple_choice' ? 'mcq' : data.type === 'ox' ? 'ox' : 'subjective',
+            difficulty: data.difficulty || 'medium',
+            unit: data.unit || '',
+          };
+        });
+
+        // 랜덤 셔플
+        const shuffled = allProblems.sort(() => Math.random() - 0.5);
+
+        // 티어별 문제 수 제한
+        const maxQuestions = tier === 'sky' ? 10 : tier === 'baeum' ? 5 : 3;
+        console.log('tier:', tier, 'maxQuestions:', maxQuestions);
+
+        const selected = shuffled.slice(0, maxQuestions);
+        console.log('선택된 문제 수:', selected.length);
+        console.log('첫 번째 문제:', JSON.stringify(selected[0]));
+
+        setProblems(selected);
+      } catch (error) {
+        console.log('=== Firestore 문제 로드 에러 ===', error);
+        setProblems([]);
+      }
+    };
+
+    loadProblems();
   }, []);
 
   const currentProblem = problems[currentIndex];
