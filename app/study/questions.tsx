@@ -65,8 +65,12 @@ export default function QuestionsScreen() {
           };
         });
 
+        // 주관식(subjective) 제외 — 현재 주관식 입력 UI 미구현
+        const filtered = allProblems.filter(p => p.questionType !== 'subjective');
+        console.log('주관식 제외 후 문제 수:', filtered.length);
+
         // 랜덤 셔플
-        const shuffled = allProblems.sort(() => Math.random() - 0.5);
+        const shuffled = filtered.sort(() => Math.random() - 0.5);
 
         // 티어별 문제 수 제한
         const maxQuestions = tier === 'sky' ? 10 : tier === 'baeum' ? 5 : 3;
