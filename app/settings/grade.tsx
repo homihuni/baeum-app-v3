@@ -102,15 +102,12 @@ export default function LearningPlanScreen() {
             </View>
           )}
           <View style={styles.planHeader}>
-            <Text style={styles.planName}>무료</Text>
-            <Text style={styles.planPrice}>₩0</Text>
+            <Text style={styles.planName}>무료회원</Text>
           </View>
           <View style={styles.planFeatures}>
             <Text style={styles.featureItem}>• 과목: {isLowGrade ? '3과목 중 1과목' : '5과목 중 1과목'}</Text>
             <Text style={styles.featureItem}>• 과목당 3문제</Text>
             <Text style={styles.featureItem}>• 기본 학습 리포트</Text>
-            <Text style={[styles.featureItem, styles.featureDisabled]}>• 더 풀기 ✕</Text>
-            <Text style={[styles.featureItem, styles.featureDisabled]}>• 상세 분석 리포트 ✕</Text>
           </View>
         </View>
 
@@ -122,15 +119,14 @@ export default function LearningPlanScreen() {
             </View>
           )}
           <View style={styles.planHeader}>
-            <Text style={[styles.planName, { color: '#7ED4C0' }]}>배움</Text>
+            <Text style={[styles.planName, { color: '#7ED4C0' }]}>배움회원</Text>
             <Text style={styles.planPrice}>배움달력 구매</Text>
           </View>
           <View style={styles.planFeatures}>
             <Text style={styles.featureItem}>• 과목: {isLowGrade ? '전과목 (3과목)' : '5과목 중 3과목'}</Text>
             <Text style={styles.featureItem}>• 과목당 5문제</Text>
-            <Text style={styles.featureItem}>• 기본 학습 리포트</Text>
-            <Text style={[styles.featureItem, styles.featureDisabled]}>• 더 풀기 ✕</Text>
-            <Text style={[styles.featureItem, styles.featureDisabled]}>• 상세 분석 리포트 ✕</Text>
+            <Text style={styles.featureItem}>• 기본 학습 분석 리포트</Text>
+            <Text style={styles.featureItem}>• 학습 어드바이스</Text>
           </View>
           <Text style={styles.planNote}>배움달력 뒷면의 시리얼번호로 등록</Text>
           {childTier === 'free' && (
@@ -154,19 +150,18 @@ export default function LearningPlanScreen() {
             </View>
           )}
           <View style={styles.planHeader}>
-            <Text style={[styles.planName, { color: '#87CEEB' }]}>스카이</Text>
+            <Text style={[styles.planName, { color: '#87CEEB' }]}>스카이회원</Text>
             <View style={styles.priceRow}>
               <Text style={[styles.planPrice, { color: '#87CEEB', fontSize: 22, fontWeight: 'bold' }]}>월 1,900원</Text>
             </View>
           </View>
           <View style={styles.planFeatures}>
-            <Text style={[styles.featureItem, styles.featureHighlight]}>• 과목: 전과목</Text>
-            <Text style={[styles.featureItem, styles.featureHighlight]}>• 과목당 10문제</Text>
-            <Text style={[styles.featureItem, styles.featureHighlight]}>• 더 풀기 +5문제 ✓</Text>
-            <Text style={[styles.featureItem, styles.featureHighlight]}>• 상세 분석 리포트 ✓</Text>
-            <Text style={[styles.featureItem, styles.featureHighlight]}>• AI 약점 분석 ✓</Text>
+            <Text style={[styles.featureItem, styles.featureHighlight]}>• 전과목 학습</Text>
+            <Text style={[styles.featureItem, styles.featureHighlight]}>• 과목당 10문제 + 추가 문제 5문제</Text>
+            <Text style={[styles.featureItem, styles.featureHighlight]}>• 상세 학습 분석 리포트</Text>
+            <Text style={[styles.featureItem, styles.featureHighlight]}>• 맞춤 학습 어드바이스</Text>
           </View>
-          <Text style={styles.skyBenefit}>하루 커피 한 잔 값으로 우리 아이 학습을!</Text>
+          <Text style={styles.skyBenefit}>아이의 성장을 위한 최적의 학습 환경</Text>
           {childTier !== 'sky' && (
             <TouchableOpacity
               style={[styles.planButton, styles.skyButton]}
