@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Modal, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -56,6 +56,7 @@ export default function QuestionsScreen() {
   const [wrongCount, setWrongCount] = useState(0);
   const [showExitModal, setShowExitModal] = useState(false);
   const [showNoAnswerModal, setShowNoAnswerModal] = useState(false);
+  const [textAnswer, setTextAnswer] = useState('');
 
   useEffect(() => {
     const loadProblems = async () => {
@@ -85,17 +86,17 @@ export default function QuestionsScreen() {
             id: doc.id,
             question: data.question,
             choices: data.options || [],
-            correctAnswer: data.options && data.options[data.answer] ? data.options[data.answer] : '',
+            correctAnswer: data.type === 'short_answer' ? String(data.answer || '') : (data.options && data.options[data.answer] ? data.options[data.answer] : ''),
             explanation: data.explanation || '해설이 없습니다.',
-            questionType: data.type === 'multiple_choice' ? 'mcq' : data.type === 'ox' ? 'ox' : 'subjective',
+            questionType: data.type === 'multiple_choice' ? 'mcq' : data.type === 'ox' ? 'ox' : data.type === 'short_answer' ? 'short_answer' : 'subjective',
             difficulty: data.difficulty || 'medium',
             unit: data.unit || '',
           };
         });
 
-        // 주관식(subjective) 제외 — 현재 주관식 입력 UI 미구현
+        // short_answer 포함, subjective만 제외
         const filtered = allProblems.filter(p => p.questionType !== 'subjective');
-        console.log('주관식 제외 후 문제 수:', filtered.length);
+        console.log('필터 후 문제 수:', filtered.length);
 
         // 날짜 기반 시드 셔플 (같은 날 = 같은 순서, 다른 날 = 다른 순서)
         const todaySeed = getTodaySeed(subject);
@@ -128,6 +129,21 @@ export default function QuestionsScreen() {
   };
 
   const handleCheckAnswer = async () => {
+    if (currentProblem.questionType === 'short_answer') {
+      if (!textAnswer.trim()) {
+        setShowNoAnswerModal(true);
+        return;
+      }
+      const userAnswer = textAnswer.trim().replace(/\s/g, '').toLowerCase();
+      const correctAnswerClean = currentProblem.correctAnswer.trim().replace(/\s/g, '').toLowerCase();
+      console.log('주관식 비교:', userAnswer, '===', correctAnswerClean);
+      const correct = userAnswer === correctAnswerClean;
+      setIsCorrect(correct);
+      setIsAnswered(true);
+      if (correct) setCorrectCount(prev => prev + 1);
+      else setWrongCount(prev => prev + 1);
+      return;
+    }
     if (!selectedAnswer) {
       setShowNoAnswerModal(true);
       return;
@@ -194,6 +210,7 @@ export default function QuestionsScreen() {
     }
     setCurrentIndex(prev => prev + 1);
     setSelectedAnswer(null);
+    setTextAnswer('');
     setIsAnswered(false);
     setIsCorrect(false);
   };
@@ -241,40 +258,56 @@ export default function QuestionsScreen() {
         <Text style={styles.questionLabel}>Q{currentIndex + 1}</Text>
         <Text style={styles.questionText}>{currentProblem.question}</Text>
 
-        <View style={styles.choicesContainer}>
-          {(currentProblem.choices || []).map((choice: string, index: number) => {
-            const isSelected = selectedAnswer === choice;
-            const isCorrectAnswer = choice === currentProblem.correctAnswer;
-            let choiceStyle = styles.choiceBtn;
-            let choiceTextStyle = styles.choiceText;
+        {currentProblem.questionType === 'short_answer' ? (
+          <View style={styles.shortAnswerContainer}>
+            <Text style={styles.shortAnswerLabel}>✏️ 답을 입력하세요</Text>
+            <TextInput
+              style={[styles.shortAnswerInput, isAnswered && styles.shortAnswerInputDisabled]}
+              value={textAnswer}
+              onChangeText={setTextAnswer}
+              placeholder="정답을 입력하세요"
+              placeholderTextColor="#9E9E9E"
+              editable={!isAnswered}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          </View>
+        ) : (
+          <View style={styles.choicesContainer}>
+            {(currentProblem.choices || []).map((choice: string, index: number) => {
+              const isSelected = selectedAnswer === choice;
+              const isCorrectAnswer = choice === currentProblem.correctAnswer;
+              let choiceStyle = styles.choiceBtn;
+              let choiceTextStyle = styles.choiceText;
 
-            if (isAnswered) {
-              if (isCorrectAnswer) {
-                choiceStyle = { ...styles.choiceBtn, ...styles.choiceCorrect };
-                choiceTextStyle = { ...styles.choiceText, ...styles.choiceTextCorrect };
-              } else if (isSelected && !isCorrectAnswer) {
-                choiceStyle = { ...styles.choiceBtn, ...styles.choiceWrong };
-                choiceTextStyle = { ...styles.choiceText, ...styles.choiceTextWrong };
+              if (isAnswered) {
+                if (isCorrectAnswer) {
+                  choiceStyle = { ...styles.choiceBtn, ...styles.choiceCorrect };
+                  choiceTextStyle = { ...styles.choiceText, ...styles.choiceTextCorrect };
+                } else if (isSelected && !isCorrectAnswer) {
+                  choiceStyle = { ...styles.choiceBtn, ...styles.choiceWrong };
+                  choiceTextStyle = { ...styles.choiceText, ...styles.choiceTextWrong };
+                }
+              } else if (isSelected) {
+                choiceStyle = { ...styles.choiceBtn, ...styles.choiceSelected };
+                choiceTextStyle = { ...styles.choiceText, ...styles.choiceTextSelected };
               }
-            } else if (isSelected) {
-              choiceStyle = { ...styles.choiceBtn, ...styles.choiceSelected };
-              choiceTextStyle = { ...styles.choiceText, ...styles.choiceTextSelected };
-            }
 
-            const prefix = currentProblem.questionType === 'ox' ? '' : `${String.fromCharCode(9312 + index)} `;
+              const prefix = currentProblem.questionType === 'ox' ? '' : `${String.fromCharCode(9312 + index)} `;
 
-            return (
-              <TouchableOpacity
-                key={index}
-                style={choiceStyle}
-                onPress={() => handleSelectAnswer(choice)}
-                disabled={isAnswered}
-              >
-                <Text style={choiceTextStyle}>{prefix}{choice}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+              return (
+                <TouchableOpacity
+                  key={index}
+                  style={choiceStyle}
+                  onPress={() => handleSelectAnswer(choice)}
+                  disabled={isAnswered}
+                >
+                  <Text style={choiceTextStyle}>{prefix}{choice}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
 
         {isAnswered && (
           <View style={styles.resultCard}>
@@ -382,4 +415,8 @@ const styles = StyleSheet.create({
   modalConfirmBtn: { flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: '#7ED4C0', alignItems: 'center' },
   modalConfirmText: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
   modalSingleBtn: { flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: '#7ED4C0', alignItems: 'center' },
+  shortAnswerContainer: { marginTop: 8 },
+  shortAnswerLabel: { fontSize: 14, color: '#7ED4C0', fontWeight: 'bold', marginBottom: 12 },
+  shortAnswerInput: { borderWidth: 2, borderColor: '#7ED4C0', borderRadius: 12, padding: 16, fontSize: 18, color: '#333', backgroundColor: '#FFFFFF' },
+  shortAnswerInputDisabled: { backgroundColor: '#F5F5F5', borderColor: '#E0E0E0', color: '#999' },
 });
