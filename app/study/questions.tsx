@@ -12,6 +12,34 @@ const SUBJECT_LABELS: Record<string, string> = {
   science: '과학', social: '사회', english: '영어',
 };
 
+// 날짜 기반 시드 셔플 함수
+const seededShuffle = (array: any[], seed: number) => {
+  const arr = [...array];
+  let s = seed;
+  for (let i = arr.length - 1; i > 0; i--) {
+    s = (s * 16807 + 0) % 2147483647;
+    const j = s % (i + 1);
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+};
+
+// KST 기준 오늘 날짜로 시드 생성
+const getTodaySeed = (subject: string) => {
+  const now = new Date();
+  const kstTime = now.getTime() + (9 * 60 * 60 * 1000);
+  const kstDate = new Date(kstTime);
+  const dateStr = kstDate.getUTCFullYear() + '' + String(kstDate.getUTCMonth() + 1).padStart(2, '0') + String(kstDate.getUTCDate()).padStart(2, '0');
+  // 날짜 + 과목을 조합하여 시드 생성 (같은 날이라도 과목별로 다른 문제 세트)
+  let hash = 0;
+  const seedStr = dateStr + subject;
+  for (let i = 0; i < seedStr.length; i++) {
+    hash = ((hash << 5) - hash) + seedStr.charCodeAt(i);
+    hash = hash & hash;
+  }
+  return Math.abs(hash) || 1;
+};
+
 export default function QuestionsScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -69,8 +97,10 @@ export default function QuestionsScreen() {
         const filtered = allProblems.filter(p => p.questionType !== 'subjective');
         console.log('주관식 제외 후 문제 수:', filtered.length);
 
-        // 랜덤 셔플
-        const shuffled = filtered.sort(() => Math.random() - 0.5);
+        // 날짜 기반 시드 셔플 (같은 날 = 같은 순서, 다른 날 = 다른 순서)
+        const todaySeed = getTodaySeed(subject);
+        console.log('오늘 시드:', todaySeed, '과목:', subject);
+        const shuffled = seededShuffle(filtered, todaySeed);
 
         // 티어별 문제 수 제한
         const maxQuestions = tier === 'sky' ? 10 : tier === 'baeum' ? 5 : 3;
