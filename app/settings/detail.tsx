@@ -146,7 +146,7 @@ export default function SettingsDetailScreen() {
 
         {/* 섹션 2: 알림 */}
         <Text style={styles.sectionHeader}>알림</Text>
-        {renderMenuItem('푸시 알림 설정', () => console.log('푸시 알림 설정 클릭'))}
+        {renderMenuItem('푸시 알림 설정', () => router.push('/settings/push-setting'))}
 
         {/* 섹션 3: 약관 및 정책 */}
         <Text style={styles.sectionHeader}>약관 및 정책</Text>
