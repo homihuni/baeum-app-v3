@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getChild, updateChild, getChildren } from '../../utils/firestore';
-import { Timestamp } from '../../utils/firebase';
+import { Timestamp, db } from '../../utils/firebase';
+import { collection, doc, getDocs, updateDoc, serverTimestamp } from 'firebase/firestore';
 
 const AVATARS = [
   '🍓', '🍎', '🍊', '🍋', '🍇', '🍉',
@@ -73,22 +74,30 @@ export default function EditChildScreen() {
 
   const handleDelete = async () => {
     try {
-      const childrenData = await getChildren(parentId) as any[];
-      const activeChildren = childrenData.filter((c: any) => !c.isDeleted);
+      // 1. 현재 부모의 전체 자녀 수 확인
+      const pId = await AsyncStorage.getItem('parentId');
+      if (!pId) return;
 
+      const childrenRef = collection(db, 'Parents', pId, 'Children');
+      const childrenSnap = await getDocs(childrenRef);
+      const activeChildren = childrenSnap.docs.filter(doc => !doc.data().isDeleted);
+
+      // 2. 자녀가 1명뿐이면 삭제 불가
       if (activeChildren.length <= 1) {
         Alert.alert('삭제 불가', '최소 1명의 자녀가 등록되어 있어야 합니다.');
         return;
       }
 
-      const currentChildId = await AsyncStorage.getItem('childId');
-      if (currentChildId === childId) {
-        Alert.alert('삭제 불가', '현재 선택된 자녀는 삭제할 수 없습니다. 다른 자녀를 먼저 선택해 주세요.');
+      // 3. 현재 선택된 자녀인지 확인
+      const selectedChildId = await AsyncStorage.getItem('childId');
+      if (selectedChildId === childId) {
+        Alert.alert('삭제 불가', '현재 선택된 자녀는 삭제할 수 없습니다.\n다른 자녀를 먼저 선택해 주세요.');
         return;
       }
 
+      // 4. 확인 팝업
       Alert.alert(
-        '자녀 삭제',
+        '삭제',
         `${name}을(를) 삭제하시겠습니까?\n삭제 후 24시간 동안 새 자녀를 등록할 수 없습니다.`,
         [
           { text: '취소', style: 'cancel' },
@@ -96,17 +105,25 @@ export default function EditChildScreen() {
             text: '삭제',
             style: 'destructive',
             onPress: async () => {
-              await updateChild(parentId, childId as string, {
-                isDeleted: true,
-                deletedAt: Timestamp.now(),
-              });
-              router.back();
-            },
-          },
+              try {
+                const childDocRef = doc(db, 'Parents', pId, 'Children', childId as string);
+                await updateDoc(childDocRef, {
+                  isDeleted: true,
+                  deletedAt: serverTimestamp()
+                });
+                console.log('=== 자녀 삭제 완료:', childId, '===');
+                router.back();
+              } catch (error) {
+                console.log('Delete error:', error);
+                Alert.alert('오류', '삭제에 실패했습니다.');
+              }
+            }
+          }
         ]
       );
     } catch (error) {
-      console.log('Delete child error:', error);
+      console.log('Delete check error:', error);
+      Alert.alert('오류', '삭제 처리 중 오류가 발생했습니다.');
     }
   };
 
@@ -162,7 +179,7 @@ export default function EditChildScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
-          <Text style={styles.deleteButtonText}>자녀 삭제</Text>
+          <Text style={styles.deleteButtonText}>삭제</Text>
         </TouchableOpacity>
       </ScrollView>
 
