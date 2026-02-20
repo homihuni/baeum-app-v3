@@ -5,7 +5,12 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getChild, updateChild } from '../../utils/firestore';
 
-const AVATARS = ['🍓', '🍎', '🍊', '🍋', '🍇', '🍉', '🍑', '🍒', '🫐', '🥝', '🐶', '🐱', '🐰', '🐻', '🦊', '🐼', '🐨', '🦁', '🐯', '🐸'];
+const AVATARS = [
+  '🍓', '🍎', '🍊', '🍋', '🍇', '🍉',
+  '🍑', '🍒', '🫐', '🥝', '🐶', '🐱',
+  '🐰', '🐻', '🦊', '🐼', '🐨', '🦁',
+  '🐯', '🐸'
+];
 
 export default function EditChildScreen() {
   const router = useRouter();
