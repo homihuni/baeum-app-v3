@@ -1,9 +1,10 @@
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, TextInput, Modal } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, TextInput, Modal, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getChild, updateChild } from '../../utils/firestore';
+import { getChild, updateChild, getChildren } from '../../utils/firestore';
+import { Timestamp } from '../../utils/firebase';
 
 const AVATARS = [
   '🍓', '🍎', '🍊', '🍋', '🍇', '🍉',
@@ -70,6 +71,45 @@ export default function EditChildScreen() {
     }
   };
 
+  const handleDelete = async () => {
+    try {
+      const childrenData = await getChildren(parentId) as any[];
+      const activeChildren = childrenData.filter((c: any) => !c.isDeleted);
+
+      if (activeChildren.length <= 1) {
+        Alert.alert('삭제 불가', '최소 1명의 자녀가 등록되어 있어야 합니다.');
+        return;
+      }
+
+      const currentChildId = await AsyncStorage.getItem('childId');
+      if (currentChildId === childId) {
+        Alert.alert('삭제 불가', '현재 선택된 자녀는 삭제할 수 없습니다. 다른 자녀를 먼저 선택해 주세요.');
+        return;
+      }
+
+      Alert.alert(
+        '자녀 삭제',
+        `${name}을(를) 삭제하시겠습니까?\n삭제 후 24시간 동안 새 자녀를 등록할 수 없습니다.`,
+        [
+          { text: '취소', style: 'cancel' },
+          {
+            text: '삭제',
+            style: 'destructive',
+            onPress: async () => {
+              await updateChild(parentId, childId as string, {
+                isDeleted: true,
+                deletedAt: Timestamp.now(),
+              });
+              router.back();
+            },
+          },
+        ]
+      );
+    } catch (error) {
+      console.log('Delete child error:', error);
+    }
+  };
+
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -119,6 +159,10 @@ export default function EditChildScreen() {
 
         <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
           <Text style={styles.saveButtonText}>저장</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+          <Text style={styles.deleteButtonText}>자녀 삭제</Text>
         </TouchableOpacity>
       </ScrollView>
 
@@ -232,6 +276,22 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#FFFFFF',
+  },
+  deleteButton: {
+    marginTop: 30,
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#FF4444',
+    borderRadius: 8,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  deleteButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FF4444',
+    textAlign: 'center',
   },
   modalOverlay: {
     flex: 1,

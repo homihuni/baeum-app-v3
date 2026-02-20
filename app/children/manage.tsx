@@ -15,6 +15,8 @@ interface Child {
   subjects: string[];
   questionsPerSubject: number;
   tier?: string;
+  isDeleted?: boolean;
+  deletedAt?: any;
 }
 
 type Tier = 'free' | 'baeum' | 'sky';
@@ -25,6 +27,7 @@ export default function ManageChildrenScreen() {
   const [currentChildId, setCurrentChildId] = useState<string>('');
   const [highestTier, setHighestTier] = useState<Tier>('free');
   const [loading, setLoading] = useState(true);
+  const [latestDeletedAt, setLatestDeletedAt] = useState<any>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -45,10 +48,21 @@ export default function ManageChildrenScreen() {
 
       if (parentId) {
         const childrenData = await getChildren(parentId) as Child[];
-        setChildren(childrenData);
+        const activeChildren = childrenData.filter(c => !c.isDeleted);
+        setChildren(activeChildren);
 
-        const tier = getHighestTier(childrenData);
+        const tier = getHighestTier(activeChildren);
         setHighestTier(tier);
+
+        const deletedChildren = childrenData.filter(c => c.isDeleted && c.deletedAt);
+        if (deletedChildren.length > 0) {
+          const latest = deletedChildren.reduce((prev, curr) => {
+            return (curr.deletedAt?.toMillis?.() || 0) > (prev.deletedAt?.toMillis?.() || 0) ? curr : prev;
+          });
+          setLatestDeletedAt(latest.deletedAt);
+        } else {
+          setLatestDeletedAt(null);
+        }
       }
 
       if (childId) {
@@ -74,6 +88,17 @@ export default function ManageChildrenScreen() {
   };
 
   const handleAddChild = () => {
+    if (latestDeletedAt) {
+      const now = Date.now();
+      const deletedTime = latestDeletedAt.toMillis?.() || 0;
+      const hoursPassed = (now - deletedTime) / (1000 * 60 * 60);
+
+      if (hoursPassed < 24) {
+        Alert.alert('자녀 등록 제한', '자녀 삭제 후 24시간이 지나야 새 자녀를 등록할 수 있습니다.');
+        return;
+      }
+    }
+
     router.push('/children/add');
   };
 
