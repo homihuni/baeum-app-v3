@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createChild } from '../../utils/firestore';
 
-const AVATARS = ['🍓', '🍎', '��', '🍋', '🍇', '🍉', '🍑', '🍒', '🫐', '🥝', '🐶', '🐱', '🐰', '🐻', '🦊', '🐼', '🐨', '🦁', '🐯', '🐸'];
+const AVATARS = ['🍓', '🍎', '🍊', '🍌', '🍇', '🍉', '🍑', '🍒', '🍊', '🍌', '🐶', '🐱', '🐰', '🐻', '🦊', '🐼', '🐨', '🦁', '🐯', '🐸'];
 
 export default function AddChildScreen() {
   const router = useRouter();
