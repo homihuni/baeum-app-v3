@@ -62,13 +62,41 @@ export default function SelectChildScreen() {
     );
   }
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>누가 공부할까요?</Text>
-      <Text style={styles.subtitle}>학습할 자녀를 선택하세요</Text>
+  const renderChildCards = () => {
+    const activeChildren = children.filter((c: any) => !c.isDeleted);
 
-      <View style={styles.cardContainer}>
-        {children.map((child) => (
+    if (activeChildren.length === 3) {
+      return (
+        <>
+          <View style={styles.topRow}>
+            {activeChildren.slice(0, 2).map((child) => (
+              <TouchableOpacity key={child.id} style={styles.childCard} onPress={() => selectChild(child)}>
+                <Text style={styles.avatar}>{child.avatar || '🍓'}</Text>
+                <Text style={styles.childName}>{child.name}</Text>
+                <Text style={styles.childGrade}>{child.grade}학년</Text>
+                <View style={[styles.tierBadge, { backgroundColor: TIER_COLORS[child.tier] || '#7ED4C0' }]}>
+                  <Text style={styles.tierText}>{TIER_LABELS[child.tier] || '무료회원'}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <View style={styles.bottomRow}>
+            <TouchableOpacity key={activeChildren[2].id} style={styles.childCard} onPress={() => selectChild(activeChildren[2])}>
+              <Text style={styles.avatar}>{activeChildren[2].avatar || '🍓'}</Text>
+              <Text style={styles.childName}>{activeChildren[2].name}</Text>
+              <Text style={styles.childGrade}>{activeChildren[2].grade}학년</Text>
+              <View style={[styles.tierBadge, { backgroundColor: TIER_COLORS[activeChildren[2].tier] || '#7ED4C0' }]}>
+                <Text style={styles.tierText}>{TIER_LABELS[activeChildren[2].tier] || '무료회원'}</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </>
+      );
+    }
+
+    return (
+      <>
+        {activeChildren.map((child) => (
           <TouchableOpacity key={child.id} style={styles.childCard} onPress={() => selectChild(child)}>
             <Text style={styles.avatar}>{child.avatar || '🍓'}</Text>
             <Text style={styles.childName}>{child.name}</Text>
@@ -79,15 +107,24 @@ export default function SelectChildScreen() {
           </TouchableOpacity>
         ))}
 
-        <TouchableOpacity style={styles.addCard} onPress={handleAddChild}>
-          <Text style={styles.addIcon}>+</Text>
-          <Text style={styles.addText}>프로필 추가</Text>
-        </TouchableOpacity>
-      </View>
+        {activeChildren.length < 3 && (
+          <TouchableOpacity style={styles.addCard} onPress={handleAddChild}>
+            <Text style={styles.addIcon}>+</Text>
+            <Text style={styles.addText}>프로필 추가</Text>
+          </TouchableOpacity>
+        )}
+      </>
+    );
+  };
 
-      <TouchableOpacity style={styles.parentBtn} onPress={() => router.push('/settings')}>
-        <Text style={styles.parentText}>부모님 설정</Text>
-      </TouchableOpacity>
+  return (
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.title}>누가 공부할까요?</Text>
+      <Text style={styles.subtitle}>학습할 자녀를 선택하세요</Text>
+
+      <View style={styles.cardContainer}>
+        {renderChildCards()}
+      </View>
     </SafeAreaView>
   );
 }
@@ -97,6 +134,8 @@ const styles = StyleSheet.create({
   title: { fontSize: 24, fontWeight: 'bold', color: '#333' },
   subtitle: { fontSize: 14, color: '#7ED4C0', marginTop: 8 },
   cardContainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', marginTop: 40, gap: 16, paddingHorizontal: 20 },
+  topRow: { flexDirection: 'row', gap: 16, justifyContent: 'center', width: '100%' },
+  bottomRow: { flexDirection: 'row', justifyContent: 'center', width: '100%', marginTop: 16 },
   childCard: { width: 140, backgroundColor: '#FFFFFF', borderRadius: 16, padding: 20, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
   avatar: { fontSize: 40, marginBottom: 8 },
   childName: { fontSize: 16, fontWeight: 'bold', color: '#333' },
@@ -106,6 +145,4 @@ const styles = StyleSheet.create({
   addCard: { width: 140, borderRadius: 16, padding: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#D0D0D0', borderStyle: 'dashed' },
   addIcon: { fontSize: 28, color: '#9E9E9E' },
   addText: { fontSize: 13, color: '#9E9E9E', marginTop: 4 },
-  parentBtn: { position: 'absolute', bottom: 50 },
-  parentText: { fontSize: 14, color: '#7ED4C0', textDecorationLine: 'underline' },
 });
