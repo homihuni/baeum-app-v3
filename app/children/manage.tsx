@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useState, useEffect } from 'react';
+import { useRouter, useFocusEffect } from 'expo-router';
+import { useState, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getChildren, getParent } from '../../utils/firestore';
@@ -26,9 +26,11 @@ export default function ManageChildrenScreen() {
   const [highestTier, setHighestTier] = useState<Tier>('free');
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [])
+  );
 
   const getHighestTier = (childrenList: Child[]): Tier => {
     if (childrenList.some(c => c.tier === 'sky')) return 'sky';
