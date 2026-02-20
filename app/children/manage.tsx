@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Modal } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useState, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
@@ -28,6 +28,10 @@ export default function ManageChildrenScreen() {
   const [highestTier, setHighestTier] = useState<Tier>('free');
   const [loading, setLoading] = useState(true);
   const [latestDeletedAt, setLatestDeletedAt] = useState<any>(null);
+  const [showCooldownModal, setShowCooldownModal] = useState(false);
+  const [cooldownHours, setCooldownHours] = useState(0);
+  const [showFreeChildModal, setShowFreeChildModal] = useState(false);
+  const [showSelectModal, setShowSelectModal] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -79,26 +83,41 @@ export default function ManageChildrenScreen() {
     try {
       await AsyncStorage.setItem('childId', childId);
       setCurrentChildId(childId);
-      Alert.alert('자녀 선택', '자녀가 변경되었습니다.', [
-        { text: '확인', onPress: () => router.push('/(tabs)/home') }
-      ]);
+      setShowSelectModal(true);
     } catch (error) {
       console.log('Select child error:', error);
     }
   };
 
   const handleAddChild = () => {
+    // 1. 최대 3명 체크
+    if (children.length >= 3) {
+      return;
+    }
+
+    // 2. 24시간 쿨다운 체크
     if (latestDeletedAt) {
       const now = Date.now();
       const deletedTime = latestDeletedAt.toMillis?.() || 0;
-      const hoursPassed = (now - deletedTime) / (1000 * 60 * 60);
+      const diff = now - deletedTime;
+      const hours24 = 24 * 60 * 60 * 1000;
 
-      if (hoursPassed < 24) {
-        Alert.alert('자녀 등록 제한', '자녀 삭제 후 24시간이 지나야 새 자녀를 등록할 수 있습니다.');
+      if (diff < hours24) {
+        const remainHours = Math.ceil((hours24 - diff) / (60 * 60 * 1000));
+        setCooldownHours(remainHours);
+        setShowCooldownModal(true);
         return;
       }
     }
 
+    // 3. 무료 자녀 1명 제한 체크
+    const freeChildrenCount = children.filter(c => c.tier === 'free').length;
+    if (freeChildrenCount >= 1) {
+      setShowFreeChildModal(true);
+      return;
+    }
+
+    // 4. 모든 조건 통과 → 자녀 추가 화면으로 이동
     router.push('/children/add');
   };
 
@@ -106,17 +125,6 @@ export default function ManageChildrenScreen() {
     router.push(`/children/edit?childId=${childId}`);
   };
 
-  const canAddMoreChildren = (): boolean => {
-    if (highestTier === 'free') {
-      return children.length < 1;
-    }
-    return children.length < 3;
-  };
-
-  const getMaxChildrenForTier = (): number => {
-    if (highestTier === 'free') return 1;
-    return 3;
-  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -161,28 +169,14 @@ export default function ManageChildrenScreen() {
               </View>
             ))}
 
-            {canAddMoreChildren() && (
+            {children.length < 3 && (
               <TouchableOpacity style={styles.addButton} onPress={handleAddChild}>
                 <Ionicons name="add-circle-outline" size={24} color="#5BBFAA" />
                 <Text style={styles.addButtonText}>자녀 추가</Text>
               </TouchableOpacity>
             )}
 
-            {!canAddMoreChildren() && highestTier === 'free' && (
-              <View style={styles.upgradeContainer}>
-                <Text style={styles.upgradeText}>
-                  배움회원 또는 스카이회원으로 업그레이드하면 최대 3명까지 자녀를 추가할 수 있습니다.
-                </Text>
-                <TouchableOpacity
-                  style={styles.upgradeButton}
-                  onPress={() => router.push('/settings/grade')}
-                >
-                  <Text style={styles.upgradeButtonText}>학습 플랜 보기</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-
-            {!canAddMoreChildren() && (highestTier === 'baeum' || highestTier === 'sky') && (
+            {children.length >= 3 && (
               <View style={styles.maxReachedContainer}>
                 <Text style={styles.maxReachedText}>최대 자녀 수(3명)에 도달했습니다.</Text>
               </View>
@@ -190,6 +184,72 @@ export default function ManageChildrenScreen() {
           </>
         )}
       </ScrollView>
+
+      {/* 24시간 쿨다운 모달 */}
+      <Modal visible={showCooldownModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>자녀 등록 제한</Text>
+            <Text style={styles.modalMessage}>
+              자녀 삭제 후 24시간이 지나야 새 자녀를 등록할 수 있습니다.{'\n'}약 {cooldownHours}시간 후에 등록 가능합니다.
+            </Text>
+            <TouchableOpacity
+              style={styles.modalConfirmBtn}
+              onPress={() => setShowCooldownModal(false)}
+            >
+              <Text style={styles.modalConfirmText}>확인</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* 무료 자녀 1명 제한 모달 */}
+      <Modal visible={showFreeChildModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>자녀 추가 안내</Text>
+            <Text style={styles.modalMessage}>
+              무료회원 자녀는 1명만 등록할 수 있습니다.{'\n'}기존 자녀를 배움 또는 스카이회원으로 업그레이드한 후 새 자녀를 추가할 수 있습니다.
+            </Text>
+            <View style={styles.modalButtonRow}>
+              <TouchableOpacity
+                style={styles.modalCancelBtn}
+                onPress={() => setShowFreeChildModal(false)}
+              >
+                <Text style={styles.modalCancelText}>취소</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalUpgradeBtn}
+                onPress={() => {
+                  setShowFreeChildModal(false);
+                  router.push('/settings/grade');
+                }}
+              >
+                <Text style={styles.modalUpgradeText}>학습 플랜 보기</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* 자녀 선택 완료 모달 */}
+      <Modal visible={showSelectModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>자녀 선택</Text>
+            <Text style={styles.modalMessage}>자녀가 변경되었습니다.</Text>
+            <TouchableOpacity
+              style={styles.modalConfirmBtn}
+              onPress={() => {
+                setShowSelectModal(false);
+                router.push('/(tabs)/home');
+              }}
+            >
+              <Text style={styles.modalConfirmText}>확인</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -304,26 +364,68 @@ const styles = StyleSheet.create({
     color: '#856404',
     textAlign: 'center',
   },
-  upgradeContainer: {
-    backgroundColor: '#E3F2FD',
-    borderRadius: 12,
-    padding: 16,
-    marginTop: 8,
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
-  upgradeText: {
-    fontSize: 14,
-    color: '#1565C0',
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 12,
-  },
-  upgradeButton: {
-    backgroundColor: '#87CEEB',
-    borderRadius: 8,
-    paddingVertical: 12,
+  modalBox: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 24,
+    width: 300,
     alignItems: 'center',
   },
-  upgradeButtonText: {
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    color: '#333',
+  },
+  modalMessage: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 20,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  modalConfirmBtn: {
+    backgroundColor: '#5BBFAA',
+    paddingVertical: 12,
+    paddingHorizontal: 40,
+    borderRadius: 8,
+  },
+  modalConfirmText: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  modalButtonRow: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  modalCancelBtn: {
+    flex: 1,
+    backgroundColor: '#E0E0E0',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  modalCancelText: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#666',
+  },
+  modalUpgradeBtn: {
+    flex: 1,
+    backgroundColor: '#87CEEB',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  modalUpgradeText: {
     fontSize: 15,
     fontWeight: 'bold',
     color: '#FFFFFF',
