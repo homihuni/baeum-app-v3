@@ -37,6 +37,14 @@ export default function AddChildScreen() {
       return;
     }
 
+    const inputDate = new Date(birthDate);
+    const minDate = new Date('2008-01-01');
+    const maxDate = new Date();
+    if (isNaN(inputDate.getTime()) || inputDate < minDate || inputDate > maxDate) {
+      Alert.alert('오류', '생년월일을 확인해 주세요. (2008년 ~ 현재)');
+      return;
+    }
+
     try {
       const parentId = await AsyncStorage.getItem('parentId');
       if (!parentId) {
@@ -96,7 +104,9 @@ export default function AddChildScreen() {
             onChangeText={setName}
             placeholder="이름 입력"
             placeholderTextColor="#999"
+            maxLength={10}
           />
+          <Text style={styles.charCount}>{name.length}/10</Text>
         </View>
 
         <View style={styles.section}>
@@ -280,5 +290,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#FFFFFF',
+  },
+  charCount: {
+    textAlign: 'right',
+    color: '#999',
+    fontSize: 12,
+    marginTop: 4,
   },
 });

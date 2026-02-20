@@ -37,6 +37,8 @@ export const createChild = async (parentId: string, data: {
   await setDoc(childRef, {
     ...data,
     tier: 'free',
+    serialCode: '',
+    serialExpiry: null,
     subjects: data.grade <= 2 ? ['korean', 'math', 'integrated'] : ['korean', 'math', 'science', 'social', 'english'],
     questionsPerSubject: 3,
     createdAt: Timestamp.now(),
