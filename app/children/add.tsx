@@ -38,7 +38,6 @@ export default function AddChildScreen() {
 
   const handleAdd = async () => {
     if (isSubmitting) return;
-    setIsSubmitting(true);
 
     if (!name.trim()) {
       Alert.alert('오류', '이름을 입력해주세요.');
@@ -52,7 +51,7 @@ export default function AddChildScreen() {
 
     const datePattern = /^\d{4}-\d{2}-\d{2}$/;
     if (!datePattern.test(birthDate)) {
-      Alert.alert('오류', '생년월일을 YYYY-MM-DD 형식으로 입력해주세요. (예: 2018-03-15)');
+      Alert.alert('오류', '생년월일을 YYYY-MM-DD 형식으로 입력해주세요.');
       return;
     }
 
@@ -64,15 +63,20 @@ export default function AddChildScreen() {
       return;
     }
 
+    setIsSubmitting(true);
+
     try {
       const parentId = await AsyncStorage.getItem('parentId');
       if (!parentId) {
         Alert.alert('오류', '로그인 정보를 찾을 수 없습니다.');
+        setIsSubmitting(false);
         return;
       }
 
+      console.log('=== 자녀 등록 시작 ===');
       console.log('Saving avatar:', avatar);
-      await createChild(parentId, {
+
+      const newChildId = await createChild(parentId, {
         avatar,
         name: name.trim(),
         grade,
@@ -80,9 +84,11 @@ export default function AddChildScreen() {
         birthDate: birthDate.trim(),
       });
 
-      Alert.alert('성공', '자녀가 추가되었습니다.', [
-        { text: '확인', onPress: () => router.back() }
-      ]);
+      console.log('=== 자녀 등록 완료, ID:', newChildId, '===');
+
+      // Alert 대신 바로 이동
+      router.back();
+
     } catch (error) {
       console.log('Add child error:', error);
       Alert.alert('오류', '자녀 추가에 실패했습니다.');
