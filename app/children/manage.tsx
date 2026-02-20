@@ -14,18 +14,27 @@ interface Child {
   birthDate: string;
   subjects: string[];
   questionsPerSubject: number;
+  tier?: string;
 }
+
+type Tier = 'free' | 'baeum' | 'sky';
 
 export default function ManageChildrenScreen() {
   const router = useRouter();
   const [children, setChildren] = useState<Child[]>([]);
   const [currentChildId, setCurrentChildId] = useState<string>('');
-  const [maxChildren, setMaxChildren] = useState<number>(1);
+  const [highestTier, setHighestTier] = useState<Tier>('free');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadData();
   }, []);
+
+  const getHighestTier = (childrenList: Child[]): Tier => {
+    if (childrenList.some(c => c.tier === 'sky')) return 'sky';
+    if (childrenList.some(c => c.tier === 'baeum')) return 'baeum';
+    return 'free';
+  };
 
   const loadData = async () => {
     try {
@@ -33,13 +42,11 @@ export default function ManageChildrenScreen() {
       const childId = await AsyncStorage.getItem('childId');
 
       if (parentId) {
-        const parentData = await getParent(parentId);
-        if (parentData) {
-          setMaxChildren(parentData.maxChildren || 1);
-        }
+        const childrenData = await getChildren(parentId) as Child[];
+        setChildren(childrenData);
 
-        const childrenData = await getChildren(parentId);
-        setChildren(childrenData as Child[]);
+        const tier = getHighestTier(childrenData);
+        setHighestTier(tier);
       }
 
       if (childId) {
@@ -65,15 +72,23 @@ export default function ManageChildrenScreen() {
   };
 
   const handleAddChild = () => {
-    if (children.length >= maxChildren) {
-      Alert.alert('알림', '최대 자녀 수에 도달했습니다.');
-      return;
-    }
     router.push('/children/add');
   };
 
   const handleEditChild = (childId: string) => {
     router.push(`/children/edit?childId=${childId}`);
+  };
+
+  const canAddMoreChildren = (): boolean => {
+    if (highestTier === 'free') {
+      return children.length < 1;
+    }
+    return children.length < 3;
+  };
+
+  const getMaxChildrenForTier = (): number => {
+    if (highestTier === 'free') return 1;
+    return 3;
   };
 
   return (
@@ -119,17 +134,30 @@ export default function ManageChildrenScreen() {
               </View>
             ))}
 
-            {children.length < maxChildren && (
+            {canAddMoreChildren() && (
               <TouchableOpacity style={styles.addButton} onPress={handleAddChild}>
                 <Ionicons name="add-circle-outline" size={24} color="#5BBFAA" />
                 <Text style={styles.addButtonText}>자녀 추가</Text>
               </TouchableOpacity>
             )}
 
-            {children.length >= maxChildren && (
+            {!canAddMoreChildren() && highestTier === 'free' && (
+              <View style={styles.upgradeContainer}>
+                <Text style={styles.upgradeText}>
+                  배움회원 또는 스카이회원으로 업그레이드하면 최대 3명까지 자녀를 추가할 수 있습니다.
+                </Text>
+                <TouchableOpacity
+                  style={styles.upgradeButton}
+                  onPress={() => router.push('/settings/grade')}
+                >
+                  <Text style={styles.upgradeButtonText}>학습 플랜 보기</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {!canAddMoreChildren() && (highestTier === 'baeum' || highestTier === 'sky') && (
               <View style={styles.maxReachedContainer}>
-                <Text style={styles.maxReachedText}>최대 자녀 수에 도달했습니다</Text>
-                <Text style={styles.maxReachedSubtext}>구독을 업그레이드하여 더 많은 자녀를 추가하세요</Text>
+                <Text style={styles.maxReachedText}>최대 자녀 수(3명)에 도달했습니다.</Text>
               </View>
             )}
           </>
@@ -247,10 +275,30 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     color: '#856404',
-    marginBottom: 4,
+    textAlign: 'center',
   },
-  maxReachedSubtext: {
-    fontSize: 12,
-    color: '#856404',
+  upgradeContainer: {
+    backgroundColor: '#E3F2FD',
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 8,
+  },
+  upgradeText: {
+    fontSize: 14,
+    color: '#1565C0',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  upgradeButton: {
+    backgroundColor: '#87CEEB',
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  upgradeButtonText: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
   },
 });
