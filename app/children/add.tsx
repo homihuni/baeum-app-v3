@@ -20,6 +20,21 @@ export default function AddChildScreen() {
   const [gender, setGender] = useState<'male' | 'female'>('male');
   const [birthDate, setBirthDate] = useState('');
 
+  const handleBirthDateChange = (text: string) => {
+    const numbers = text.replace(/[^0-9]/g, '');
+
+    const limited = numbers.slice(0, 8);
+
+    let formatted = limited;
+    if (limited.length > 4 && limited.length <= 6) {
+      formatted = limited.slice(0, 4) + '-' + limited.slice(4);
+    } else if (limited.length > 6) {
+      formatted = limited.slice(0, 4) + '-' + limited.slice(4, 6) + '-' + limited.slice(6);
+    }
+
+    setBirthDate(formatted);
+  };
+
   const handleAdd = async () => {
     if (!name.trim()) {
       Alert.alert('오류', '이름을 입력해주세요.');
@@ -153,10 +168,11 @@ export default function AddChildScreen() {
           <TextInput
             style={styles.input}
             value={birthDate}
-            onChangeText={setBirthDate}
-            placeholder="YYYY-MM-DD (예: 2018-03-15)"
+            onChangeText={handleBirthDateChange}
+            placeholder="생년월일 8자리 입력 (예: 20180315)"
             placeholderTextColor="#999"
-            keyboardType="numbers-and-punctuation"
+            keyboardType="number-pad"
+            maxLength={10}
           />
         </View>
 
