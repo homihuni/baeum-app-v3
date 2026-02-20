@@ -127,11 +127,17 @@ export default function GrowthScreen() {
       setStreakDays(streak);
       console.log("=== 최종 streak ===", streak);
 
-      // AI Comment
-      if (total === 0) setAiComment('아직 이번 달 학습 기록이 없어요. 오늘부터 시작해볼까요? 💪');
-      else if (avg >= 90) setAiComment('🎉 정답률 ' + avg + '%! 정말 대단해요! 이 조자로 계속 가면 최고예요!');
-      else if (avg >= 70) setAiComment('👍 정답률 ' + avg + '%로 잘하고 있어요! 조금만 더 노력하면 90점 넘을 수 있어요!');
-      else setAiComment('📚 정답률 ' + avg + '%예요. 틀린 문제를 다시 풀어보면 금방 올라갈 거예요!');
+      // AI Comment - 오늘 학습 데이터 기준으로 판단
+      const hasTodayLearning = todayRecords.length > 0;
+      if (!hasTodayLearning) {
+        setAiComment('아직 학습 기록이 없어요. 첫 문제를 풀어보세요! 📚');
+      } else if (avg >= 90) {
+        setAiComment('🎉 정답률 ' + avg + '%! 정말 대단해요! 이 조자로 계속 가면 최고예요!');
+      } else if (avg >= 70) {
+        setAiComment('👍 정답률 ' + avg + '%로 잘하고 있어요! 조금만 더 노력하면 90점 넘을 수 있어요!');
+      } else {
+        setAiComment('📚 정답률 ' + avg + '%예요. 틀린 문제를 다시 풀어보면 금방 올라갈 거예요!');
+      }
 
     } catch (error) { console.log('Growth load error:', error); }
     finally { setLoading(false); }
@@ -143,7 +149,7 @@ export default function GrowthScreen() {
     if (tier === 'free') {
       return (
         <View style={styles.aiCommentContainer}>
-          <Text style={styles.aiTextFree}>오늘 수학 정답률이 높아요! 잘하고 있어요! 👏</Text>
+          <Text style={styles.aiTextFree}>{aiComment}</Text>
           <View style={styles.blurContainer}>
             <Text style={styles.dummyText}>
               과목별 상세 분석 내용이 여기에 표시됩니다...{'\n'}
@@ -207,7 +213,7 @@ export default function GrowthScreen() {
 
   const handleMembershipPress = () => {
     console.log('회원 등급 안내 클릭');
-    router.push('/growth/membership');
+    router.push('/settings/grade');
   };
 
   if (loading) return (<SafeAreaView style={styles.container}><ActivityIndicator size="large" color="#7ED4C0" style={{marginTop:100}}/></SafeAreaView>);
