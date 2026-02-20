@@ -8,7 +8,7 @@ import { db } from '../../utils/firebase';
 
 const TIER_CONFIG: Record<string, { label: string; color: string; bgColor: string }> = {
   free: { label: '무료', color: '#9E9E9E', bgColor: '#F5F5F5' },
-  baeum: { label: '배움', color: '#7ED4C0', bgColor: '#E8F8F5' },
+  baeum: { label: '배움회원', color: '#7ED4C0', bgColor: '#E8F8F5' },
   sky: { label: '스카이', color: '#87CEEB', bgColor: '#E8F4FD' },
 };
 
@@ -125,8 +125,8 @@ export default function LearningPlanScreen() {
           <View style={styles.planFeatures}>
             <Text style={styles.featureItem}>• 과목: {isLowGrade ? '전과목 (3과목)' : '5과목 중 3과목'}</Text>
             <Text style={styles.featureItem}>• 과목당 5문제</Text>
-            <Text style={styles.featureItem}>• 기본 학습 분석 리포트</Text>
-            <Text style={styles.featureItem}>• 학습 어드바이스</Text>
+            <Text style={styles.featureItem}>• 학습 분석 리포트</Text>
+            <Text style={styles.featureItem}>• AI 학습 어드바이저</Text>
           </View>
           <Text style={styles.planNote}>배움달력 뒷면의 시리얼번호로 등록</Text>
           {childTier === 'free' && (
@@ -158,8 +158,8 @@ export default function LearningPlanScreen() {
           <View style={styles.planFeatures}>
             <Text style={[styles.featureItem, styles.featureHighlight]}>• 전과목 학습</Text>
             <Text style={[styles.featureItem, styles.featureHighlight]}>• 과목당 10문제 + 추가 문제 5문제</Text>
-            <Text style={[styles.featureItem, styles.featureHighlight]}>• 상세 학습 분석 리포트</Text>
-            <Text style={[styles.featureItem, styles.featureHighlight]}>• 맞춤 학습 어드바이스</Text>
+            <Text style={[styles.featureItem, styles.featureHighlight]}>• 정밀 학습 분석 리포트</Text>
+            <Text style={[styles.featureItem, styles.featureHighlight]}>• AI 학습 어드바이저 PRO</Text>
           </View>
           <Text style={styles.skyBenefit}>아이의 성장을 위한 최적의 학습 환경</Text>
           {childTier !== 'sky' && (
