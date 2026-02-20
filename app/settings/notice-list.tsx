@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
 
 interface Notice {
@@ -28,14 +28,12 @@ export default function NoticeListScreen() {
   const loadNotices = async () => {
     try {
       setLoading(true);
-      const noticesQuery = query(
+      const q = query(
         collection(db, 'Notices'),
-        where('isActive', '==', true),
-        orderBy('isPinned', 'desc'),
-        orderBy('createdAt', 'desc')
+        where('isActive', '==', true)
       );
 
-      const querySnapshot = await getDocs(noticesQuery);
+      const querySnapshot = await getDocs(q);
       const noticesList: Notice[] = [];
 
       querySnapshot.forEach((doc) => {
@@ -45,7 +43,14 @@ export default function NoticeListScreen() {
         } as Notice);
       });
 
-      setNotices(noticesList);
+      const sorted = noticesList.sort((a, b) => {
+        if (a.isPinned !== b.isPinned) return b.isPinned ? 1 : -1;
+        const aTime = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : 0;
+        const bTime = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : 0;
+        return bTime - aTime;
+      });
+
+      setNotices(sorted);
     } catch (error) {
       console.log('공지사항 로드 에러:', error);
     } finally {
