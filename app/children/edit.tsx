@@ -22,6 +22,9 @@ export default function EditChildScreen() {
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(true);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showDeleteErrorModal, setShowDeleteErrorModal] = useState(false);
+  const [deleteErrorMessage, setDeleteErrorMessage] = useState('');
 
   useEffect(() => {
     loadChildData();
@@ -74,56 +77,53 @@ export default function EditChildScreen() {
 
   const handleDelete = async () => {
     try {
-      // 1. 현재 부모의 전체 자녀 수 확인
       const pId = await AsyncStorage.getItem('parentId');
       if (!pId) return;
 
       const childrenRef = collection(db, 'Parents', pId, 'Children');
       const childrenSnap = await getDocs(childrenRef);
-      const activeChildren = childrenSnap.docs.filter(doc => !doc.data().isDeleted);
+      const activeChildren = childrenSnap.docs.filter(d => !d.data().isDeleted);
 
-      // 2. 자녀가 1명뿐이면 삭제 불가
       if (activeChildren.length <= 1) {
-        Alert.alert('삭제 불가', '최소 1명의 자녀가 등록되어 있어야 합니다.');
+        setDeleteErrorMessage('최소 1명의 자녀가 등록되어 있어야 합니다.');
+        setShowDeleteErrorModal(true);
         return;
       }
 
-      // 3. 현재 선택된 자녀인지 확인
       const selectedChildId = await AsyncStorage.getItem('childId');
       if (selectedChildId === childId) {
-        Alert.alert('삭제 불가', '현재 선택된 자녀는 삭제할 수 없습니다.\n다른 자녀를 먼저 선택해 주세요.');
+        setDeleteErrorMessage('현재 선택된 자녀는 삭제할 수 없습니다.\n다른 자녀를 먼저 선택해 주세요.');
+        setShowDeleteErrorModal(true);
         return;
       }
 
-      // 4. 확인 팝업
-      Alert.alert(
-        '삭제',
-        `${name}을(를) 삭제하시겠습니까?\n삭제 후 24시간 동안 새 자녀를 등록할 수 없습니다.`,
-        [
-          { text: '취소', style: 'cancel' },
-          {
-            text: '삭제',
-            style: 'destructive',
-            onPress: async () => {
-              try {
-                const childDocRef = doc(db, 'Parents', pId, 'Children', childId as string);
-                await updateDoc(childDocRef, {
-                  isDeleted: true,
-                  deletedAt: serverTimestamp()
-                });
-                console.log('=== 자녀 삭제 완료:', childId, '===');
-                router.back();
-              } catch (error) {
-                console.log('Delete error:', error);
-                Alert.alert('오류', '삭제에 실패했습니다.');
-              }
-            }
-          }
-        ]
-      );
+      // 조건 통과 → 삭제 확인 모달 표시
+      setShowDeleteModal(true);
     } catch (error) {
       console.log('Delete check error:', error);
-      Alert.alert('오류', '삭제 처리 중 오류가 발생했습니다.');
+      setDeleteErrorMessage('삭제 처리 중 오류가 발생했습니다.');
+      setShowDeleteErrorModal(true);
+    }
+  };
+
+  const confirmDelete = async () => {
+    try {
+      const pId = await AsyncStorage.getItem('parentId');
+      if (!pId) return;
+
+      const childDocRef = doc(db, 'Parents', pId, 'Children', childId as string);
+      await updateDoc(childDocRef, {
+        isDeleted: true,
+        deletedAt: serverTimestamp()
+      });
+      console.log('=== 자녀 삭제 완료:', childId, '===');
+      setShowDeleteModal(false);
+      router.back();
+    } catch (error) {
+      console.log('Delete error:', error);
+      setShowDeleteModal(false);
+      setDeleteErrorMessage('삭제에 실패했습니다.');
+      setShowDeleteErrorModal(true);
     }
   };
 
@@ -194,6 +194,48 @@ export default function EditChildScreen() {
                 setShowCompleteModal(false);
                 router.back();
               }}
+            >
+              <Text style={styles.modalConfirmText}>확인</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* 삭제 확인 모달 */}
+      <Modal visible={showDeleteModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>삭제</Text>
+            <Text style={styles.modalMessage}>
+              {name}을(를) 삭제하시겠습니까?{'\n'}삭제 후 24시간 동안 새 자녀를 등록할 수 없습니다.
+            </Text>
+            <View style={styles.deleteModalButtons}>
+              <TouchableOpacity
+                style={styles.deleteModalCancelBtn}
+                onPress={() => setShowDeleteModal(false)}
+              >
+                <Text style={styles.deleteModalCancelText}>취소</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.deleteModalConfirmBtn}
+                onPress={confirmDelete}
+              >
+                <Text style={styles.deleteModalConfirmText}>삭제</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* 삭제 에러 모달 */}
+      <Modal visible={showDeleteErrorModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>안내</Text>
+            <Text style={styles.modalMessage}>{deleteErrorMessage}</Text>
+            <TouchableOpacity
+              style={styles.modalConfirmBtn}
+              onPress={() => setShowDeleteErrorModal(false)}
             >
               <Text style={styles.modalConfirmText}>확인</Text>
             </TouchableOpacity>
@@ -343,5 +385,34 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     color: '#fff',
+  },
+  deleteModalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 4,
+  },
+  deleteModalCancelBtn: {
+    flex: 1,
+    backgroundColor: '#E0E0E0',
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  deleteModalCancelText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#666',
+  },
+  deleteModalConfirmBtn: {
+    flex: 1,
+    backgroundColor: '#FF4444',
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  deleteModalConfirmText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
   },
 });
