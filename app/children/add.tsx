@@ -19,6 +19,7 @@ export default function AddChildScreen() {
   const [grade, setGrade] = useState(1);
   const [gender, setGender] = useState<'male' | 'female'>('male');
   const [birthDate, setBirthDate] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleBirthDateChange = (text: string) => {
     const numbers = text.replace(/[^0-9]/g, '');
@@ -36,6 +37,9 @@ export default function AddChildScreen() {
   };
 
   const handleAdd = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
     if (!name.trim()) {
       Alert.alert('오류', '이름을 입력해주세요.');
       return;
@@ -82,6 +86,8 @@ export default function AddChildScreen() {
     } catch (error) {
       console.log('Add child error:', error);
       Alert.alert('오류', '자녀 추가에 실패했습니다.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -176,8 +182,12 @@ export default function AddChildScreen() {
           />
         </View>
 
-        <TouchableOpacity style={styles.addButton} onPress={handleAdd}>
-          <Text style={styles.addButtonText}>등록</Text>
+        <TouchableOpacity
+          style={[styles.addButton, isSubmitting && styles.addButtonDisabled]}
+          onPress={handleAdd}
+          disabled={isSubmitting}
+        >
+          <Text style={styles.addButtonText}>{isSubmitting ? '등록 중...' : '등록'}</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -301,6 +311,9 @@ const styles = StyleSheet.create({
     padding: 16,
     alignItems: 'center',
     marginBottom: 24,
+  },
+  addButtonDisabled: {
+    backgroundColor: '#CCCCCC',
   },
   addButtonText: {
     fontSize: 16,
