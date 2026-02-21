@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { getChildren } from '../../utils/firestore';
@@ -41,18 +41,6 @@ export default function SelectChildScreen() {
     router.replace('/(tabs)/home');
   };
 
-  const handleAddChild = async () => {
-    const tier = children.length > 0 ? children[0].tier : 'free';
-    if (tier === 'free') {
-      Alert.alert('알림', '무료회원은 자녀 1명만 등록할 수 있습니다.\n배움 등급 이상으로 업그레이드해주세요.');
-      return;
-    }
-    if (children.length >= 3) {
-      Alert.alert('알림', '최대 3명까지 등록할 수 있습니다.');
-      return;
-    }
-    router.push('/(auth)/create-profile');
-  };
 
   if (loading) {
     return (
@@ -106,13 +94,6 @@ export default function SelectChildScreen() {
             </View>
           </TouchableOpacity>
         ))}
-
-        {activeChildren.length < 3 && (
-          <TouchableOpacity style={styles.addCard} onPress={handleAddChild}>
-            <Text style={styles.addIcon}>+</Text>
-            <Text style={styles.addText}>프로필 추가</Text>
-          </TouchableOpacity>
-        )}
       </>
     );
   };
@@ -142,7 +123,4 @@ const styles = StyleSheet.create({
   childGrade: { fontSize: 13, color: '#666', marginTop: 4 },
   tierBadge: { marginTop: 8, paddingHorizontal: 10, paddingVertical: 3, borderRadius: 10 },
   tierText: { fontSize: 11, fontWeight: 'bold', color: '#FFFFFF' },
-  addCard: { width: 140, borderRadius: 16, padding: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#D0D0D0', borderStyle: 'dashed' },
-  addIcon: { fontSize: 28, color: '#9E9E9E' },
-  addText: { fontSize: 13, color: '#9E9E9E', marginTop: 4 },
 });
