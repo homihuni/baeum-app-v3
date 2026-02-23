@@ -62,24 +62,34 @@ export default function HomeScreen() {
   };
 
   useEffect(() => {
-    Alert.alert('테스트', '홈 화면 로드됨');
+    if (typeof window !== 'undefined') {
+      window.alert('홈 화면 로드됨');
+    }
     checkExpiry();
     loadMonthlyData();
     refreshChildAvatar();
   }, [currentYear, currentMonth]);
 
   const checkExpiry = async () => {
-    Alert.alert('디버그1', 'checkExpiry 시작');
+    if (typeof window !== 'undefined') {
+      window.alert('디버그1: checkExpiry 시작');
+    }
     try {
       const parentId = await AsyncStorage.getItem('parentId');
       if (!parentId) {
-        Alert.alert('디버그2', 'parentId 없음');
+        if (typeof window !== 'undefined') {
+          window.alert('디버그2: parentId 없음');
+        }
         return;
       }
-      Alert.alert('디버그3', 'parentId: ' + parentId);
+      if (typeof window !== 'undefined') {
+        window.alert('디버그3: parentId: ' + parentId);
+      }
 
       const result = await checkSerialExpiry(parentId);
-      Alert.alert('디버그4', 'freeCount: ' + result.freeChildrenCount + ', expired: ' + result.expiredChildren.length);
+      if (typeof window !== 'undefined') {
+        window.alert('디버그4: freeCount: ' + result.freeChildrenCount + ', expired: ' + result.expiredChildren.length);
+      }
 
       if (result.expiredChildren.length > 0) {
         console.log('만료된 자녀:', result.expiredChildren);
@@ -93,7 +103,9 @@ export default function HomeScreen() {
       }
 
       if (result.freeChildrenCount >= 2) {
-        Alert.alert('디버그5', '무료 2명 이상 감지');
+        if (typeof window !== 'undefined') {
+          window.alert('디버그5: 무료 2명 이상 감지');
+        }
         const childrenRef = collection(db, 'Parents', parentId, 'Children');
         const snap = await getDocs(childrenRef);
         const freeList: any[] = [];
@@ -112,20 +124,19 @@ export default function HomeScreen() {
 
         setFreeChildren(freeList);
 
-        const buttons = freeList.map((child) => ({
-          text: `${child.name} (${child.grade}학년)`,
-          onPress: () => handleSelectChild(child.id, child.name),
-        }));
-
-        Alert.alert(
-          '자녀 선택 필요',
-          '무료회원은 1명만 이용할 수 있습니다.\n학습할 자녀를 선택해주세요.',
-          buttons,
-          { cancelable: false }
-        );
+        if (typeof window !== 'undefined') {
+          const choice = window.confirm('자녀 선택 필요\n' + freeList.map(c => c.name).join(', ') + '\n첫번째 자녀를 선택하려면 확인, 두번째는 취소');
+          if (choice) {
+            handleSelectChild(freeList[0].id, freeList[0].name);
+          } else if (freeList.length > 1) {
+            handleSelectChild(freeList[1].id, freeList[1].name);
+          }
+        }
       }
     } catch (error) {
-      Alert.alert('디버그 에러', String(error));
+      if (typeof window !== 'undefined') {
+        window.alert('디버그 에러: ' + String(error));
+      }
       console.log('시리얼 만료 체크 오류:', error);
     }
   };
