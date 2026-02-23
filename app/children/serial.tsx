@@ -14,6 +14,8 @@ export default function SerialScreen() {
   const [modalTitle, setModalTitle] = useState('');
   const [modalMessage, setModalMessage] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
+  const [failCount, setFailCount] = useState(0);
+  const [lockedUntil, setLockedUntil] = useState<Date | null>(null);
 
   const showErrorModal = (message: string) => {
     setModalTitle('안내');
@@ -23,6 +25,12 @@ export default function SerialScreen() {
   };
 
   const handleRegister = async () => {
+    if (lockedUntil && new Date() < lockedUntil) {
+      const remainingSeconds = Math.ceil((lockedUntil.getTime() - Date.now()) / 1000);
+      showErrorModal(`너무 많은 시도가 있었습니다.\n${remainingSeconds}초 후에 다시 시도해주세요.`);
+      return;
+    }
+
     if (!serialCode.trim()) {
       showErrorModal('시리얼 코드를 입력해주세요');
       return;
@@ -33,21 +41,48 @@ export default function SerialScreen() {
       const serialSnap = await getDoc(serialDocRef);
 
       if (!serialSnap.exists()) {
-        showErrorModal('유효하지 않은 시리얼 코드입니다');
+        const newFailCount = failCount + 1;
+        setFailCount(newFailCount);
+
+        if (newFailCount >= 5) {
+          setLockedUntil(new Date(Date.now() + 60000));
+          setFailCount(0);
+          showErrorModal('5회 연속 실패했습니다.\n1분 후에 다시 시도해주세요.');
+        } else {
+          showErrorModal('유효하지 않은 시리얼 코드입니다');
+        }
         return;
       }
 
       const serialData = serialSnap.data();
 
       if (serialData.isUsed) {
-        showErrorModal('이미 사용된 시리얼 코드입니다');
+        const newFailCount = failCount + 1;
+        setFailCount(newFailCount);
+
+        if (newFailCount >= 5) {
+          setLockedUntil(new Date(Date.now() + 60000));
+          setFailCount(0);
+          showErrorModal('5회 연속 실패했습니다.\n1분 후에 다시 시도해주세요.');
+        } else {
+          showErrorModal('이미 사용된 시리얼 코드입니다');
+        }
         return;
       }
 
       const now = new Date();
       const expiry = serialData.expiry?.toDate();
       if (expiry && expiry < now) {
-        showErrorModal('만료된 시리얼 코드입니다');
+        const newFailCount = failCount + 1;
+        setFailCount(newFailCount);
+
+        if (newFailCount >= 5) {
+          setLockedUntil(new Date(Date.now() + 60000));
+          setFailCount(0);
+          showErrorModal('5회 연속 실패했습니다.\n1분 후에 다시 시도해주세요.');
+        } else {
+          showErrorModal('만료된 시리얼 코드입니다');
+        }
         return;
       }
 
@@ -71,10 +106,12 @@ export default function SerialScreen() {
         serialCalendarYear: serialData.calendarYear,
       });
 
+      setFailCount(0);
+
       const calendarYear = serialData.calendarYear || new Date().getFullYear();
       setModalTitle('시리얼 등록 완료!');
       setModalMessage(
-        `${childName}이(가) 배움회원이 되었습니다.\n유효기간: ${calendarYear + 1}년 2월 28일까지`
+        `${childName}이(가) 배움회원이 되었습니다.\n시리얼 유효기간은 다음 해 2월 28일까지입니다.`
       );
       setIsSuccess(true);
       setShowModal(true);
@@ -108,17 +145,17 @@ export default function SerialScreen() {
           style={styles.input}
           value={serialCode}
           onChangeText={setSerialCode}
-          placeholder="예: BAEUM-2026-TEST-001"
+          placeholder="예: 26JH26A7K3"
           placeholderTextColor="#999"
           autoCapitalize="characters"
-          maxLength={30}
+          maxLength={10}
         />
 
         <TouchableOpacity style={styles.registerButton} onPress={handleRegister}>
           <Text style={styles.registerButtonText}>등록하기</Text>
         </TouchableOpacity>
 
-        <Text style={styles.hintText}>시리얼 코드는 배움달력 뒷면에서 확인할 수 있습니다.</Text>
+        <Text style={styles.hintText}>배움달력 뒷면의 시리얼번호 10자리를 입력해주세요</Text>
       </View>
 
       <Modal visible={showModal} transparent animationType="fade">
