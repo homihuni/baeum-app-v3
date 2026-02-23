@@ -105,6 +105,8 @@ export default function HomeScreen() {
         });
 
         setFreeChildren(freeList);
+        console.log('무료 자녀 목록:', JSON.stringify(freeList));
+        console.log('모달 표시 예정, freeList 수:', freeList.length);
         setShowLockSelectionModal(true);
       }
     } catch (error) {
@@ -407,7 +409,11 @@ export default function HomeScreen() {
                 <TouchableOpacity
                   key={child.id}
                   style={styles.childButton}
-                  onPress={() => handleSelectChild(child.id, child.name)}
+                  activeOpacity={0.5}
+                  onPress={() => {
+                    console.log('버튼 클릭됨:', child.id, child.name);
+                    handleSelectChild(child.id, child.name);
+                  }}
                 >
                   <Text style={styles.childAvatar}>{child.avatar}</Text>
                   <View style={styles.childInfo}>
