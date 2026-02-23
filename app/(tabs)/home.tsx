@@ -63,6 +63,7 @@ export default function HomeScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      Alert.alert('테스트', '홈 화면 포커스됨');
       checkExpiry();
       loadMonthlyData();
       refreshChildAvatar();
