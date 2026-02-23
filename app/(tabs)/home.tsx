@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Modal, Pressable } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Modal, Pressable, Alert } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -105,9 +105,18 @@ export default function HomeScreen() {
         });
 
         setFreeChildren(freeList);
-        console.log('무료 자녀 목록:', JSON.stringify(freeList));
-        console.log('모달 표시 예정, freeList 수:', freeList.length);
-        setShowLockSelectionModal(true);
+
+        const buttons = freeList.map((child) => ({
+          text: `${child.name} (${child.grade}학년)`,
+          onPress: () => handleSelectChild(child.id, child.name),
+        }));
+
+        Alert.alert(
+          '자녀 선택 필요',
+          '무료회원은 1명만 이용할 수 있습니다.\n학습할 자녀를 선택해주세요.',
+          buttons,
+          { cancelable: false }
+        );
       }
     } catch (error) {
       console.log('시리얼 만료 체크 오류:', error);
@@ -416,55 +425,6 @@ export default function HomeScreen() {
         </View>
       </Modal>
       </SafeAreaView>
-
-      {showLockSelectionModal && (
-        <View style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.5)',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 9999,
-          elevation: 9999,
-        }}>
-          <View style={{
-            width: '85%',
-            backgroundColor: '#FFFFFF',
-            borderRadius: 16,
-            padding: 24,
-            alignItems: 'center',
-          }}>
-            <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 8 }}>자녀 선택 필요</Text>
-            <Text style={{ fontSize: 14, color: '#666', textAlign: 'center', marginBottom: 20 }}>
-              무료회원은 1명만 이용할 수 있습니다.{'\n'}학습할 자녀를 선택해주세요.
-            </Text>
-            {freeChildren.map((child) => (
-              <Pressable
-                key={child.id}
-                onPress={() => handleSelectChild(child.id, child.name)}
-                style={({ pressed }) => ({
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  backgroundColor: pressed ? '#E0E0E0' : '#F5F5F5',
-                  borderRadius: 12,
-                  padding: 16,
-                  marginBottom: 8,
-                  width: '100%',
-                })}
-              >
-                <Text style={{ fontSize: 32, marginRight: 12 }}>{child.avatar}</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#333' }}>{child.name}</Text>
-                  <Text style={{ fontSize: 14, color: '#666' }}>{child.grade}학년</Text>
-                </View>
-              </Pressable>
-            ))}
-          </View>
-        </View>
-      )}
     </View>
   );
 }
