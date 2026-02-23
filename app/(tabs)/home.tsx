@@ -82,6 +82,28 @@ export default function HomeScreen() {
         }
         setShowExpiryModal(true);
       }
+
+      // 현재 선택된 자녀가 만료되었으면 무료 자녀로 자동 전환
+      const currentChildId = await AsyncStorage.getItem('childId');
+      if (result.expiredList && result.expiredList.some(c => c.id === currentChildId)) {
+        // 무료 활성 자녀 찾기
+        const childrenRef = collection(db, 'Parents', parentId, 'Children');
+        const snap = await getDocs(childrenRef);
+        let freeChild: { id: string; name: string } | null = null;
+        snap.forEach((childDoc) => {
+          const data = childDoc.data();
+          if (data.isDeleted !== true && data.tier === 'free' && data.isLocked !== true && !freeChild) {
+            freeChild = { id: childDoc.id, name: data.name || '자녀' };
+          }
+        });
+        if (freeChild) {
+          await AsyncStorage.setItem('childId', freeChild.id);
+          await AsyncStorage.setItem('childName', freeChild.name);
+          loadChildData();
+          loadMonthlyData();
+          refreshChildAvatar();
+        }
+      }
     } catch (error) {
       console.log('시리얼 만료 체크 오류:', error);
     }
