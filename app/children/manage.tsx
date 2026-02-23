@@ -79,11 +79,18 @@ export default function ManageChildrenScreen() {
     }
   };
 
-  const handleSelectChild = async (childId: string) => {
+  const handleSelectChild = async (child: Child) => {
     try {
-      await AsyncStorage.setItem('childId', childId);
-      setCurrentChildId(childId);
-      setShowSelectModal(true);
+      await AsyncStorage.setItem('childId', child.id);
+      await AsyncStorage.setItem('childName', child.name);
+      setCurrentChildId(child.id);
+
+      const childTier = child.tier || 'free';
+      if (childTier === 'free') {
+        router.push({ pathname: '/serial/enter', params: { childId: child.id, childName: child.name } });
+      } else {
+        setShowSelectModal(true);
+      }
     } catch (error) {
       console.log('Select child error:', error);
     }
@@ -145,7 +152,7 @@ export default function ManageChildrenScreen() {
               <View key={child.id} style={styles.childCard}>
                 <TouchableOpacity
                   style={styles.childInfo}
-                  onPress={() => handleSelectChild(child.id)}
+                  onPress={() => handleSelectChild(child)}
                 >
                   <Text style={styles.childEmoji}>{child.avatar}</Text>
                   <View style={styles.childDetails}>
@@ -154,6 +161,21 @@ export default function ManageChildrenScreen() {
                       {currentChildId === child.id && (
                         <View style={styles.badge}>
                           <Text style={styles.badgeText}>현재 선택됨</Text>
+                        </View>
+                      )}
+                      {child.tier === 'free' && (
+                        <View style={styles.tierBadgeFree}>
+                          <Text style={styles.tierBadgeTextFree}>무료</Text>
+                        </View>
+                      )}
+                      {child.tier === 'baeum' && (
+                        <View style={styles.tierBadgeBaeum}>
+                          <Text style={styles.tierBadgeTextBaeum}>배움</Text>
+                        </View>
+                      )}
+                      {child.tier === 'sky' && (
+                        <View style={styles.tierBadgeSky}>
+                          <Text style={styles.tierBadgeTextSky}>스카이</Text>
                         </View>
                       )}
                     </View>
@@ -429,5 +451,41 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: 'bold',
     color: '#FFFFFF',
+  },
+  tierBadgeFree: {
+    backgroundColor: '#E0E0E0',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    marginLeft: 4,
+  },
+  tierBadgeTextFree: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#666',
+  },
+  tierBadgeBaeum: {
+    backgroundColor: '#4A90D9',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    marginLeft: 4,
+  },
+  tierBadgeTextBaeum: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#FFF',
+  },
+  tierBadgeSky: {
+    backgroundColor: '#FFD700',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    marginLeft: 4,
+  },
+  tierBadgeTextSky: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#333',
   },
 });
