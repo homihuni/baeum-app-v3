@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Modal, Pressable, Alert } from 'react-native';
-import { useRouter, useFocusEffect } from 'expo-router';
-import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'expo-router';
+import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
@@ -61,14 +61,12 @@ export default function HomeScreen() {
     }
   };
 
-  useFocusEffect(
-    useCallback(() => {
-      Alert.alert('테스트', '홈 화면 포커스됨');
-      checkExpiry();
-      loadMonthlyData();
-      refreshChildAvatar();
-    }, [currentYear, currentMonth])
-  );
+  useEffect(() => {
+    Alert.alert('테스트', '홈 화면 로드됨');
+    checkExpiry();
+    loadMonthlyData();
+    refreshChildAvatar();
+  }, [currentYear, currentMonth]);
 
   const checkExpiry = async () => {
     Alert.alert('디버그1', 'checkExpiry 시작');
