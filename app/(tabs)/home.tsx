@@ -23,7 +23,9 @@ export default function HomeScreen() {
   const [correctCount, setCorrectCount] = useState(0);
   const [showLockSelectionModal, setShowLockSelectionModal] = useState(false);
   const [showExpiryModal, setShowExpiryModal] = useState(false);
+  const [showLockCompleteModal, setShowLockCompleteModal] = useState(false);
   const [expiryMessage, setExpiryMessage] = useState('');
+  const [selectedChildName, setSelectedChildName] = useState('');
   const [freeChildren, setFreeChildren] = useState<any[]>([]);
 
   const TIER_LABELS: Record<string, string> = { free: '무료회원', baeum: '배움회원', sky: '스카이회원' };
@@ -115,12 +117,16 @@ export default function HomeScreen() {
       const parentId = await AsyncStorage.getItem('parentId');
       if (!parentId) return;
 
-      await lockExcessFreeChildren(parentId, childId);
-
       await AsyncStorage.setItem('childId', childId);
       await AsyncStorage.setItem('childName', childName);
 
+      await lockExcessFreeChildren(parentId, childId);
+
       setShowLockSelectionModal(false);
+      setSelectedChildName(childName);
+      setShowLockCompleteModal(true);
+
+      console.log(`자녀 선택 완료: ${childName}, 나머지 잠금 처리`);
 
       loadChildData();
       loadMonthlyData();
@@ -406,11 +412,36 @@ export default function HomeScreen() {
                   <Text style={styles.childAvatar}>{child.avatar}</Text>
                   <View style={styles.childInfo}>
                     <Text style={styles.childName}>{child.name}</Text>
-                    <Text style={styles.childGrade}>{child.grade}</Text>
+                    <Text style={styles.childGrade}>{child.grade}학년</Text>
                   </View>
                 </TouchableOpacity>
               ))}
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* LOCK COMPLETE MODAL */}
+      <Modal
+        visible={showLockCompleteModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowLockCompleteModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>선택 완료</Text>
+            <Text style={styles.modalMessage}>
+              {selectedChildName}이(가) 선택되었습니다.{'\n'}
+              나머지 자녀는 잠금 처리되었습니다.{'\n'}
+              잠금 해제는 시리얼 등록 또는 구독으로 가능합니다.
+            </Text>
+            <TouchableOpacity
+              style={styles.modalButton}
+              onPress={() => setShowLockCompleteModal(false)}
+            >
+              <Text style={styles.modalButtonText}>확인</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
