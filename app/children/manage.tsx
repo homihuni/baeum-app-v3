@@ -17,6 +17,7 @@ interface Child {
   tier?: string;
   isDeleted?: boolean;
   deletedAt?: any;
+  isLocked?: boolean;
 }
 
 type Tier = 'free' | 'baeum' | 'sky';
@@ -31,7 +32,8 @@ export default function ManageChildrenScreen() {
   const [showCooldownModal, setShowCooldownModal] = useState(false);
   const [cooldownHours, setCooldownHours] = useState(0);
   const [showFreeChildModal, setShowFreeChildModal] = useState(false);
-  const [showSelectModal, setShowSelectModal] = useState(false);
+  const [showLockedModal, setShowLockedModal] = useState(false);
+  const [selectedLockedChild, setSelectedLockedChild] = useState<Child | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -80,17 +82,17 @@ export default function ManageChildrenScreen() {
   };
 
   const handleSelectChild = async (child: Child) => {
+    if (child.isLocked) {
+      setSelectedLockedChild(child);
+      setShowLockedModal(true);
+      return;
+    }
+
     try {
       await AsyncStorage.setItem('childId', child.id);
       await AsyncStorage.setItem('childName', child.name);
       setCurrentChildId(child.id);
-
-      const childTier = child.tier || 'free';
-      if (childTier === 'free') {
-        router.push({ pathname: '/serial/enter', params: { childId: child.id, childName: child.name } });
-      } else {
-        setShowSelectModal(true);
-      }
+      await loadData();
     } catch (error) {
       console.log('Select child error:', error);
     }
@@ -149,7 +151,7 @@ export default function ManageChildrenScreen() {
         ) : (
           <>
             {children.map((child) => (
-              <View key={child.id} style={styles.childCard}>
+              <View key={child.id} style={[styles.childCard, child.isLocked && styles.childCardLocked]}>
                 <TouchableOpacity
                   style={styles.childInfo}
                   onPress={() => handleSelectChild(child)}
@@ -159,21 +161,26 @@ export default function ManageChildrenScreen() {
                     <View style={styles.childNameRow}>
                       <Text style={styles.childName}>{child.name}</Text>
                       {currentChildId === child.id && (
-                        <View style={styles.badge}>
-                          <Text style={styles.badgeText}>현재 선택됨</Text>
+                        <View style={styles.badgeSelected}>
+                          <Text style={styles.badgeSelectedText}>현재 선택됨</Text>
                         </View>
                       )}
-                      {child.tier === 'free' && (
+                      {child.isLocked && (
+                        <View style={styles.badgeLocked}>
+                          <Text style={styles.badgeLockedText}>잠금</Text>
+                        </View>
+                      )}
+                      {!child.isLocked && child.tier === 'free' && (
                         <View style={styles.tierBadgeFree}>
                           <Text style={styles.tierBadgeTextFree}>무료</Text>
                         </View>
                       )}
-                      {child.tier === 'baeum' && (
+                      {!child.isLocked && child.tier === 'baeum' && (
                         <View style={styles.tierBadgeBaeum}>
                           <Text style={styles.tierBadgeTextBaeum}>배움</Text>
                         </View>
                       )}
-                      {child.tier === 'sky' && (
+                      {!child.isLocked && child.tier === 'sky' && (
                         <View style={styles.tierBadgeSky}>
                           <Text style={styles.tierBadgeTextSky}>스카이</Text>
                         </View>
@@ -254,21 +261,43 @@ export default function ManageChildrenScreen() {
         </View>
       </Modal>
 
-      {/* 자녀 선택 완료 모달 */}
-      <Modal visible={showSelectModal} transparent animationType="fade">
+      {/* 잠긴 자녀 모달 */}
+      <Modal visible={showLockedModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>
-            <Text style={styles.modalTitle}>자녀 선택</Text>
-            <Text style={styles.modalMessage}>자녀가 변경되었습니다.</Text>
-            <TouchableOpacity
-              style={styles.modalConfirmBtn}
-              onPress={() => {
-                setShowSelectModal(false);
-                router.push('/(tabs)/home');
-              }}
-            >
-              <Text style={styles.modalConfirmText}>확인</Text>
-            </TouchableOpacity>
+            <Text style={styles.modalTitle}>잠긴 자녀</Text>
+            <Text style={styles.modalMessage}>
+              {selectedLockedChild?.name}은(는) 현재 잠겨있습니다.{'\n'}시리얼 등록 또는 구독으로 잠금을 해제할 수 있습니다.
+            </Text>
+            <View style={styles.modalButtonRow}>
+              <TouchableOpacity
+                style={styles.modalCancelBtn}
+                onPress={() => {
+                  setShowLockedModal(false);
+                  setSelectedLockedChild(null);
+                }}
+              >
+                <Text style={styles.modalCancelText}>닫기</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalUpgradeBtn}
+                onPress={() => {
+                  setShowLockedModal(false);
+                  if (selectedLockedChild) {
+                    router.push({
+                      pathname: '/serial/enter',
+                      params: {
+                        childId: selectedLockedChild.id,
+                        childName: selectedLockedChild.name
+                      }
+                    });
+                  }
+                  setSelectedLockedChild(null);
+                }}
+              >
+                <Text style={styles.modalUpgradeText}>시리얼 등록</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -318,6 +347,9 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 12,
   },
+  childCardLocked: {
+    opacity: 0.5,
+  },
   childInfo: {
     flex: 1,
     flexDirection: 'row',
@@ -341,13 +373,26 @@ const styles = StyleSheet.create({
     color: '#333',
     marginRight: 8,
   },
-  badge: {
-    backgroundColor: '#5BBFAA',
+  badgeSelected: {
+    backgroundColor: '#FF6B6B',
     paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingVertical: 2,
+    borderRadius: 10,
+    marginLeft: 4,
   },
-  badgeText: {
+  badgeSelectedText: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  badgeLocked: {
+    backgroundColor: '#999999',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    marginLeft: 4,
+  },
+  badgeLockedText: {
     fontSize: 11,
     fontWeight: 'bold',
     color: '#FFFFFF',
@@ -462,10 +507,10 @@ const styles = StyleSheet.create({
   tierBadgeTextFree: {
     fontSize: 11,
     fontWeight: 'bold',
-    color: '#666',
+    color: '#666666',
   },
   tierBadgeBaeum: {
-    backgroundColor: '#4A90D9',
+    backgroundColor: '#4ECDC4',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 10,
@@ -474,10 +519,10 @@ const styles = StyleSheet.create({
   tierBadgeTextBaeum: {
     fontSize: 11,
     fontWeight: 'bold',
-    color: '#FFF',
+    color: '#FFFFFF',
   },
   tierBadgeSky: {
-    backgroundColor: '#FFD700',
+    backgroundColor: '#87CEEB',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 10,
@@ -486,6 +531,6 @@ const styles = StyleSheet.create({
   tierBadgeTextSky: {
     fontSize: 11,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#333333',
   },
 });
