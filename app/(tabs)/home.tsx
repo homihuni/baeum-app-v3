@@ -275,7 +275,8 @@ export default function HomeScreen() {
   const displayName = childName.length > 5 ? childName.substring(0, 5) + '..' : childName;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={{ flex: 1 }}>
+      <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* 1. PROFILE HEADER BAR */}
         <View style={styles.profileHeader}>
@@ -414,6 +415,7 @@ export default function HomeScreen() {
           </View>
         </View>
       </Modal>
+      </SafeAreaView>
 
       {showLockSelectionModal && (
         <View style={{
@@ -463,7 +465,7 @@ export default function HomeScreen() {
           </View>
         </View>
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
