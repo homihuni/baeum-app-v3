@@ -20,10 +20,13 @@ export default function EditChildScreen() {
   const [parentId, setParentId] = useState('');
   const [avatar, setAvatar] = useState('🍓');
   const [name, setName] = useState('');
+  const [grade, setGrade] = useState<number>(1);
+  const [originalGrade, setOriginalGrade] = useState<number>(1);
   const [loading, setLoading] = useState(true);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showDeleteErrorModal, setShowDeleteErrorModal] = useState(false);
+  const [showGradeChangeModal, setShowGradeChangeModal] = useState(false);
   const [deleteErrorMessage, setDeleteErrorMessage] = useState('');
 
   useEffect(() => {
@@ -41,6 +44,8 @@ export default function EditChildScreen() {
       if (childData) {
         setAvatar(childData.avatar || '🍓');
         setName(childData.name || '');
+        setGrade(childData.grade || 1);
+        setOriginalGrade(childData.grade || 1);
       }
     } catch (error) {
       console.log('Load child error:', error);
@@ -58,6 +63,15 @@ export default function EditChildScreen() {
       return;
     }
 
+    if (grade !== originalGrade) {
+      setShowGradeChangeModal(true);
+      return;
+    }
+
+    await saveData();
+  };
+
+  const saveData = async () => {
     try {
       console.log('=== Firebase 저장 시도 ===');
       console.log('parentId:', parentId);
@@ -66,6 +80,7 @@ export default function EditChildScreen() {
       await updateChild(parentId, childId as string, {
         avatar,
         name: name.trim(),
+        grade,
       });
 
       console.log('=== Firebase 저장 성공 ===');
@@ -174,6 +189,23 @@ export default function EditChildScreen() {
           <Text style={styles.charCount}>{name.length}/10</Text>
         </View>
 
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>학년</Text>
+          <View style={styles.gradeGrid}>
+            {[1, 2, 3, 4, 5, 6].map((g) => (
+              <TouchableOpacity
+                key={g}
+                style={[styles.gradeButton, grade === g && styles.gradeButtonSelected]}
+                onPress={() => setGrade(g)}
+              >
+                <Text style={[styles.gradeButtonText, grade === g && styles.gradeButtonTextSelected]}>
+                  {g}학년
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
         <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
           <Text style={styles.saveButtonText}>저장</Text>
         </TouchableOpacity>
@@ -239,6 +271,38 @@ export default function EditChildScreen() {
             >
               <Text style={styles.modalConfirmText}>확인</Text>
             </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* 학년 변경 확인 모달 */}
+      <Modal visible={showGradeChangeModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>학년 변경</Text>
+            <Text style={styles.modalMessage}>
+              {originalGrade}학년에서 {grade}학년으로 변경합니다.{'\n'}변경하시겠습니까?
+            </Text>
+            <View style={styles.gradeModalButtons}>
+              <TouchableOpacity
+                style={styles.gradeModalCancelBtn}
+                onPress={() => {
+                  setShowGradeChangeModal(false);
+                  setGrade(originalGrade);
+                }}
+              >
+                <Text style={styles.gradeModalCancelText}>취소</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.gradeModalConfirmBtn}
+                onPress={() => {
+                  setShowGradeChangeModal(false);
+                  saveData();
+                }}
+              >
+                <Text style={styles.gradeModalConfirmText}>변경</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -413,6 +477,61 @@ const styles = StyleSheet.create({
   },
   deleteModalConfirmText: {
     fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  gradeGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  gradeButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: '#F5F5F5',
+    minWidth: 70,
+    alignItems: 'center',
+  },
+  gradeButtonSelected: {
+    backgroundColor: '#5BBFAA',
+  },
+  gradeButtonText: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '500',
+  },
+  gradeButtonTextSelected: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+  },
+  gradeModalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+    marginTop: 4,
+  },
+  gradeModalCancelBtn: {
+    flex: 1,
+    backgroundColor: '#E0E0E0',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  gradeModalCancelText: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#666',
+  },
+  gradeModalConfirmBtn: {
+    flex: 1,
+    backgroundColor: '#5BBFAA',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  gradeModalConfirmText: {
+    fontSize: 15,
     fontWeight: 'bold',
     color: '#FFFFFF',
   },
