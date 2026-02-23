@@ -22,7 +22,8 @@ export default function HomeScreen() {
   const [correctCount, setCorrectCount] = useState(0);
 
   const TIER_LABELS: Record<string, string> = { free: '무료회원', baeum: '배움회원', sky: '스카이회원' };
-  const TIER_COLORS: Record<string, string> = { free: '#7ED4C0', baeum: '#F5A5B8', sky: '#87CEEB' };
+  const TIER_COLORS: Record<string, string> = { free: '#E0E0E0', baeum: '#4ECDC4', sky: '#87CEEB' };
+  const TIER_TEXT_COLORS: Record<string, string> = { free: '#666666', baeum: '#FFFFFF', sky: '#333333' };
 
   useEffect(() => {
     loadChildData();
@@ -204,8 +205,8 @@ export default function HomeScreen() {
           <View style={styles.profileLeft}>
             <Text style={styles.profileEmoji}>{childAvatar}</Text>
             <Text style={styles.profileName}>{displayName || '김배움'}</Text>
-            <View style={[styles.badge, { backgroundColor: TIER_COLORS[childTier] || '#7ED4C0' }]}>
-              <Text style={styles.badgeText}>{TIER_LABELS[childTier] || '무료회원'}</Text>
+            <View style={[styles.badge, { backgroundColor: TIER_COLORS[childTier] || '#E0E0E0' }]}>
+              <Text style={[styles.badgeText, { color: TIER_TEXT_COLORS[childTier] || '#666666' }]}>{TIER_LABELS[childTier] || '무료회원'}</Text>
             </View>
           </View>
           <Text style={styles.bellIcon}>🔔</Text>
@@ -330,7 +331,6 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: 11,
     fontWeight: 'bold',
-    color: '#FFFFFF',
   },
   bellIcon: {
     fontSize: 24,

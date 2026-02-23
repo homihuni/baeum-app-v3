@@ -6,7 +6,8 @@ import { getChildren } from '../../utils/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const TIER_LABELS: Record<string, string> = { free: '무료회원', baeum: '배움회원', sky: '스카이회원' };
-const TIER_COLORS: Record<string, string> = { free: '#7ED4C0', baeum: '#F5A5B8', sky: '#87CEEB' };
+const TIER_COLORS: Record<string, string> = { free: '#E0E0E0', baeum: '#4ECDC4', sky: '#87CEEB' };
+const TIER_TEXT_COLORS: Record<string, string> = { free: '#666666', baeum: '#FFFFFF', sky: '#333333' };
 
 export default function SelectChildScreen() {
   const router = useRouter();
@@ -62,8 +63,8 @@ export default function SelectChildScreen() {
                 <Text style={styles.avatar}>{child.avatar || '🍓'}</Text>
                 <Text style={styles.childName}>{child.name}</Text>
                 <Text style={styles.childGrade}>{child.grade}학년</Text>
-                <View style={[styles.tierBadge, { backgroundColor: TIER_COLORS[child.tier] || '#7ED4C0' }]}>
-                  <Text style={styles.tierText}>{TIER_LABELS[child.tier] || '무료회원'}</Text>
+                <View style={[styles.tierBadge, { backgroundColor: TIER_COLORS[child.tier] || '#E0E0E0' }]}>
+                  <Text style={[styles.tierText, { color: TIER_TEXT_COLORS[child.tier] || '#666666' }]}>{TIER_LABELS[child.tier] || '무료회원'}</Text>
                 </View>
               </TouchableOpacity>
             ))}
@@ -73,8 +74,8 @@ export default function SelectChildScreen() {
               <Text style={styles.avatar}>{activeChildren[2].avatar || '🍓'}</Text>
               <Text style={styles.childName}>{activeChildren[2].name}</Text>
               <Text style={styles.childGrade}>{activeChildren[2].grade}학년</Text>
-              <View style={[styles.tierBadge, { backgroundColor: TIER_COLORS[activeChildren[2].tier] || '#7ED4C0' }]}>
-                <Text style={styles.tierText}>{TIER_LABELS[activeChildren[2].tier] || '무료회원'}</Text>
+              <View style={[styles.tierBadge, { backgroundColor: TIER_COLORS[activeChildren[2].tier] || '#E0E0E0' }]}>
+                <Text style={[styles.tierText, { color: TIER_TEXT_COLORS[activeChildren[2].tier] || '#666666' }]}>{TIER_LABELS[activeChildren[2].tier] || '무료회원'}</Text>
               </View>
             </TouchableOpacity>
           </View>
@@ -89,8 +90,8 @@ export default function SelectChildScreen() {
             <Text style={styles.avatar}>{child.avatar || '🍓'}</Text>
             <Text style={styles.childName}>{child.name}</Text>
             <Text style={styles.childGrade}>{child.grade}학년</Text>
-            <View style={[styles.tierBadge, { backgroundColor: TIER_COLORS[child.tier] || '#7ED4C0' }]}>
-              <Text style={styles.tierText}>{TIER_LABELS[child.tier] || '무료회원'}</Text>
+            <View style={[styles.tierBadge, { backgroundColor: TIER_COLORS[child.tier] || '#E0E0E0' }]}>
+              <Text style={[styles.tierText, { color: TIER_TEXT_COLORS[child.tier] || '#666666' }]}>{TIER_LABELS[child.tier] || '무료회원'}</Text>
             </View>
           </TouchableOpacity>
         ))}
@@ -122,5 +123,5 @@ const styles = StyleSheet.create({
   childName: { fontSize: 16, fontWeight: 'bold', color: '#333' },
   childGrade: { fontSize: 13, color: '#666', marginTop: 4 },
   tierBadge: { marginTop: 8, paddingHorizontal: 10, paddingVertical: 3, borderRadius: 10 },
-  tierText: { fontSize: 11, fontWeight: 'bold', color: '#FFFFFF' },
+  tierText: { fontSize: 11, fontWeight: 'bold' },
 });
