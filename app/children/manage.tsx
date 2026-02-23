@@ -175,11 +175,6 @@ export default function ManageChildrenScreen() {
                   <View style={styles.childDetails}>
                     <View style={styles.childNameRow}>
                       <Text style={styles.childName}>{child.name}</Text>
-                      {currentChildId === child.id && (
-                        <View style={styles.badgeSelected}>
-                          <Text style={styles.badgeSelectedText}>현재 선택됨</Text>
-                        </View>
-                      )}
                       {child.isLocked && (
                         <View style={styles.badgeLocked}>
                           <Text style={styles.badgeLockedText}>잠금</Text>
@@ -201,7 +196,14 @@ export default function ManageChildrenScreen() {
                         </View>
                       )}
                     </View>
-                    <Text style={styles.childGrade}>{child.grade}학년</Text>
+                    <View style={styles.childGradeRow}>
+                      <Text style={styles.childGrade}>{child.grade}학년</Text>
+                      {currentChildId === child.id && (
+                        <View style={styles.badgeSelected}>
+                          <Text style={styles.badgeSelectedText}>현재 선택됨</Text>
+                        </View>
+                      )}
+                    </View>
                   </View>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -409,20 +411,24 @@ const styles = StyleSheet.create({
   childNameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+    gap: 6,
   },
   childName: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
-    marginRight: 8,
+  },
+  childGradeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 4,
   },
   badgeSelected: {
     backgroundColor: '#FF6B6B',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 10,
-    marginLeft: 4,
   },
   badgeSelectedText: {
     fontSize: 11,
@@ -434,7 +440,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 10,
-    marginLeft: 4,
   },
   badgeLockedText: {
     fontSize: 11,
