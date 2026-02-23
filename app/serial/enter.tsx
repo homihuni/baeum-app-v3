@@ -166,18 +166,18 @@ export default function EnterSerialScreen() {
             style={[styles.input, isVerified && styles.inputDisabled]}
             value={serialCode}
             onChangeText={setSerialCode}
-            placeholder="JH26A7K3"
+            placeholder="예: 26JH26A7K3"
             placeholderTextColor="#999"
-            maxLength={8}
+            maxLength={10}
             autoCapitalize="characters"
             editable={!isVerified}
           />
-          <Text style={styles.charCount}>{serialCode.length}/8</Text>
+          <Text style={styles.charCount}>{serialCode.length}/10</Text>
         </View>
 
         <View style={styles.guideBox}>
-          <Text style={styles.guideText}>📖 배움달력 뒷면의 시리얼번호 8자리를 입력해주세요</Text>
-          <Text style={styles.guideWarning}>⚠️ 해당 시리얼은 학년이 끝나는 12월 31일에 만료됩니다. 새 학년에는 새 배움달력의 시리얼번호를 등록해주세요.</Text>
+          <Text style={styles.guideText}>📖 배움달력 뒷면의 시리얼번호 10자리를 입력해주세요</Text>
+          <Text style={styles.guideWarning}>⚠️ 시리얼 유효기간은 다음 해 2월 28일까지입니다.</Text>
         </View>
 
         <TouchableOpacity
@@ -186,7 +186,7 @@ export default function EnterSerialScreen() {
           disabled={isVerified}
         >
           <Text style={styles.verifyButtonText}>
-            {isVerified ? '✅ 인증완료' : '인증하기'}
+            {isVerified ? '✅ 인증완료' : '등록하기'}
           </Text>
         </TouchableOpacity>
       </ScrollView>
