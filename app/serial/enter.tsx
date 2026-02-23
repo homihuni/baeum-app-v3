@@ -81,10 +81,10 @@ export default function EnterSerialScreen() {
       return;
     }
 
-    // 정규식 검증: JH + 연도2자리 + 영문대문자/숫자 4자리
-    const serialRegex = /^JH\d{2}[A-Z0-9]{4}$/;
+    // 정규식 검증: 10자리
+    const serialRegex = /^[A-Z0-9]{10}$/;
     if (!serialRegex.test(trimmedCode)) {
-      showErrorModal('형식 오류', '시리얼번호 형식이 올바르지 않습니다\n(예: JH26A7K3)');
+      showErrorModal('시리얼 번호 확인', '시리얼번호를 다시 확인해주세요.\n배움달력 뒷면의 10자리를 입력해주세요.\n(예: 26JH26A7K3)');
       return;
     }
 
