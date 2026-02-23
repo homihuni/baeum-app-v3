@@ -1,9 +1,10 @@
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Modal } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
+import { checkSerialExpiry, lockExcessFreeChildren } from '../../utils/firestore';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -20,6 +21,10 @@ export default function HomeScreen() {
   const [monthlyAverage, setMonthlyAverage] = useState(0);
   const [accessDays, setAccessDays] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
+  const [showLockSelectionModal, setShowLockSelectionModal] = useState(false);
+  const [showExpiryModal, setShowExpiryModal] = useState(false);
+  const [expiryMessage, setExpiryMessage] = useState('');
+  const [freeChildren, setFreeChildren] = useState<any[]>([]);
 
   const TIER_LABELS: Record<string, string> = { free: '무료회원', baeum: '배움회원', sky: '스카이회원' };
   const TIER_COLORS: Record<string, string> = { free: '#E0E0E0', baeum: '#4ECDC4', sky: '#87CEEB' };
@@ -56,10 +61,74 @@ export default function HomeScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      checkExpiry();
       loadMonthlyData();
       refreshChildAvatar();
     }, [currentYear, currentMonth])
   );
+
+  const checkExpiry = async () => {
+    try {
+      const parentId = await AsyncStorage.getItem('parentId');
+      if (!parentId) return;
+
+      const result = await checkSerialExpiry(parentId);
+
+      if (result.expiredChildren.length > 0) {
+        console.log('만료된 자녀:', result.expiredChildren);
+
+        if (result.freeChildrenCount < 2) {
+          setExpiryMessage(
+            `${result.expiredChildren.join(', ')}의 시리얼이 만료되어 무료회원으로 전환되었습니다.`
+          );
+          setShowExpiryModal(true);
+        }
+      }
+
+      if (result.freeChildrenCount >= 2) {
+        const childrenRef = collection(db, 'Parents', parentId, 'Children');
+        const snap = await getDocs(childrenRef);
+        const freeList: any[] = [];
+
+        snap.forEach((childDoc) => {
+          const childData = childDoc.data();
+          if (childData.isDeleted !== true && childData.tier === 'free') {
+            freeList.push({
+              id: childDoc.id,
+              name: childData.name || '자녀',
+              avatar: childData.avatar || '🍓',
+              grade: childData.grade || '초1',
+            });
+          }
+        });
+
+        setFreeChildren(freeList);
+        setShowLockSelectionModal(true);
+      }
+    } catch (error) {
+      console.log('시리얼 만료 체크 오류:', error);
+    }
+  };
+
+  const handleSelectChild = async (childId: string, childName: string) => {
+    try {
+      const parentId = await AsyncStorage.getItem('parentId');
+      if (!parentId) return;
+
+      await lockExcessFreeChildren(parentId, childId);
+
+      await AsyncStorage.setItem('childId', childId);
+      await AsyncStorage.setItem('childName', childName);
+
+      setShowLockSelectionModal(false);
+
+      loadChildData();
+      loadMonthlyData();
+      refreshChildAvatar();
+    } catch (error) {
+      console.log('자녀 선택 오류:', error);
+    }
+  };
 
   const refreshChildAvatar = async () => {
     try {
@@ -291,6 +360,60 @@ export default function HomeScreen() {
           <Text style={styles.learnButtonText}>학습하기 📝</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* EXPIRY NOTIFICATION MODAL */}
+      <Modal
+        visible={showExpiryModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowExpiryModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>시리얼 만료 안내</Text>
+            <Text style={styles.modalMessage}>{expiryMessage}</Text>
+            <TouchableOpacity
+              style={styles.modalButton}
+              onPress={() => setShowExpiryModal(false)}
+            >
+              <Text style={styles.modalButtonText}>확인</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* LOCK SELECTION MODAL */}
+      <Modal
+        visible={showLockSelectionModal}
+        transparent={true}
+        animationType="fade"
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>자녀 선택 필요</Text>
+            <Text style={styles.modalMessage}>
+              무료회원은 1명만 이용할 수 있습니다.{'\n'}
+              학습할 자녀를 선택해주세요.{'\n'}
+              나머지 자녀는 잠금 처리됩니다.
+            </Text>
+            <View style={styles.childrenList}>
+              {freeChildren.map((child) => (
+                <TouchableOpacity
+                  key={child.id}
+                  style={styles.childButton}
+                  onPress={() => handleSelectChild(child.id, child.name)}
+                >
+                  <Text style={styles.childAvatar}>{child.avatar}</Text>
+                  <View style={styles.childInfo}>
+                    <Text style={styles.childName}>{child.name}</Text>
+                    <Text style={styles.childGrade}>{child.grade}</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -510,5 +633,71 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#FFFFFF',
     textAlign: 'center',
+  },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    width: '85%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333333',
+    marginBottom: 12,
+  },
+  modalMessage: {
+    fontSize: 14,
+    color: '#666666',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 20,
+  },
+  modalButton: {
+    backgroundColor: '#7ED4C0',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+  },
+  modalButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  childrenList: {
+    width: '100%',
+    gap: 12,
+  },
+  childButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F5F5F5',
+    borderRadius: 12,
+    padding: 16,
+  },
+  childAvatar: {
+    fontSize: 32,
+    marginRight: 12,
+  },
+  childInfo: {
+    flex: 1,
+  },
+  childName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333333',
+  },
+  childGrade: {
+    fontSize: 14,
+    color: '#666666',
+    marginTop: 2,
   },
 });
