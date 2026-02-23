@@ -1,4 +1,4 @@
-import { db, collection, doc, setDoc, getDoc, getDocs, query, where, orderBy, addDoc, updateDoc, deleteDoc, Timestamp } from './firebase';
+import { db, collection, doc, setDoc, getDoc, getDocs, query, where, orderBy, addDoc, updateDoc, deleteDoc, Timestamp, serverTimestamp } from './firebase';
 
 // ===== PARENTS =====
 export const createParent = async (parentId: string, data: {
@@ -192,5 +192,91 @@ export const upgradeChildTier = async (
     serialExpiry,
     serialCalendarYear,
     gradeChangeCount: 0,
+  });
+};
+
+// ===== SERIAL EXPIRY CHECK =====
+export const checkSerialExpiry = async (parentId: string) => {
+  const childrenRef = collection(db, 'Parents', parentId, 'Children');
+  const snap = await getDocs(childrenRef);
+
+  const expiredChildren: string[] = [];
+  let freeChildrenCount = 0;
+  let totalChildren = 0;
+
+  for (const childDoc of snap.docs) {
+    const childData = childDoc.data();
+
+    if (childData.isDeleted === true) continue;
+
+    totalChildren++;
+
+    if (childData.tier === 'baeum' && childData.serialExpiry) {
+      let expiryDate: Date;
+
+      if (typeof childData.serialExpiry === 'string') {
+        expiryDate = new Date(childData.serialExpiry);
+      } else if (childData.serialExpiry.toDate) {
+        expiryDate = childData.serialExpiry.toDate();
+      } else {
+        continue;
+      }
+
+      const now = new Date();
+      if (expiryDate < now) {
+        await updateDoc(doc(db, 'Parents', parentId, 'Children', childDoc.id), {
+          tier: 'free',
+          serialCode: '',
+          serialExpiry: null,
+          serialCalendarYear: null,
+        });
+
+        expiredChildren.push(childData.name || '자녀');
+        console.log(`${childData.name || '자녀'} 시리얼 만료 → 무료 전환`);
+      }
+    }
+  }
+
+  const updatedSnap = await getDocs(childrenRef);
+  for (const childDoc of updatedSnap.docs) {
+    const childData = childDoc.data();
+    if (childData.isDeleted !== true && childData.tier === 'free') {
+      freeChildrenCount++;
+    }
+  }
+
+  return {
+    expiredChildren,
+    freeChildrenCount,
+    totalChildren,
+  };
+};
+
+export const lockExcessFreeChildren = async (parentId: string, selectedChildId: string) => {
+  const childrenRef = collection(db, 'Parents', parentId, 'Children');
+  const snap = await getDocs(childrenRef);
+
+  for (const childDoc of snap.docs) {
+    const childData = childDoc.data();
+
+    if (childData.isDeleted === true) continue;
+
+    if (childData.tier === 'free' && childDoc.id !== selectedChildId) {
+      await updateDoc(doc(db, 'Parents', parentId, 'Children', childDoc.id), {
+        isLocked: true,
+        lockedAt: serverTimestamp(),
+      });
+    } else if (childDoc.id === selectedChildId) {
+      await updateDoc(doc(db, 'Parents', parentId, 'Children', childDoc.id), {
+        isLocked: false,
+      });
+    }
+  }
+};
+
+export const unlockChild = async (parentId: string, childId: string) => {
+  await updateDoc(doc(db, 'Parents', parentId, 'Children', childId), {
+    isLocked: false,
+    lockedAt: null,
   });
 };
