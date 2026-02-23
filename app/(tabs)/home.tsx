@@ -70,11 +70,17 @@ export default function HomeScreen() {
   );
 
   const checkExpiry = async () => {
+    Alert.alert('디버그1', 'checkExpiry 시작');
     try {
       const parentId = await AsyncStorage.getItem('parentId');
-      if (!parentId) return;
+      if (!parentId) {
+        Alert.alert('디버그2', 'parentId 없음');
+        return;
+      }
+      Alert.alert('디버그3', 'parentId: ' + parentId);
 
       const result = await checkSerialExpiry(parentId);
+      Alert.alert('디버그4', 'freeCount: ' + result.freeChildrenCount + ', expired: ' + result.expiredChildren.length);
 
       if (result.expiredChildren.length > 0) {
         console.log('만료된 자녀:', result.expiredChildren);
@@ -88,6 +94,7 @@ export default function HomeScreen() {
       }
 
       if (result.freeChildrenCount >= 2) {
+        Alert.alert('디버그5', '무료 2명 이상 감지');
         const childrenRef = collection(db, 'Parents', parentId, 'Children');
         const snap = await getDocs(childrenRef);
         const freeList: any[] = [];
@@ -119,6 +126,7 @@ export default function HomeScreen() {
         );
       }
     } catch (error) {
+      Alert.alert('디버그 에러', String(error));
       console.log('시리얼 만료 체크 오류:', error);
     }
   };
