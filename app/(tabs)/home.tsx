@@ -62,34 +62,19 @@ export default function HomeScreen() {
   };
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.alert('홈 화면 로드됨');
-    }
     checkExpiry();
     loadMonthlyData();
     refreshChildAvatar();
   }, [currentYear, currentMonth]);
 
   const checkExpiry = async () => {
-    if (typeof window !== 'undefined') {
-      window.alert('디버그1: checkExpiry 시작');
-    }
     try {
       const parentId = await AsyncStorage.getItem('parentId');
       if (!parentId) {
-        if (typeof window !== 'undefined') {
-          window.alert('디버그2: parentId 없음');
-        }
         return;
-      }
-      if (typeof window !== 'undefined') {
-        window.alert('디버그3: parentId: ' + parentId);
       }
 
       const result = await checkSerialExpiry(parentId);
-      if (typeof window !== 'undefined') {
-        window.alert('디버그4: freeCount: ' + result.freeChildrenCount + ', expired: ' + result.expiredChildren.length);
-      }
 
       if (result.expiredChildren.length > 0) {
         console.log('만료된 자녀:', result.expiredChildren);
@@ -103,9 +88,6 @@ export default function HomeScreen() {
       }
 
       if (result.freeChildrenCount >= 2) {
-        if (typeof window !== 'undefined') {
-          window.alert('디버그5: 무료 2명 이상 감지');
-        }
         const childrenRef = collection(db, 'Parents', parentId, 'Children');
         const snap = await getDocs(childrenRef);
         const freeList: any[] = [];
@@ -123,20 +105,9 @@ export default function HomeScreen() {
         });
 
         setFreeChildren(freeList);
-
-        if (typeof window !== 'undefined') {
-          const choice = window.confirm('자녀 선택 필요\n' + freeList.map(c => c.name).join(', ') + '\n첫번째 자녀를 선택하려면 확인, 두번째는 취소');
-          if (choice) {
-            handleSelectChild(freeList[0].id, freeList[0].name);
-          } else if (freeList.length > 1) {
-            handleSelectChild(freeList[1].id, freeList[1].name);
-          }
-        }
+        setShowLockSelectionModal(true);
       }
     } catch (error) {
-      if (typeof window !== 'undefined') {
-        window.alert('디버그 에러: ' + String(error));
-      }
       console.log('시리얼 만료 체크 오류:', error);
     }
   };
@@ -443,6 +414,56 @@ export default function HomeScreen() {
         </View>
       </Modal>
       </SafeAreaView>
+
+      {/* LOCK SELECTION MODAL */}
+      <Modal
+        visible={showLockSelectionModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => {}}
+      >
+        <View style={{
+          flex: 1,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}>
+          <View style={{
+            width: '85%',
+            backgroundColor: '#FFFFFF',
+            borderRadius: 16,
+            padding: 24,
+            alignItems: 'center',
+          }}>
+            <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 8 }}>자녀 선택 필요</Text>
+            <Text style={{ fontSize: 14, color: '#666', textAlign: 'center', marginBottom: 20 }}>
+              무료회원은 1명만 이용할 수 있습니다.{'\n'}학습할 자녀를 선택해주세요.
+            </Text>
+            {freeChildren.map((child) => (
+              <TouchableOpacity
+                key={child.id}
+                onPress={() => handleSelectChild(child.id, child.name)}
+                activeOpacity={0.6}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: '#F5F5F5',
+                  borderRadius: 12,
+                  padding: 16,
+                  marginBottom: 8,
+                  width: '100%',
+                }}
+              >
+                <Text style={{ fontSize: 32, marginRight: 12 }}>{child.avatar}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#333' }}>{child.name}</Text>
+                  <Text style={{ fontSize: 14, color: '#666' }}>{child.grade}학년</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
