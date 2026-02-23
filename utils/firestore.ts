@@ -196,61 +196,107 @@ export const upgradeChildTier = async (
 };
 
 // ===== SERIAL EXPIRY CHECK =====
-export const checkSerialExpiry = async (parentId: string) => {
-  const childrenRef = collection(db, 'Parents', parentId, 'Children');
-  const snap = await getDocs(childrenRef);
+/**
+ * 시리얼 만료 체크 및 처리
+ * 규칙:
+ * - 배움/스카이 만료 시 → 잠금 처리 (무료 전환 아님)
+ * - 단, 무료 자녀가 0명이면 → 만료된 자녀 중 1명만 무료 전환
+ * - 무료는 항상 1명만 활성
+ */
+export async function checkSerialExpiry(parentId: string) {
+  try {
+    const childrenRef = collection(db, 'Parents', parentId, 'Children');
+    const snap = await getDocs(childrenRef);
 
-  const expiredChildren: string[] = [];
-  let freeChildrenCount = 0;
-  let totalChildren = 0;
+    const now = new Date();
+    const expiredChildren: { id: string; name: string }[] = [];
+    let freeCount = 0;
+    let activeCount = 0;
+    const allChildren: any[] = [];
 
-  for (const childDoc of snap.docs) {
-    const childData = childDoc.data();
+    snap.forEach((childDoc) => {
+      const data = childDoc.data();
+      if (data.isDeleted === true) return;
 
-    if (childData.isDeleted === true) continue;
+      allChildren.push({ id: childDoc.id, ...data });
 
-    totalChildren++;
-
-    if (childData.tier === 'baeum' && childData.serialExpiry) {
-      let expiryDate: Date;
-
-      if (typeof childData.serialExpiry === 'string') {
-        expiryDate = new Date(childData.serialExpiry);
-      } else if (childData.serialExpiry.toDate) {
-        expiryDate = childData.serialExpiry.toDate();
-      } else {
-        continue;
+      if (data.tier === 'free' && data.isLocked !== true) {
+        freeCount++;
       }
 
-      const now = new Date();
-      if (expiryDate < now) {
-        await updateDoc(doc(db, 'Parents', parentId, 'Children', childDoc.id), {
+      if (data.tier === 'baeum' || data.tier === 'sky') {
+        activeCount++;
+        let isExpired = false;
+
+        if (data.tier === 'baeum' && data.serialExpiry) {
+          const expiryStr = String(data.serialExpiry);
+          let expiryDate: Date;
+          if (expiryStr.includes('-')) {
+            expiryDate = new Date(expiryStr + 'T23:59:59');
+          } else if (expiryStr.length === 8) {
+            expiryDate = new Date(
+              expiryStr.substring(0, 4) + '-' +
+              expiryStr.substring(4, 6) + '-' +
+              expiryStr.substring(6, 8) + 'T23:59:59'
+            );
+          } else {
+            return;
+          }
+          if (now > expiryDate) {
+            isExpired = true;
+          }
+        }
+
+        if (isExpired) {
+          expiredChildren.push({ id: childDoc.id, name: data.name || '자녀' });
+        }
+      }
+    });
+
+    // 만료된 자녀 처리
+    for (const expired of expiredChildren) {
+      if (freeCount === 0) {
+        // 무료가 0명이면 첫 번째 만료 자녀를 무료로 전환
+        await updateDoc(doc(db, 'Parents', parentId, 'Children', expired.id), {
           tier: 'free',
+          isLocked: false,
           serialCode: '',
           serialExpiry: null,
           serialCalendarYear: null,
         });
-
-        expiredChildren.push(childData.name || '자녀');
-        console.log(`${childData.name || '자녀'} 시리얼 만료 → 무료 전환`);
+        freeCount++;
+        console.log(`${expired.name}: 무료 전환 (무료 자녀 없음)`);
+      } else {
+        // 무료가 이미 있으면 잠금 처리
+        await updateDoc(doc(db, 'Parents', parentId, 'Children', expired.id), {
+          tier: 'expired',
+          isLocked: true,
+          serialCode: '',
+          serialExpiry: null,
+          serialCalendarYear: null,
+        });
+        console.log(`${expired.name}: 잠금 처리`);
       }
     }
-  }
 
-  const updatedSnap = await getDocs(childrenRef);
-  for (const childDoc of updatedSnap.docs) {
-    const childData = childDoc.data();
-    if (childData.isDeleted !== true && childData.tier === 'free') {
-      freeChildrenCount++;
-    }
+    return {
+      expiredChildren: expiredChildren.map(c => c.name),
+      hasExpired: expiredChildren.length > 0,
+      freeCount,
+      needsSelection: expiredChildren.length > 1 && freeCount === 0,
+      expiredList: expiredChildren,
+    };
+  } catch (error) {
+    console.log('시리얼 만료 체크 오류:', error);
+    return {
+      expiredChildren: [],
+      hasExpired: false,
+      freeCount: 0,
+      needsSelection: false,
+      expiredList: [],
+    };
   }
-
-  return {
-    expiredChildren,
-    freeChildrenCount,
-    totalChildren,
-  };
-};
+}
 
 export const lockExcessFreeChildren = async (parentId: string, selectedChildId: string) => {
   const childrenRef = collection(db, 'Parents', parentId, 'Children');
