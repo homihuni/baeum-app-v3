@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
-import { checkSerialExpiry, lockExcessFreeChildren } from '../../utils/firestore';
+import { checkSerialExpiry } from '../../utils/firestore';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -21,12 +21,8 @@ export default function HomeScreen() {
   const [monthlyAverage, setMonthlyAverage] = useState(0);
   const [accessDays, setAccessDays] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
-  const [showLockSelectionModal, setShowLockSelectionModal] = useState(false);
   const [showExpiryModal, setShowExpiryModal] = useState(false);
-  const [showLockCompleteModal, setShowLockCompleteModal] = useState(false);
   const [expiryMessage, setExpiryMessage] = useState('');
-  const [selectedChildName, setSelectedChildName] = useState('');
-  const [freeChildren, setFreeChildren] = useState<any[]>([]);
 
   const TIER_LABELS: Record<string, string> = { free: '무료회원', baeum: '배움회원', sky: '스카이회원' };
   const TIER_COLORS: Record<string, string> = { free: '#E0E0E0', baeum: '#4ECDC4', sky: '#87CEEB' };
@@ -70,69 +66,24 @@ export default function HomeScreen() {
   const checkExpiry = async () => {
     try {
       const parentId = await AsyncStorage.getItem('parentId');
-      if (!parentId) {
-        return;
-      }
+      if (!parentId) return;
 
       const result = await checkSerialExpiry(parentId);
 
-      if (result.expiredChildren.length > 0) {
-        console.log('만료된 자녀:', result.expiredChildren);
-
-        if (result.freeChildrenCount < 2) {
+      if (result.hasExpired) {
+        if (result.expiredChildren.length === 1) {
           setExpiryMessage(
-            `${result.expiredChildren.join(', ')}의 시리얼이 만료되어 무료회원으로 전환되었습니다.`
+            result.expiredChildren[0] + '의 시리얼이 만료되었습니다.\n새 시리얼을 등록하거나 스카이회원으로 업그레이드해주세요.'
           );
-          setShowExpiryModal(true);
+        } else {
+          setExpiryMessage(
+            result.expiredChildren.join(', ') + '의 시리얼이 만료되었습니다.\n새 시리얼을 등록하거나 스카이회원으로 업그레이드해주세요.'
+          );
         }
-      }
-
-      if (result.freeChildrenCount >= 2) {
-        const childrenRef = collection(db, 'Parents', parentId, 'Children');
-        const snap = await getDocs(childrenRef);
-        const freeList: any[] = [];
-
-        snap.forEach((childDoc) => {
-          const childData = childDoc.data();
-          if (childData.isDeleted !== true && childData.tier === 'free') {
-            freeList.push({
-              id: childDoc.id,
-              name: childData.name || '자녀',
-              avatar: childData.avatar || '🍓',
-              grade: childData.grade || '초1',
-            });
-          }
-        });
-
-        setFreeChildren(freeList);
-        setShowLockSelectionModal(true);
+        setShowExpiryModal(true);
       }
     } catch (error) {
       console.log('시리얼 만료 체크 오류:', error);
-    }
-  };
-
-  const handleSelectChild = async (childId: string, childName: string) => {
-    try {
-      const parentId = await AsyncStorage.getItem('parentId');
-      if (!parentId) return;
-
-      await AsyncStorage.setItem('childId', childId);
-      await AsyncStorage.setItem('childName', childName);
-
-      await lockExcessFreeChildren(parentId, childId);
-
-      setShowLockSelectionModal(false);
-      setSelectedChildName(childName);
-      setShowLockCompleteModal(true);
-
-      console.log(`자녀 선택 완료: ${childName}, 나머지 잠금 처리`);
-
-      loadChildData();
-      loadMonthlyData();
-      refreshChildAvatar();
-    } catch (error) {
-      console.log('자녀 선택 오류:', error);
     }
   };
 
@@ -369,101 +320,30 @@ export default function HomeScreen() {
       </ScrollView>
 
       {/* EXPIRY NOTIFICATION MODAL */}
-      <Modal
-        visible={showExpiryModal}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowExpiryModal(false)}
-      >
+      <Modal visible={showExpiryModal} transparent={true} animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
             <Text style={styles.modalTitle}>시리얼 만료 안내</Text>
             <Text style={styles.modalMessage}>{expiryMessage}</Text>
             <TouchableOpacity
-              style={styles.modalButton}
+              style={{ backgroundColor: '#4ECDC4', borderRadius: 12, paddingVertical: 14, paddingHorizontal: 24, marginTop: 16, width: '100%', alignItems: 'center' }}
+              onPress={() => {
+                setShowExpiryModal(false);
+                router.push('/serial/enter');
+              }}
+            >
+              <Text style={{ color: '#FFF', fontSize: 16, fontWeight: 'bold' }}>새 시리얼 등록</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={{ marginTop: 12, paddingVertical: 10 }}
               onPress={() => setShowExpiryModal(false)}
             >
-              <Text style={styles.modalButtonText}>확인</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      {/* LOCK COMPLETE MODAL */}
-      <Modal
-        visible={showLockCompleteModal}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowLockCompleteModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>선택 완료</Text>
-            <Text style={styles.modalMessage}>
-              {selectedChildName}이(가) 선택되었습니다.{'\n'}
-              나머지 자녀는 잠금 처리되었습니다.{'\n'}
-              잠금 해제는 시리얼 등록 또는 구독으로 가능합니다.
-            </Text>
-            <TouchableOpacity
-              style={styles.modalButton}
-              onPress={() => setShowLockCompleteModal(false)}
-            >
-              <Text style={styles.modalButtonText}>확인</Text>
+              <Text style={{ color: '#999', fontSize: 14 }}>나중에 하기</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
       </SafeAreaView>
-
-      {/* LOCK SELECTION MODAL */}
-      <Modal
-        visible={showLockSelectionModal}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => {}}
-      >
-        <View style={{
-          flex: 1,
-          backgroundColor: 'rgba(0,0,0,0.5)',
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}>
-          <View style={{
-            width: '85%',
-            backgroundColor: '#FFFFFF',
-            borderRadius: 16,
-            padding: 24,
-            alignItems: 'center',
-          }}>
-            <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 8 }}>자녀 선택 필요</Text>
-            <Text style={{ fontSize: 14, color: '#666', textAlign: 'center', marginBottom: 20 }}>
-              무료회원은 1명만 이용할 수 있습니다.{'\n'}학습할 자녀를 선택해주세요.
-            </Text>
-            {freeChildren.map((child) => (
-              <TouchableOpacity
-                key={child.id}
-                onPress={() => handleSelectChild(child.id, child.name)}
-                activeOpacity={0.6}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  backgroundColor: '#F5F5F5',
-                  borderRadius: 12,
-                  padding: 16,
-                  marginBottom: 8,
-                  width: '100%',
-                }}
-              >
-                <Text style={{ fontSize: 32, marginRight: 12 }}>{child.avatar}</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#333' }}>{child.name}</Text>
-                  <Text style={{ fontSize: 14, color: '#666' }}>{child.grade}학년</Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }
