@@ -23,6 +23,7 @@ export default function EditChildScreen() {
   const [tier, setTier] = useState<string>('free');
   const [grade, setGrade] = useState<number>(1);
   const [originalGrade, setOriginalGrade] = useState<number>(1);
+  const [gradeChangeCount, setGradeChangeCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -48,6 +49,7 @@ export default function EditChildScreen() {
         setTier(childData.tier || 'free');
         setGrade(childData.grade || 1);
         setOriginalGrade(childData.grade || 1);
+        setGradeChangeCount(childData.gradeChangeCount || 0);
       }
     } catch (error) {
       console.log('Load child error:', error);
@@ -79,11 +81,17 @@ export default function EditChildScreen() {
       console.log('parentId:', parentId);
       console.log('childId:', childId);
 
-      await updateChild(parentId, childId as string, {
+      const updateData: any = {
         avatar,
         name: name.trim(),
         grade,
-      });
+      };
+
+      if (grade !== originalGrade) {
+        updateData.gradeChangeCount = gradeChangeCount + 1;
+      }
+
+      await updateChild(parentId, childId as string, updateData);
 
       console.log('=== Firebase 저장 성공 ===');
       setShowCompleteModal(true);
@@ -204,38 +212,73 @@ export default function EditChildScreen() {
         {(tier === 'baeum' || tier === 'sky') && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>학년</Text>
-            <View style={styles.gradeGrid}>
-              {[1, 2, 3, 4, 5, 6].map((g) => {
-                const isCurrentGrade = g === originalGrade;
-                const isNextGrade = g === originalGrade + 1 && originalGrade < 6;
-                const isSelectable = isCurrentGrade || isNextGrade;
-                const isSelected = g === grade;
+            {gradeChangeCount >= 3 ? (
+              <>
+                <View style={styles.gradeGrid}>
+                  {[1, 2, 3, 4, 5, 6].map((g) => {
+                    const isSelected = g === grade;
+                    return (
+                      <TouchableOpacity
+                        key={g}
+                        style={[
+                          styles.gradeButton,
+                          isSelected && styles.gradeButtonSelected,
+                          styles.gradeButtonDisabled,
+                        ]}
+                        disabled={true}
+                      >
+                        <Text style={[
+                          styles.gradeButtonText,
+                          isSelected && styles.gradeButtonTextSelected,
+                          styles.gradeButtonTextDisabled,
+                        ]}>
+                          {g}학년
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+                <Text style={styles.gradeHintError}>학년 변경 횟수를 모두 사용했습니다. (3회/3회)</Text>
+              </>
+            ) : (
+              <>
+                <View style={styles.gradeGrid}>
+                  {[1, 2, 3, 4, 5, 6].map((g) => {
+                    const isCurrentGrade = g === originalGrade;
+                    const isNextGrade = g === originalGrade + 1 && originalGrade < 6;
+                    const isSelectable = isCurrentGrade || isNextGrade;
+                    const isSelected = g === grade;
 
-                return (
-                  <TouchableOpacity
-                    key={g}
-                    style={[
-                      styles.gradeButton,
-                      isSelected && styles.gradeButtonSelected,
-                      !isSelectable && styles.gradeButtonDisabled,
-                    ]}
-                    onPress={() => {
-                      if (isSelectable) setGrade(g);
-                    }}
-                    disabled={!isSelectable}
-                  >
-                    <Text style={[
-                      styles.gradeButtonText,
-                      isSelected && styles.gradeButtonTextSelected,
-                      !isSelectable && styles.gradeButtonTextDisabled,
-                    ]}>
-                      {g}학년
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-            <Text style={styles.gradeHint}>현재 학년에서 한 학년 위로만 변경할 수 있습니다</Text>
+                    return (
+                      <TouchableOpacity
+                        key={g}
+                        style={[
+                          styles.gradeButton,
+                          isSelected && styles.gradeButtonSelected,
+                          !isSelectable && styles.gradeButtonDisabled,
+                        ]}
+                        onPress={() => {
+                          if (isSelectable) setGrade(g);
+                        }}
+                        disabled={!isSelectable}
+                      >
+                        <Text style={[
+                          styles.gradeButtonText,
+                          isSelected && styles.gradeButtonTextSelected,
+                          !isSelectable && styles.gradeButtonTextDisabled,
+                        ]}>
+                          {g}학년
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+                <Text style={styles.gradeHint}>
+                  현재 학년에서 한 학년 위로만 변경할 수 있습니다{'\n'}
+                  학년 변경 가능 횟수: {3 - gradeChangeCount}회 남음
+                </Text>
+              </>
+            )}
           </View>
         )}
 
@@ -314,7 +357,8 @@ export default function EditChildScreen() {
           <View style={styles.modalBox}>
             <Text style={styles.modalTitle}>학년 변경</Text>
             <Text style={styles.modalMessage}>
-              {originalGrade}학년에서 {grade}학년으로 변경합니다.{'\n'}변경하시겠습니까?
+              {originalGrade}학년에서 {grade}학년으로 변경합니다.{'\n'}변경하시겠습니까?{'\n\n'}
+              (변경 가능 횟수: {3 - gradeChangeCount - 1}회 남음)
             </Text>
             <View style={styles.gradeModalButtons}>
               <TouchableOpacity
@@ -564,6 +608,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#999',
     marginTop: 8,
+  },
+  gradeHintError: {
+    fontSize: 12,
+    color: '#FF4444',
+    marginTop: 8,
+    fontWeight: 'bold',
   },
   gradeModalButtons: {
     flexDirection: 'row',
