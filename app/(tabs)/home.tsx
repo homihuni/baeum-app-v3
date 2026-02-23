@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Modal } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Modal, Pressable } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -396,35 +396,49 @@ export default function HomeScreen() {
         transparent={true}
         animationType="fade"
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>자녀 선택 필요</Text>
-            <Text style={styles.modalMessage}>
-              무료회원은 1명만 이용할 수 있습니다.{'\n'}
-              학습할 자녀를 선택해주세요.{'\n'}
-              나머지 자녀는 잠금 처리됩니다.
+        <Pressable
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+          onPress={() => {}}
+        >
+          <View style={{
+            width: '85%',
+            backgroundColor: '#FFFFFF',
+            borderRadius: 16,
+            padding: 24,
+            alignItems: 'center',
+          }}>
+            <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 8 }}>자녀 선택 필요</Text>
+            <Text style={{ fontSize: 14, color: '#666', textAlign: 'center', marginBottom: 20 }}>
+              무료회원은 1명만 이용할 수 있습니다.{'\n'}학습할 자녀를 선택해주세요.
             </Text>
-            <View style={styles.childrenList}>
-              {freeChildren.map((child) => (
-                <TouchableOpacity
-                  key={child.id}
-                  style={styles.childButton}
-                  activeOpacity={0.5}
-                  onPress={() => {
-                    console.log('버튼 클릭됨:', child.id, child.name);
-                    handleSelectChild(child.id, child.name);
-                  }}
-                >
-                  <Text style={styles.childAvatar}>{child.avatar}</Text>
-                  <View style={styles.childInfo}>
-                    <Text style={styles.childName}>{child.name}</Text>
-                    <Text style={styles.childGrade}>{child.grade}학년</Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
+            {freeChildren.map((child) => (
+              <Pressable
+                key={child.id}
+                onPress={() => handleSelectChild(child.id, child.name)}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: '#F5F5F5',
+                  borderRadius: 12,
+                  padding: 16,
+                  marginBottom: 8,
+                  width: '100%',
+                }}
+              >
+                <Text style={{ fontSize: 32, marginRight: 12 }}>{child.avatar}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#333' }}>{child.name}</Text>
+                  <Text style={{ fontSize: 14, color: '#666' }}>{child.grade}학년</Text>
+                </View>
+              </Pressable>
+            ))}
           </View>
-        </View>
+        </Pressable>
       </Modal>
 
       {/* LOCK COMPLETE MODAL */}
