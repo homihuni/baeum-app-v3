@@ -390,57 +390,6 @@ export default function HomeScreen() {
         </View>
       </Modal>
 
-      {/* LOCK SELECTION MODAL */}
-      <Modal
-        visible={showLockSelectionModal}
-        transparent={true}
-        animationType="fade"
-      >
-        <Pressable
-          style={{
-            flex: 1,
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-          onPress={() => {}}
-        >
-          <View style={{
-            width: '85%',
-            backgroundColor: '#FFFFFF',
-            borderRadius: 16,
-            padding: 24,
-            alignItems: 'center',
-          }}>
-            <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 8 }}>자녀 선택 필요</Text>
-            <Text style={{ fontSize: 14, color: '#666', textAlign: 'center', marginBottom: 20 }}>
-              무료회원은 1명만 이용할 수 있습니다.{'\n'}학습할 자녀를 선택해주세요.
-            </Text>
-            {freeChildren.map((child) => (
-              <Pressable
-                key={child.id}
-                onPress={() => handleSelectChild(child.id, child.name)}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  backgroundColor: '#F5F5F5',
-                  borderRadius: 12,
-                  padding: 16,
-                  marginBottom: 8,
-                  width: '100%',
-                }}
-              >
-                <Text style={{ fontSize: 32, marginRight: 12 }}>{child.avatar}</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#333' }}>{child.name}</Text>
-                  <Text style={{ fontSize: 14, color: '#666' }}>{child.grade}학년</Text>
-                </View>
-              </Pressable>
-            ))}
-          </View>
-        </Pressable>
-      </Modal>
-
       {/* LOCK COMPLETE MODAL */}
       <Modal
         visible={showLockCompleteModal}
@@ -465,6 +414,55 @@ export default function HomeScreen() {
           </View>
         </View>
       </Modal>
+
+      {showLockSelectionModal && (
+        <View style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 9999,
+          elevation: 9999,
+        }}>
+          <View style={{
+            width: '85%',
+            backgroundColor: '#FFFFFF',
+            borderRadius: 16,
+            padding: 24,
+            alignItems: 'center',
+          }}>
+            <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 8 }}>자녀 선택 필요</Text>
+            <Text style={{ fontSize: 14, color: '#666', textAlign: 'center', marginBottom: 20 }}>
+              무료회원은 1명만 이용할 수 있습니다.{'\n'}학습할 자녀를 선택해주세요.
+            </Text>
+            {freeChildren.map((child) => (
+              <Pressable
+                key={child.id}
+                onPress={() => handleSelectChild(child.id, child.name)}
+                style={({ pressed }) => ({
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: pressed ? '#E0E0E0' : '#F5F5F5',
+                  borderRadius: 12,
+                  padding: 16,
+                  marginBottom: 8,
+                  width: '100%',
+                })}
+              >
+                <Text style={{ fontSize: 32, marginRight: 12 }}>{child.avatar}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#333' }}>{child.name}</Text>
+                  <Text style={{ fontSize: 14, color: '#666' }}>{child.grade}학년</Text>
+                </View>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
