@@ -20,6 +20,7 @@ export default function EditChildScreen() {
   const [parentId, setParentId] = useState('');
   const [avatar, setAvatar] = useState('🍓');
   const [name, setName] = useState('');
+  const [tier, setTier] = useState<string>('free');
   const [grade, setGrade] = useState<number>(1);
   const [originalGrade, setOriginalGrade] = useState<number>(1);
   const [loading, setLoading] = useState(true);
@@ -44,6 +45,7 @@ export default function EditChildScreen() {
       if (childData) {
         setAvatar(childData.avatar || '🍓');
         setName(childData.name || '');
+        setTier(childData.tier || 'free');
         setGrade(childData.grade || 1);
         setOriginalGrade(childData.grade || 1);
       }
@@ -189,22 +191,53 @@ export default function EditChildScreen() {
           <Text style={styles.charCount}>{name.length}/10</Text>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>학년</Text>
-          <View style={styles.gradeGrid}>
-            {[1, 2, 3, 4, 5, 6].map((g) => (
-              <TouchableOpacity
-                key={g}
-                style={[styles.gradeButton, grade === g && styles.gradeButtonSelected]}
-                onPress={() => setGrade(g)}
-              >
-                <Text style={[styles.gradeButtonText, grade === g && styles.gradeButtonTextSelected]}>
-                  {g}학년
-                </Text>
-              </TouchableOpacity>
-            ))}
+        {tier === 'free' && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>학년</Text>
+            <View style={styles.gradeDisplayRow}>
+              <Text style={styles.gradeDisplayText}>{grade}학년</Text>
+              <Text style={styles.gradeNotice}>매년 3월에 자동으로 학년이 올라갑니다</Text>
+            </View>
           </View>
-        </View>
+        )}
+
+        {(tier === 'baeum' || tier === 'sky') && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>학년</Text>
+            <View style={styles.gradeGrid}>
+              {[1, 2, 3, 4, 5, 6].map((g) => {
+                const isCurrentGrade = g === originalGrade;
+                const isNextGrade = g === originalGrade + 1 && originalGrade < 6;
+                const isSelectable = isCurrentGrade || isNextGrade;
+                const isSelected = g === grade;
+
+                return (
+                  <TouchableOpacity
+                    key={g}
+                    style={[
+                      styles.gradeButton,
+                      isSelected && styles.gradeButtonSelected,
+                      !isSelectable && styles.gradeButtonDisabled,
+                    ]}
+                    onPress={() => {
+                      if (isSelectable) setGrade(g);
+                    }}
+                    disabled={!isSelectable}
+                  >
+                    <Text style={[
+                      styles.gradeButtonText,
+                      isSelected && styles.gradeButtonTextSelected,
+                      !isSelectable && styles.gradeButtonTextDisabled,
+                    ]}>
+                      {g}학년
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            <Text style={styles.gradeHint}>현재 학년에서 한 학년 위로만 변경할 수 있습니다</Text>
+          </View>
+        )}
 
         <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
           <Text style={styles.saveButtonText}>저장</Text>
@@ -496,6 +529,10 @@ const styles = StyleSheet.create({
   gradeButtonSelected: {
     backgroundColor: '#5BBFAA',
   },
+  gradeButtonDisabled: {
+    backgroundColor: '#F0F0F0',
+    opacity: 0.4,
+  },
   gradeButtonText: {
     fontSize: 14,
     color: '#666',
@@ -504,6 +541,29 @@ const styles = StyleSheet.create({
   gradeButtonTextSelected: {
     color: '#FFFFFF',
     fontWeight: 'bold',
+  },
+  gradeButtonTextDisabled: {
+    color: '#CCC',
+  },
+  gradeDisplayRow: {
+    backgroundColor: '#F5F5F5',
+    borderRadius: 8,
+    padding: 14,
+  },
+  gradeDisplayText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 4,
+  },
+  gradeNotice: {
+    fontSize: 12,
+    color: '#999',
+  },
+  gradeHint: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 8,
   },
   gradeModalButtons: {
     flexDirection: 'row',
