@@ -1,10 +1,11 @@
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Modal, Pressable, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
 import { checkSerialExpiry } from '../../utils/firestore';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -62,6 +63,14 @@ export default function HomeScreen() {
     loadMonthlyData();
     refreshChildAvatar();
   }, [currentYear, currentMonth]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadChildData();
+      loadMonthlyData();
+      refreshChildAvatar();
+    }, [])
+  );
 
   const checkExpiry = async () => {
     try {
