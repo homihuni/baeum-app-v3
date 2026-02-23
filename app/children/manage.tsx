@@ -34,6 +34,8 @@ export default function ManageChildrenScreen() {
   const [showFreeChildModal, setShowFreeChildModal] = useState(false);
   const [showLockedModal, setShowLockedModal] = useState(false);
   const [selectedLockedChild, setSelectedLockedChild] = useState<Child | null>(null);
+  const [showChangeModal, setShowChangeModal] = useState(false);
+  const [pendingChild, setPendingChild] = useState<Child | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -88,10 +90,23 @@ export default function ManageChildrenScreen() {
       return;
     }
 
+    if (child.id === currentChildId) {
+      return;
+    }
+
+    setPendingChild(child);
+    setShowChangeModal(true);
+  };
+
+  const confirmChangeChild = async () => {
+    if (!pendingChild) return;
+
     try {
-      await AsyncStorage.setItem('childId', child.id);
-      await AsyncStorage.setItem('childName', child.name);
-      setCurrentChildId(child.id);
+      await AsyncStorage.setItem('childId', pendingChild.id);
+      await AsyncStorage.setItem('childName', pendingChild.name);
+      setCurrentChildId(pendingChild.id);
+      setShowChangeModal(false);
+      setPendingChild(null);
       await loadData();
     } catch (error) {
       console.log('Select child error:', error);
@@ -301,6 +316,35 @@ export default function ManageChildrenScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* 자녀 변경 확인 모달 */}
+      <Modal visible={showChangeModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>자녀 변경</Text>
+            <Text style={styles.modalMessage}>
+              {pendingChild?.name}(으)로 변경하시겠습니까?
+            </Text>
+            <View style={styles.modalButtonRow}>
+              <TouchableOpacity
+                style={styles.modalCancelBtn}
+                onPress={() => {
+                  setShowChangeModal(false);
+                  setPendingChild(null);
+                }}
+              >
+                <Text style={styles.modalCancelText}>취소</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalChangeConfirmBtn}
+                onPress={confirmChangeChild}
+              >
+                <Text style={styles.modalChangeConfirmText}>변경</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -493,6 +537,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalUpgradeText: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  modalChangeConfirmBtn: {
+    flex: 1,
+    backgroundColor: '#4ECDC4',
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  modalChangeConfirmText: {
     fontSize: 15,
     fontWeight: 'bold',
     color: '#FFFFFF',
