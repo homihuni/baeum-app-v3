@@ -110,7 +110,7 @@ export default function EnterSerialScreen() {
 
       // 자녀 등급 업그레이드
       console.log('=== 등급 업그레이드 시작 ===');
-      await upgradeChildTier(parentId, childId, 'baeum', trimmedCode, '2026-12-31');
+      await upgradeChildTier(parentId, childId, 'baeum', trimmedCode, serialData.expiry, serialData.calendarYear);
       console.log('=== 등급 업그레이드 성공 ===');
 
       await AsyncStorage.setItem('childTier', 'baeum');

@@ -182,12 +182,14 @@ export const upgradeChildTier = async (
   parentId: string,
   childId: string,
   tier: string,
-  serialNumber: string,
-  serialExpiry: string
+  serialCode: string,
+  serialExpiry: string,
+  serialCalendarYear: number
 ) => {
   await updateDoc(doc(db, 'Parents', parentId, 'Children', childId), {
     tier,
-    serialNumber,
+    serialCode,
     serialExpiry,
+    serialCalendarYear,
   });
 };
