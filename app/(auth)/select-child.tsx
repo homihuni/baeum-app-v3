@@ -87,7 +87,7 @@ export default function SelectChildScreen() {
                     marginTop: 4,
                   }}>
                     <Text style={{ color: '#FFF', fontSize: 11, fontWeight: 'bold' }}>
-                      만료 — 시리얼 등록 필요
+                      Expired
                     </Text>
                   </View>
                 )}
