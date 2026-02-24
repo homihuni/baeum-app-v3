@@ -35,6 +35,12 @@ export default function SelectChildScreen() {
   };
 
   const selectChild = async (child: any) => {
+    if (child.isLocked || child.tier === 'expired') {
+      await AsyncStorage.setItem('childId', child.id);
+      await AsyncStorage.setItem('childName', child.name);
+      router.push('/children/manage');
+      return;
+    }
     await AsyncStorage.setItem('childId', child.id);
     await AsyncStorage.setItem('childName', child.name);
     await AsyncStorage.setItem('childGrade', String(child.grade));
@@ -59,9 +65,32 @@ export default function SelectChildScreen() {
         <>
           <View style={styles.topRow}>
             {activeChildren.slice(0, 2).map((child) => (
-              <TouchableOpacity key={child.id} style={styles.childCard} onPress={() => selectChild(child)}>
+              <TouchableOpacity
+                key={child.id}
+                style={[
+                  styles.childCard,
+                  (child.isLocked || child.tier === 'expired') && {
+                    opacity: 0.5,
+                    backgroundColor: '#E0E0E0',
+                  },
+                ]}
+                onPress={() => selectChild(child)}
+              >
                 <Text style={styles.avatar}>{child.avatar || '🍓'}</Text>
                 <Text style={styles.childName}>{child.name}</Text>
+                {(child.isLocked || child.tier === 'expired') && (
+                  <View style={{
+                    backgroundColor: '#FF6B6B',
+                    borderRadius: 8,
+                    paddingHorizontal: 8,
+                    paddingVertical: 2,
+                    marginTop: 4,
+                  }}>
+                    <Text style={{ color: '#FFF', fontSize: 11, fontWeight: 'bold' }}>
+                      만료 — 시리얼 등록 필요
+                    </Text>
+                  </View>
+                )}
                 <Text style={styles.childGrade}>{child.grade}학년</Text>
                 <View style={[styles.tierBadge, { backgroundColor: TIER_COLORS[child.tier] || '#E0E0E0' }]}>
                   <Text style={[styles.tierText, { color: TIER_TEXT_COLORS[child.tier] || '#666666' }]}>{TIER_LABELS[child.tier] || '무료회원'}</Text>
@@ -70,9 +99,32 @@ export default function SelectChildScreen() {
             ))}
           </View>
           <View style={styles.bottomRow}>
-            <TouchableOpacity key={activeChildren[2].id} style={styles.childCard} onPress={() => selectChild(activeChildren[2])}>
+            <TouchableOpacity
+              key={activeChildren[2].id}
+              style={[
+                styles.childCard,
+                (activeChildren[2].isLocked || activeChildren[2].tier === 'expired') && {
+                  opacity: 0.5,
+                  backgroundColor: '#E0E0E0',
+                },
+              ]}
+              onPress={() => selectChild(activeChildren[2])}
+            >
               <Text style={styles.avatar}>{activeChildren[2].avatar || '🍓'}</Text>
               <Text style={styles.childName}>{activeChildren[2].name}</Text>
+              {(activeChildren[2].isLocked || activeChildren[2].tier === 'expired') && (
+                <View style={{
+                  backgroundColor: '#FF6B6B',
+                  borderRadius: 8,
+                  paddingHorizontal: 8,
+                  paddingVertical: 2,
+                  marginTop: 4,
+                }}>
+                  <Text style={{ color: '#FFF', fontSize: 11, fontWeight: 'bold' }}>
+                    만료 — 시리얼 등록 필요
+                  </Text>
+                </View>
+              )}
               <Text style={styles.childGrade}>{activeChildren[2].grade}학년</Text>
               <View style={[styles.tierBadge, { backgroundColor: TIER_COLORS[activeChildren[2].tier] || '#E0E0E0' }]}>
                 <Text style={[styles.tierText, { color: TIER_TEXT_COLORS[activeChildren[2].tier] || '#666666' }]}>{TIER_LABELS[activeChildren[2].tier] || '무료회원'}</Text>
@@ -86,9 +138,32 @@ export default function SelectChildScreen() {
     return (
       <>
         {activeChildren.map((child) => (
-          <TouchableOpacity key={child.id} style={styles.childCard} onPress={() => selectChild(child)}>
+          <TouchableOpacity
+            key={child.id}
+            style={[
+              styles.childCard,
+              (child.isLocked || child.tier === 'expired') && {
+                opacity: 0.5,
+                backgroundColor: '#E0E0E0',
+              },
+            ]}
+            onPress={() => selectChild(child)}
+          >
             <Text style={styles.avatar}>{child.avatar || '🍓'}</Text>
             <Text style={styles.childName}>{child.name}</Text>
+            {(child.isLocked || child.tier === 'expired') && (
+              <View style={{
+                backgroundColor: '#FF6B6B',
+                borderRadius: 8,
+                paddingHorizontal: 8,
+                paddingVertical: 2,
+                marginTop: 4,
+              }}>
+                <Text style={{ color: '#FFF', fontSize: 11, fontWeight: 'bold' }}>
+                  만료 — 시리얼 등록 필요
+                </Text>
+              </View>
+            )}
             <Text style={styles.childGrade}>{child.grade}학년</Text>
             <View style={[styles.tierBadge, { backgroundColor: TIER_COLORS[child.tier] || '#E0E0E0' }]}>
               <Text style={[styles.tierText, { color: TIER_TEXT_COLORS[child.tier] || '#666666' }]}>{TIER_LABELS[child.tier] || '무료회원'}</Text>
