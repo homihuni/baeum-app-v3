@@ -192,6 +192,7 @@ export const upgradeChildTier = async (
     serialExpiry,
     serialCalendarYear,
     gradeChangeCount: 0,
+    isLocked: false,
   });
 };
 
