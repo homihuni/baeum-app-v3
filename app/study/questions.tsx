@@ -67,7 +67,8 @@ export default function QuestionsScreen() {
         const q = query(
           collection(db, 'Problems'),
           where('grade', '==', grade),
-          where('subject', '==', subject)
+          where('subject', '==', subject),
+          where('isActive', '==', true)
         );
 
         const snap = await getDocs(q);
