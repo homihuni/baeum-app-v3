@@ -257,7 +257,7 @@ export default function QuestionsScreen() {
 
       <ScrollView style={styles.scrollArea} contentContainerStyle={styles.scrollContent}>
         <Text style={styles.questionLabel}>Q{currentIndex + 1}</Text>
-        <Text style={styles.questionText}>{currentProblem.question}</Text>
+        <Text style={styles.questionText}>{String(currentProblem.question)}</Text>
 
         {currentProblem.questionType === 'short_answer' ? (
           <View style={styles.shortAnswerContainer}>
@@ -303,7 +303,7 @@ export default function QuestionsScreen() {
                   onPress={() => handleSelectAnswer(choice)}
                   disabled={isAnswered}
                 >
-                  <Text style={choiceTextStyle}>{prefix}{choice}</Text>
+                  <Text style={choiceTextStyle}>{prefix}{String(choice)}</Text>
                 </TouchableOpacity>
               );
             })}
@@ -315,10 +315,10 @@ export default function QuestionsScreen() {
             <Text style={[styles.resultTitle, { color: isCorrect ? '#4CAF50' : '#FF6B6B' }]}>
               {isCorrect ? '🎉 정답이에요!' : '😢 틀렸어요'}
             </Text>
-            <Text style={styles.resultAnswer}>정답: {currentProblem.correctAnswer}</Text>
+            <Text style={styles.resultAnswer}>정답: {String(currentProblem.correctAnswer)}</Text>
             <View style={styles.explanationCard}>
               <Text style={styles.explanationLabel}>💡 해설</Text>
-              <Text style={styles.explanationText}>{currentProblem.explanation}</Text>
+              <Text style={styles.explanationText}>{String(currentProblem.explanation)}</Text>
             </View>
           </View>
         )}
