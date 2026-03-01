@@ -77,7 +77,7 @@ export default function LearningPlanScreen() {
           </View>
           {childTier === 'baeum' && serialNumber ? (
             <View style={styles.currentDetail}>
-              <Text style={styles.currentDetailText}>시리얼: {serialNumber} · 만료: {serialExpiry || '2026.12.31'}</Text>
+              <Text style={styles.currentDetailText}>시리얼: {serialNumber} · 만료: {serialExpiry ? new Date(serialExpiry).toLocaleDateString('ko-KR') : '2026.12.31'}</Text>
             </View>
           ) : childTier === 'sky' ? (
             <View style={styles.currentDetail}>

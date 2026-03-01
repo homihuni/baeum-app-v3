@@ -102,8 +102,8 @@ export default function SerialScreen() {
       await updateDoc(childDocRef, {
         tier: 'baeum',
         serialCode: serialCode.trim(),
-        serialExpiry: serialData.expiry,
-        serialCalendarYear: serialData.calendarYear,
+        serialExpiry: serialData.expiry ? serialData.expiry.toDate().toISOString() : null,
+        serialCalendarYear: serialData.calendarYear || null,
       });
 
       setFailCount(0);
