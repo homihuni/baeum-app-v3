@@ -85,10 +85,10 @@ export default function QuestionsScreen() {
           const data = doc.data();
           return {
             id: doc.id,
-            question: data.question,
+            question: String(data.question || ''),
             choices: data.options || [],
             correctAnswer: data.type === 'short_answer' ? String(data.answer || '') : (data.options && data.options[data.answer] ? data.options[data.answer] : ''),
-            explanation: data.explanation || '해설이 없습니다.',
+            explanation: String(data.explanation || '해설이 없습니다.'),
             questionType: data.type === 'multiple_choice' ? 'mcq' : data.type === 'ox' ? 'ox' : data.type === 'short_answer' ? 'short_answer' : 'subjective',
             difficulty: data.difficulty || 'medium',
             unit: data.unit || '',
