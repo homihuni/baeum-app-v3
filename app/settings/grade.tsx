@@ -39,7 +39,7 @@ export default function LearningPlanScreen() {
           setChildAvatar(data.avatar || '🍎');
           setChildGrade(data.grade || 1);
           setChildTier(data.tier || 'free');
-          setSerialNumber(data.serialNumber || '');
+          setSerialNumber(data.serialCode || '');
           setSerialExpiry(data.serialExpiry || '');
         }
       }
@@ -77,7 +77,12 @@ export default function LearningPlanScreen() {
           </View>
           {childTier === 'baeum' && serialNumber ? (
             <View style={styles.currentDetail}>
-              <Text style={styles.currentDetailText}>시리얼: {serialNumber} · 만료: {serialExpiry ? new Date(serialExpiry).toLocaleDateString('ko-KR') : '2026.12.31'}</Text>
+              <Text style={styles.currentDetailText}>시리얼: {serialNumber} · 만료: {(() => {
+                if (!serialExpiry) return '정보 없음';
+                if (serialExpiry?.seconds) return new Date(serialExpiry.seconds * 1000).toLocaleDateString('ko-KR');
+                const date = new Date(serialExpiry);
+                return isNaN(date.getTime()) ? '정보 없음' : date.toLocaleDateString('ko-KR');
+              })()}</Text>
             </View>
           ) : childTier === 'sky' ? (
             <View style={styles.currentDetail}>
