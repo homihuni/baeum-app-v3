@@ -3,8 +3,6 @@ import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { httpsCallable } from 'firebase/functions';
-import { functions } from '../../utils/firebase';
 
 const SUBJECT_LABELS: Record<string, string> = {
   korean: '국어', math: '수학', integrated: '통합교과',
@@ -41,17 +39,23 @@ export default function CompleteScreen() {
         }
 
         setAiLoading(true);
-        const generateAIComment = httpsCallable(functions, 'generateAIComment');
 
-        const result = await generateAIComment({
-          childId,
-          childName: childName || '학생',
-          grade: childGrade || '1',
-          tier: childTier,
+        const response = await fetch('https://us-central1-baeum-app.cloudfunctions.net/generateAIComment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            data: {
+              childId: childId,
+              childName: childName || '학생',
+              grade: childGrade || '1',
+              tier: childTier,
+            }
+          })
         });
+        const result = await response.json();
+        const data = result.result;
 
-        const data = result.data as any;
-        if (data.success) {
+        if (data && data.success) {
           setAiComment(data.analysis);
           if (data.tip) setAiTip(data.tip);
         }
