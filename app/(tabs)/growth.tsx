@@ -223,9 +223,9 @@ export default function GrowthScreen() {
     subjectRates.forEach(sr => {
       const name = subjectNameMap[sr.subject] || sr.subject;
       if (sr.rate >= 90) {
-        comment += `• ${name}: 정답률 ${sr.rate}%! 아주 잘하고 있어요! 👏\n`;
+        comment += `• ${name}: 정답률 ${sr.rate}%! 아주 잘하고 있어요.\n`;
       } else if (sr.rate >= 70) {
-        comment += `• ${name}: 정답률 ${sr.rate}%로 잘하고 있어요. 틀린 문제를 복습하면 더 올라갈 거예요!\n`;
+        comment += `• ${name}: 정답률 ${sr.rate}%로 잘하고 있어요. 틀린 문제를 복습하면 더 올라갈 거예요.\n`;
       } else {
         comment += `• ${name}: 정답률 ${sr.rate}%예요. 어려운 부분을 다시 풀어보면 금방 올라갈 거예요.\n`;
       }

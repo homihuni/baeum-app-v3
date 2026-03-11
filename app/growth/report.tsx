@@ -222,8 +222,8 @@ export default function ReportScreen() {
                       </>
                     ) : (
                       <>
-                        <View style={styles.emptySpace} />
-                        <View style={styles.emptyBar} />
+                        <Text style={styles.barValue}>-</Text>
+                        <View style={styles.emptyBarSpace} />
                       </>
                     )}
                     <Text style={styles.barLabel}>{data.month}월</Text>
@@ -545,6 +545,10 @@ const styles = StyleSheet.create({
     width: 26,
     height: 2,
     backgroundColor: '#E0E0E0',
+  },
+  emptyBarSpace: {
+    height: 0,
+    width: 26,
   },
   barValue: { fontSize: 9, fontWeight: 'bold', color: '#333', marginBottom: 4 },
   barLabel: { fontSize: 10, color: '#666', marginTop: 6 },
