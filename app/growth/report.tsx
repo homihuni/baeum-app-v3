@@ -109,7 +109,14 @@ export default function ReportScreen() {
   };
 
   const calculateMonthlyData = (records: RecordData[]) => {
-    const months = ['2025-09', '2025-10', '2025-11', '2025-12', '2026-01', '2026-02'];
+    // 현재 월 기준 최근 6개월 자동 계산
+    const months = [];
+    const now = new Date();
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+    }
+
     const monthlyMap: Record<string, { correct: number; total: number }> = {};
 
     months.forEach((month) => {
@@ -137,7 +144,9 @@ export default function ReportScreen() {
   };
 
   const calculateSubjectData = (records: RecordData[]) => {
-    const currentMonth = '2026-02';
+    // 현재 월 동적 처리
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     const subjectMap: Record<string, { correct: number; total: number }> = {};
 
     records.forEach((record) => {
@@ -161,7 +170,9 @@ export default function ReportScreen() {
   };
 
   const calculateSummary = (records: RecordData[]) => {
-    const currentMonth = '2026-02';
+    // 현재 월 동적 처리
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     const dateSet = new Set<string>();
     let totalCorrect = 0;
     let totalQuestions = 0;

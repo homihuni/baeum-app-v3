@@ -168,37 +168,108 @@ export default function GrowthScreen() {
     } else if (tier === 'baeum') {
       return (
         <Text style={styles.aiTextPaid}>
-          {childName || '지훈'}이는 오늘 수학에서 높은 정답률을 보여줬어요! 👏{'\n\n'}
-          📊 과목별 분석{'\n'}
-          • 수학: 덧셈과 뺄셈의 정확도가 매우 높아요. 시계 읽기 문제에서 가끔 실수가 있으니 긴 바늘과 짧은 바늘 구분을 연습해보세요.{'\n'}
-          • 국어: 받아쓰기 정확도가 지난주보다 향상되었어요. 겹받침 단어를 좀 더 연습하면 좋겠어요.{'\n'}
-          • 통합교과: 계절과 날씨 관련 문제를 잘 풀고 있어요.{'\n\n'}
-          💡 이번 주는 수학에 집중하는 패턴이 보여요. 국어도 병행하면 균형 잡힌 학습이 될 거예요!
+          {generateBaeumComment()}
         </Text>
       );
     } else if (tier === 'sky') {
       return (
         <View>
           <Text style={styles.aiTextPaid}>
-            {childName || '지훈'}이는 오늘 수학에서 높은 정답률을 보여줬어요! 👏{'\n\n'}
-            📊 과목별 분석{'\n'}
-            • 수학: 덧셈과 뺄셈의 정확도가 매우 높아요. 시계 읽기 문제에서 가끔 실수가 있으니 긴 바늘과 짧은 바늘 구분을 연습해보세요.{'\n'}
-            • 국어: 받아쓰기 정확도가 지난주보다 향상되었어요. 겹받침 단어를 좀 더 연습하면 좋겠어요.{'\n'}
-            • 통합교과: 계절과 날씨 관련 문제를 잘 풀고 있어요.{'\n\n'}
-            💡 이번 주는 수학에 집중하는 패턴이 보여요. 국어도 병행하면 균형 잡힌 학습이 될 거예요!
+            {generateBaeumComment()}
           </Text>
           <View style={styles.skyTipBox}>
             <Text style={styles.aiTextPaid}>
-              🎯 AI 맞춤 학습 팁{'\n'}
-              • {childName || '지훈'}이는 오후 시간대에 집중력이 높은 편이에요. 수학처럼 사고력이 필요한 과목은 오후에 풀어보세요.{'\n'}
-              • 한 번에 5문제씩 짧게 자주 학습하는 것이 {childName || '지훈'}이에게 잘 맞아요.{'\n'}
-              • 틀린 문제를 다음 날 한 번 더 풀어보면 기억에 오래 남아요.
+              {generateSkyTip()}
             </Text>
           </View>
         </View>
       );
     }
     return null;
+  };
+
+  const generateBaeumComment = () => {
+    // todayStats 기반 과목별 정답률 계산
+    const subjectNameMap: Record<string, string> = {
+      math: '수학',
+      korean: '국어',
+      english: '영어',
+      social: '사회',
+      science: '과학',
+      integrated: '통합교과'
+    };
+
+    const subjects = Object.keys(todayStats);
+    if (subjects.length === 0) {
+      return '아직 오늘 학습 기록이 없어요. 첫 문제를 풀어보세요! 📚';
+    }
+
+    // 오늘 푼 과목 나열
+    const subjectRates = subjects.map(s => {
+      const stat = todayStats[s];
+      const total = stat.correct + stat.wrong;
+      const rate = total > 0 ? Math.round((stat.correct / total) * 100) : 0;
+      return { subject: s, rate, total };
+    });
+
+    let comment = `${childName || '학생'}이(가) 오늘 `;
+    const subjectNames = subjectRates.map(sr => {
+      const name = subjectNameMap[sr.subject] || sr.subject;
+      return `${name} ${sr.rate}%`;
+    });
+    comment += subjectNames.join(', ') + '의 정답률을 기록했어요!\n\n';
+    comment += '📊 과목별 분석\n';
+
+    subjectRates.forEach(sr => {
+      const name = subjectNameMap[sr.subject] || sr.subject;
+      if (sr.rate >= 90) {
+        comment += `• ${name}: 정답률 ${sr.rate}%! 아주 잘하고 있어요! 👏\n`;
+      } else if (sr.rate >= 70) {
+        comment += `• ${name}: 정답률 ${sr.rate}%로 잘하고 있어요. 틀린 문제를 복습하면 더 올라갈 거예요!\n`;
+      } else {
+        comment += `• ${name}: 정답률 ${sr.rate}%예요. 어려운 부분을 다시 풀어보면 금방 올라갈 거예요.\n`;
+      }
+    });
+
+    // 학습 패턴 팁
+    if (subjects.length === 1) {
+      const name = subjectNameMap[subjects[0]] || subjects[0];
+      comment += `\n💡 오늘은 ${name}만 공부했어요. 다른 과목도 함께 풀어보면 균형 잡힌 학습이 될 거예요!`;
+    } else {
+      comment += `\n💡 ${subjects.length}개 과목을 골고루 공부했어요. 훌륭해요!`;
+    }
+
+    return comment;
+  };
+
+  const generateSkyTip = () => {
+    const subjectNameMap: Record<string, string> = {
+      math: '수학',
+      korean: '국어',
+      english: '영어',
+      social: '사회',
+      science: '과학',
+      integrated: '통합교과'
+    };
+
+    const subjects = Object.keys(todayStats);
+    let skyTip = '🎯 AI 맞춤 학습 팁\n';
+
+    const weakSubjects = subjects.filter(s => {
+      const stat = todayStats[s];
+      const total = stat.correct + stat.wrong;
+      const rate = total > 0 ? Math.round((stat.correct / total) * 100) : 0;
+      return rate < 70;
+    });
+
+    if (weakSubjects.length > 0) {
+      const weakNames = weakSubjects.map(s => subjectNameMap[s] || s);
+      skyTip += `• ${weakNames.join(', ')} 과목의 틀린 문제를 내일 다시 풀어보세요. 반복 학습이 기억에 오래 남아요.\n`;
+    }
+    skyTip += `• 매일 꾸준히 ${Math.min(subjects.length + 1, 3)}개 과목을 풀어보는 것을 추천해요.\n`;
+    skyTip += '• 틀린 문제는 바로 다시 풀어보면 효과가 2배예요!';
+
+    return skyTip;
   };
 
   const handleReportPress = () => {
@@ -247,7 +318,7 @@ export default function GrowthScreen() {
         </View>
 
         <View style={styles.cardSmall}>
-          <Text style={styles.cardTitleSmall}>📅 2월 학습 통계</Text>
+          <Text style={styles.cardTitleSmall}>📅 {new Date().getMonth() + 1}월 학습 통계</Text>
           <View style={styles.statsGrid}>
             <View style={styles.statItem}>
               <Text style={styles.statValueSmall}>{monthlyStats.accessDays}일</Text>
