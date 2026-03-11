@@ -203,7 +203,11 @@ export default function ReportScreen() {
             <Text style={styles.yAxisLabel}>0%</Text>
           </View>
           <View style={styles.chartContent}>
-            <View style={styles.horizontalLine} />
+            <View style={styles.gridLine100} />
+            <View style={styles.gridLine75} />
+            <View style={styles.gridLine50} />
+            <View style={styles.gridLine25} />
+            <View style={styles.gridLine0} />
             <View style={styles.barsContainer}>
               {monthlyData.map((data, index) => {
                 const height = (data.rate / 100) * 180;
@@ -215,7 +219,10 @@ export default function ReportScreen() {
                         <View style={[styles.bar, { height }]} />
                       </>
                     ) : (
-                      <Text style={styles.barValue}>-</Text>
+                      <>
+                        <View style={styles.emptySpace} />
+                        <View style={styles.emptyBar} />
+                      </>
                     )}
                     <Text style={styles.barLabel}>{data.month}월</Text>
                   </View>
@@ -281,22 +288,89 @@ export default function ReportScreen() {
     );
   };
 
+  const generateAISummary = () => {
+    const subjectNameMap: Record<string, string> = {
+      math: '수학',
+      korean: '국어',
+      english: '영어',
+      social: '사회',
+      science: '과학',
+      integrated: '통합교과'
+    };
+
+    if (subjectData.length === 0) {
+      return '이번 달 학습 기록이 없어요. 첫 문제를 풀어보세요!';
+    }
+
+    const strong = subjectData.filter(s => s.rate >= 80);
+    const weak = subjectData.filter(s => s.rate < 70);
+    const strongNames = strong.map(s => subjectNameMap[s.subject] || s.subject);
+    const weakNames = weak.map(s => subjectNameMap[s.subject] || s.subject);
+
+    let summary = `${childName || '학생'}은(는) 이번 달 `;
+
+    if (strong.length > 0) {
+      summary += `${strongNames.join(', ')}에서 높은 정답률(${strong.map(s => s.rate + '%').join(', ')})을 보이고 있어요! 👏\n\n`;
+    }
+
+    if (weak.length > 0) {
+      summary += `${weakNames.join(', ')}은(는) 조금 더 연습하면 좋겠어요. 틀린 문제를 복습하면 금방 올라갈 거예요!\n\n`;
+    }
+
+    if (subjectData.length >= 3) {
+      summary += `${subjectData.length}개 과목을 골고루 학습하고 있어요! 균형 잡힌 학습 습관이 훌륭해요.\n\n`;
+    } else if (subjectData.length === 1) {
+      summary += `한 가지 과목에 집중하고 있어요. 다른 과목도 함께 풀어보면 더 균형 잡힌 학습이 될 거예요.\n\n`;
+    }
+
+    if (totalDays >= 15) {
+      summary += `이번 달 ${totalDays}일 동안 꾸준히 학습했어요. 대단해요! 🎉\n\n`;
+    } else if (totalDays >= 7) {
+      summary += `이번 달 ${totalDays}일 동안 학습했어요. 조금 더 자주 학습하면 더 큰 성장을 기대할 수 있어요!\n\n`;
+    }
+
+    summary += '꾸준히 학습하면 다음 달에는 더 큰 성장을 기대할 수 있어요! 💪';
+
+    return summary;
+  };
+
   const renderAIEvaluation = () => {
     return (
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>🤖 AI 종합 평가</Text>
-        <Text style={styles.aiText}>
-          {childName || '학생'}은 이번 달 수학에서 꾸준한 성장을 보이고 있어요. 덧셈과 뺄셈의 기초 연산 능력이
-          탄탄하며, 특히 최근 학습에서 높은 정답률을 기록했어요.{'\n\n'}
-          국어는 받아쓰기와 독해 모두 안정적인 수준이에요. 겹받침 단어에서 간혹 실수가 보이니 조금 더
-          연습하면 완벽해질 거예요.{'\n\n'}
-          통합교과는 생활 속 주제를 잘 이해하고 있어요. 다양한 주제의 문제를 접하면서 사고력을 더
-          넓혀보세요.{'\n\n'}
-          전체적으로 균형 잡힌 학습을 하고 있어요. 이 페이스를 유지하면 다음 달에는 더 큰 성장을 기대할
-          수 있어요! 💪
-        </Text>
+        <Text style={styles.aiText}>{generateAISummary()}</Text>
       </View>
     );
+  };
+
+  const generateSkyTips = () => {
+    const subjectNameMap: Record<string, string> = {
+      math: '수학',
+      korean: '국어',
+      english: '영어',
+      social: '사회',
+      science: '과학',
+      integrated: '통합교과'
+    };
+
+    let tips = '';
+
+    const weak = subjectData.filter(s => s.rate < 70);
+    if (weak.length > 0) {
+      const weakNames = weak.map(s => subjectNameMap[s.subject] || s.subject);
+      tips += `• ${weakNames.join(', ')} 과목의 틀린 문제를 내일 다시 풀어보세요. 반복 학습이 기억에 오래 남아요.\n\n`;
+    }
+
+    tips += `• 매일 꾸준히 ${Math.min(subjectData.length + 1, 3)}개 과목을 풀어보는 것을 추천해요.\n\n`;
+    tips += '• 틀린 문제는 바로 다시 풀어보면 효과가 2배예요! 복습 습관을 만들어보세요.\n\n';
+
+    if (totalDays < 10) {
+      tips += `• 이번 달 ${totalDays}일 학습했어요. 주 3회 이상 학습하면 더 큰 성장을 기대할 수 있어요.`;
+    } else {
+      tips += `• 이번 달 ${totalDays}일 동안 꾸준히 학습했어요. 이 페이스를 유지해보세요!`;
+    }
+
+    return tips;
   };
 
   const renderLearningTips = () => {
@@ -307,15 +381,7 @@ export default function ReportScreen() {
           <View style={styles.tipsBadge}>
             <Text style={styles.tipsBadgeText}>스카이 회원 전용</Text>
           </View>
-          <Text style={styles.tipsText}>
-            • {childName || '학생'}은 오후 시간대에 집중력이 높은 편이에요. 수학처럼 사고력이 필요한 과목은 오후에
-            풀어보세요.{'\n\n'}
-            • 한 번에 5문제씩 짧게 자주 학습하는 것이 {childName || '학생'}에게 잘 맞는 패턴이에요. 무리하지 않는
-            범위에서 매일 꾸준히 해보세요.{'\n\n'}
-            • 틀린 문제를 다음 날 한 번 더 풀어보면 기억에 오래 남아요. 복습 습관을 만들어보세요.{'\n\n'}
-            • 수학에 비해 국어 학습 빈도가 낮아요. 이번 주에는 국어를 하루 1회 이상 풀어보는 것을
-            추천해요.
-          </Text>
+          <Text style={styles.tipsText}>{generateSkyTips()}</Text>
         </View>
       );
     } else if (tier === 'baeum') {
@@ -405,14 +471,49 @@ const styles = StyleSheet.create({
   },
   yAxisLabel: { fontSize: 10, color: '#999', textAlign: 'right' },
   chartContent: { flex: 1, position: 'relative' },
-  horizontalLine: {
+  gridLine100: {
     position: 'absolute',
     top: 10,
     left: 0,
     right: 0,
-    height: 180,
     borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
+    borderTopColor: '#E8E8E8',
+    borderStyle: 'dashed',
+  },
+  gridLine75: {
+    position: 'absolute',
+    top: 55,
+    left: 0,
+    right: 0,
+    borderTopWidth: 1,
+    borderTopColor: '#E8E8E8',
+    borderStyle: 'dashed',
+  },
+  gridLine50: {
+    position: 'absolute',
+    top: 100,
+    left: 0,
+    right: 0,
+    borderTopWidth: 1,
+    borderTopColor: '#E8E8E8',
+    borderStyle: 'dashed',
+  },
+  gridLine25: {
+    position: 'absolute',
+    top: 145,
+    left: 0,
+    right: 0,
+    borderTopWidth: 1,
+    borderTopColor: '#E8E8E8',
+    borderStyle: 'dashed',
+  },
+  gridLine0: {
+    position: 'absolute',
+    top: 190,
+    left: 0,
+    right: 0,
+    borderTopWidth: 1,
+    borderTopColor: '#E8E8E8',
   },
   barsContainer: {
     flexDirection: 'row',
@@ -423,25 +524,31 @@ const styles = StyleSheet.create({
   },
   barWrapper: { alignItems: 'center', flex: 1 },
   bar: {
-    width: 32,
+    width: 26,
     backgroundColor: '#4CAF50',
-    borderTopLeftRadius: 6,
-    borderTopRightRadius: 6,
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
   },
-  barValue: { fontSize: 10, fontWeight: 'bold', color: '#333', marginBottom: 4 },
-  barLabel: { fontSize: 11, color: '#666', marginTop: 8 },
+  emptySpace: { height: 16, marginBottom: 4 },
+  emptyBar: {
+    width: 26,
+    height: 2,
+    backgroundColor: '#E0E0E0',
+  },
+  barValue: { fontSize: 9, fontWeight: 'bold', color: '#333', marginBottom: 4 },
+  barLabel: { fontSize: 10, color: '#666', marginTop: 6 },
   subjectContainer: { marginTop: 0 },
-  subjectItem: { marginBottom: 14 },
-  subjectHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
+  subjectItem: { marginBottom: 16 },
+  subjectHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   subjectName: { fontSize: 14, fontWeight: '600', color: '#333' },
   subjectRate: { fontSize: 14, fontWeight: 'bold' },
   progressBarBg: {
-    height: 12,
+    height: 10,
     backgroundColor: '#F0F0F0',
-    borderRadius: 6,
+    borderRadius: 5,
     overflow: 'hidden',
   },
-  progressBarFill: { height: 12, borderRadius: 6 },
+  progressBarFill: { height: 10, borderRadius: 5 },
   summaryGrid: { flexDirection: 'row', justifyContent: 'space-around' },
   summaryItem: { alignItems: 'center' },
   summaryValue: { fontSize: 24, fontWeight: 'bold', color: '#333', marginBottom: 4 },
