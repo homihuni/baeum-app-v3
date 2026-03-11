@@ -25,7 +25,9 @@ export default function HomeScreen() {
   const [showExpiryModal, setShowExpiryModal] = useState(false);
   const [expiryMessage, setExpiryMessage] = useState('');
 
-  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const characters = ['학', '습', '하', '기', ' 📚'];
+  const charAnims = useRef(characters.map(() => new Animated.Value(0))).current;
+  const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const TIER_LABELS: Record<string, string> = { free: '무료회원', baeum: '배움회원', sky: '스카이회원' };
   const TIER_COLORS: Record<string, string> = { free: '#E0E0E0', baeum: '#4ECDC4', sky: '#87CEEB' };
@@ -34,22 +36,44 @@ export default function HomeScreen() {
   useEffect(() => {
     loadChildData();
 
-    const pulse = Animated.loop(
+    const animation = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 0.6,
-          duration: 750,
+        Animated.stagger(
+          300,
+          charAnims.map(anim =>
+            Animated.timing(anim, {
+              toValue: 1,
+              duration: 200,
+              useNativeDriver: true,
+            })
+          )
+        ),
+        Animated.delay(500),
+        Animated.timing(scaleAnim, {
+          toValue: 1.15,
+          duration: 200,
           useNativeDriver: true,
         }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 750,
+        Animated.timing(scaleAnim, {
+          toValue: 1.0,
+          duration: 200,
           useNativeDriver: true,
         }),
+        Animated.delay(500),
+        Animated.parallel(
+          charAnims.map(anim =>
+            Animated.timing(anim, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            })
+          )
+        ),
+        Animated.delay(300),
       ])
     );
-    pulse.start();
-    return () => pulse.stop();
+    animation.start();
+    return () => animation.stop();
   }, []);
 
   const loadChildData = async () => {
@@ -364,11 +388,15 @@ export default function HomeScreen() {
         </View>
 
         {/* 5. LEARN BUTTON */}
-        <Animated.View style={{ opacity: pulseAnim }}>
-          <TouchableOpacity style={styles.learnButton} onPress={() => router.replace('/(tabs)/study')}>
-            <Text style={styles.learnButtonText}>학습하기 📝</Text>
-          </TouchableOpacity>
-        </Animated.View>
+        <TouchableOpacity style={styles.learnButton} onPress={() => router.replace('/(tabs)/study')}>
+          <Animated.View style={{ transform: [{ scale: scaleAnim }], flexDirection: 'row' }}>
+            {characters.map((char, index) => (
+              <Animated.Text key={index} style={[styles.learnButtonText, { opacity: charAnims[index] }]}>
+                {char}
+              </Animated.Text>
+            ))}
+          </Animated.View>
+        </TouchableOpacity>
       </ScrollView>
 
       {/* EXPIRY NOTIFICATION MODAL */}
