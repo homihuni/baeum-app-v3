@@ -298,11 +298,11 @@ export default function HomeScreen() {
   const firstDay = new Date(currentYear, currentMonth - 1, 1).getDay();
   const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
 
-  const isAtMinMonth = currentYear === 2026 && currentMonth === 1;
-  const isPastMonth = currentYear < 2026 || (currentYear === 2026 && currentMonth < 2);
+  const todayYear = new Date().getFullYear();
+  const todayMonth = new Date().getMonth() + 1;
+  const isCurrentMonth = currentYear === todayYear && currentMonth === todayMonth;
 
   const previousMonth = () => {
-    if (isAtMinMonth) return;
     if (currentMonth === 1) {
       setCurrentMonth(12);
       setCurrentYear(currentYear - 1);
@@ -311,9 +311,19 @@ export default function HomeScreen() {
     }
   };
 
+  const nextMonth = () => {
+    if (isCurrentMonth) return;
+    if (currentMonth === 12) {
+      setCurrentMonth(1);
+      setCurrentYear(currentYear + 1);
+    } else {
+      setCurrentMonth(currentMonth + 1);
+    }
+  };
+
   const goToCurrentMonth = () => {
-    setCurrentYear(2026);
-    setCurrentMonth(2);
+    setCurrentYear(todayYear);
+    setCurrentMonth(todayMonth);
   };
 
   const renderCalendarDays = () => {
@@ -321,7 +331,7 @@ export default function HomeScreen() {
     const todayDate = today.getDate();
     const todayMonth = today.getMonth() + 1;
     const todayYear = today.getFullYear();
-    const isCurrentMonth = currentYear === todayYear && currentMonth === todayMonth;
+    const isViewingCurrentMonth = currentYear === todayYear && currentMonth === todayMonth;
 
     for (let i = 0; i < firstDay; i++) {
       days.push(<View key={`empty-start-${i}`} style={styles.dayCell} />);
@@ -329,10 +339,10 @@ export default function HomeScreen() {
 
     for (let day = 1; day <= daysInMonth; day++) {
       const dayOfWeek = (firstDay + day - 1) % 7;
-      const isToday = isCurrentMonth && day === todayDate;
+      const isToday = isViewingCurrentMonth && day === todayDate;
       const isSelected = day === selectedDate && !isToday;
       const hasCompleted = studyDays.has(day);
-      const hasMissed = isCurrentMonth && day < todayDate && !studyDays.has(day);
+      const hasMissed = isViewingCurrentMonth && day < todayDate && !studyDays.has(day);
 
       let textColor = '#333333';
       if (dayOfWeek === 0) textColor = '#FF6B6B';
@@ -373,9 +383,9 @@ export default function HomeScreen() {
   const displayName = childName.length > 5 ? childName.substring(0, 5) + '..' : childName;
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={styles.rootContainer}>
       <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
         {/* 1. PROFILE HEADER BAR */}
         <View style={styles.profileHeader}>
           <View style={styles.profileLeft}>
@@ -456,18 +466,20 @@ export default function HomeScreen() {
         <View style={styles.calendarCard}>
           {/* Calendar Header */}
           <View style={styles.calendarHeader}>
-            <TouchableOpacity onPress={previousMonth} disabled={isAtMinMonth}>
-              <Text style={[styles.arrowText, isAtMinMonth && { color: '#D0D0D0' }]}>{'<'}</Text>
+            <TouchableOpacity onPress={previousMonth}>
+              <Text style={styles.arrowText}>{'<'}</Text>
             </TouchableOpacity>
             <View style={styles.monthTitleContainer}>
               <Text style={styles.monthTitle}>{currentYear}년 {currentMonth}월</Text>
-              {isPastMonth && (
+              {!isCurrentMonth && (
                 <TouchableOpacity onPress={goToCurrentMonth} style={styles.currentMonthButton}>
                   <Text style={styles.currentMonthText}>이번 달</Text>
                 </TouchableOpacity>
               )}
             </View>
-            <View style={styles.emptySpace} />
+            <TouchableOpacity onPress={nextMonth} disabled={isCurrentMonth}>
+              <Text style={[styles.arrowText, isCurrentMonth && { color: '#D0D0D0' }]}>{'>'}</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Week Days Header */}
@@ -502,7 +514,11 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* 5. LEARN BUTTON */}
+        <View style={styles.scrollViewBottomPadding} />
+      </ScrollView>
+
+      {/* 5. LEARN BUTTON - FIXED AT BOTTOM */}
+      <View style={styles.learnButtonContainer}>
         <TouchableOpacity style={styles.learnButton} onPress={() => router.replace('/(tabs)/study')}>
           <Animated.View style={{ transform: [{ scale: scaleAnim }], flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
             {characters.map((char, index) => (
@@ -512,7 +528,7 @@ export default function HomeScreen() {
             ))}
           </Animated.View>
         </TouchableOpacity>
-      </ScrollView>
+      </View>
 
       {/* EXPIRY NOTIFICATION MODAL */}
       <Modal visible={showExpiryModal} transparent={true} animationType="fade">
@@ -544,9 +560,19 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  rootContainer: {
+    flex: 1,
+    backgroundColor: '#F5F5F5',
+  },
   container: {
     flex: 1,
     backgroundColor: '#F5F5F5',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollViewBottomPadding: {
+    height: 20,
   },
   // 1. Profile Header
   profileHeader: {
@@ -711,9 +737,6 @@ const styles = StyleSheet.create({
     color: '#7ED4C0',
     textDecorationLine: 'underline',
   },
-  emptySpace: {
-    width: 42,
-  },
   weekRow: {
     flexDirection: 'row',
     marginBottom: 2,
@@ -725,30 +748,30 @@ const styles = StyleSheet.create({
   daysGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    height: 168,
+    height: 192,
   },
   dayCell: {
     width: '14.28%',
-    height: 28,
+    height: 32,
     justifyContent: 'center',
     alignItems: 'center',
   },
   dayText: {
-    fontSize: 13,
+    fontSize: 14,
   },
   todayCircle: {
     backgroundColor: '#7ED4C0',
-    borderRadius: 14,
-    width: 28,
-    height: 28,
+    borderRadius: 16,
+    width: 32,
+    height: 32,
     justifyContent: 'center',
     alignItems: 'center',
   },
   selectedCircle: {
     backgroundColor: '#E8F8F5',
-    borderRadius: 14,
-    width: 28,
-    height: 28,
+    borderRadius: 16,
+    width: 32,
+    height: 32,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -778,11 +801,20 @@ const styles = StyleSheet.create({
     color: '#9E9E9E',
     marginLeft: 4,
   },
-  // 5. Learn Button
+  // 5. Learn Button (Fixed at bottom)
+  learnButtonContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#F5F5F5',
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
+  },
   learnButton: {
-    marginHorizontal: 20,
-    marginTop: 12,
-    marginBottom: 20,
     backgroundColor: '#7ED4C0',
     borderRadius: 16,
     paddingVertical: 18,
