@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Modal, Pressable, Alert, Animated } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Modal, Pressable, Alert, Animated, Image, Linking, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -24,6 +24,10 @@ export default function HomeScreen() {
   const [correctCount, setCorrectCount] = useState(0);
   const [showExpiryModal, setShowExpiryModal] = useState(false);
   const [expiryMessage, setExpiryMessage] = useState('');
+  const [banners, setBanners] = useState<any[]>([]);
+  const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
+  const scrollViewRef = useRef<ScrollView>(null);
+  const bannerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const characters = ['학', '습', '하', '기', ' 🏆'];
   const charAnims = useRef(characters.map(() => new Animated.Value(0))).current;
@@ -35,6 +39,7 @@ export default function HomeScreen() {
 
   useEffect(() => {
     loadChildData();
+    loadBanners();
 
     const animation = Animated.loop(
       Animated.sequence([
@@ -99,6 +104,76 @@ export default function HomeScreen() {
     } catch (error) {
       console.log('Load child data error:', error);
     }
+  };
+
+  const loadBanners = async () => {
+    try {
+      const bannersRef = collection(db, 'Banners');
+      const snapshot = await getDocs(bannersRef);
+      const today = new Date();
+      const todayStr = today.toISOString().split('T')[0];
+
+      const activeBanners = snapshot.docs
+        .map(docSnap => ({ id: docSnap.id, ...docSnap.data() }))
+        .filter((banner: any) => {
+          return (
+            banner.isActive === true &&
+            banner.startDate <= todayStr &&
+            banner.endDate >= todayStr
+          );
+        })
+        .sort((a: any, b: any) => a.order - b.order);
+
+      setBanners(activeBanners);
+
+      if (activeBanners.length > 0) {
+        startBannerAutoScroll(activeBanners.length);
+      }
+    } catch (error) {
+      console.log('Load banners error:', error);
+    }
+  };
+
+  const startBannerAutoScroll = (totalBanners: number) => {
+    if (bannerIntervalRef.current) {
+      clearInterval(bannerIntervalRef.current);
+    }
+
+    if (totalBanners <= 1) return;
+
+    bannerIntervalRef.current = setInterval(() => {
+      setCurrentBannerIndex(prevIndex => {
+        const nextIndex = (prevIndex + 1) % totalBanners;
+        const screenWidth = Dimensions.get('window').width;
+        const bannerWidth = screenWidth - 40;
+        scrollViewRef.current?.scrollTo({ x: nextIndex * bannerWidth, animated: true });
+        return nextIndex;
+      });
+    }, 3000);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (bannerIntervalRef.current) {
+        clearInterval(bannerIntervalRef.current);
+      }
+    };
+  }, []);
+
+  const handleBannerPress = (banner: any) => {
+    if (banner.linkType === 'url') {
+      Linking.openURL(banner.linkValue);
+    } else if (banner.linkType === 'screen') {
+      router.push(banner.linkValue);
+    }
+  };
+
+  const handleBannerScroll = (event: any) => {
+    const screenWidth = Dimensions.get('window').width;
+    const bannerWidth = screenWidth - 40;
+    const contentOffsetX = event.nativeEvent.contentOffset.x;
+    const index = Math.round(contentOffsetX / bannerWidth);
+    setCurrentBannerIndex(index);
   };
 
   useEffect(() => {
@@ -314,10 +389,50 @@ export default function HomeScreen() {
         </View>
 
         {/* 2. BANNER AREA */}
-        <View style={styles.banner}>
-          <Text style={styles.bannerTitle}>배움학습 소식</Text>
-          <Text style={styles.bannerSubtitle}>매일 학습하고 성장해요!</Text>
-        </View>
+        {banners.length > 0 ? (
+          <View style={styles.bannerContainer}>
+            <ScrollView
+              ref={scrollViewRef}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onMomentumScrollEnd={handleBannerScroll}
+              scrollEventThrottle={16}
+            >
+              {banners.map((banner, index) => (
+                <TouchableOpacity
+                  key={banner.id}
+                  activeOpacity={0.9}
+                  onPress={() => handleBannerPress(banner)}
+                >
+                  <Image
+                    source={{ uri: banner.imageUrl }}
+                    style={styles.bannerImage}
+                    resizeMode="cover"
+                  />
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            {banners.length > 1 && (
+              <View style={styles.indicatorContainer}>
+                {banners.map((_, index) => (
+                  <View
+                    key={index}
+                    style={[
+                      styles.indicator,
+                      currentBannerIndex === index && styles.indicatorActive
+                    ]}
+                  />
+                ))}
+              </View>
+            )}
+          </View>
+        ) : (
+          <View style={styles.banner}>
+            <Text style={styles.bannerTitle}>배움학습 소식</Text>
+            <Text style={styles.bannerSubtitle}>매일 학습하고 성장해요!</Text>
+          </View>
+        )}
 
         {/* 3. MONTHLY STATS ROW */}
         <View style={styles.statsCard}>
@@ -488,6 +603,40 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666666',
     marginTop: 4,
+  },
+  bannerContainer: {
+    marginHorizontal: 20,
+    marginTop: 16,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#F0F0F0',
+  },
+  bannerImage: {
+    width: Dimensions.get('window').width - 40,
+    height: ((Dimensions.get('window').width - 40) * 280) / 720,
+    borderRadius: 12,
+  },
+  indicatorContainer: {
+    position: 'absolute',
+    bottom: 8,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+  },
+  indicator: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+  },
+  indicatorActive: {
+    backgroundColor: '#FFFFFF',
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   // 3. Stats Card
   statsCard: {
