@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -73,88 +73,91 @@ export default function CompleteScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.trophy}>🏆</Text>
-        <Text style={styles.title}>학습 완료!</Text>
-        <Text style={styles.subtitle}>수고했어요! 오늘도 잘했습니다</Text>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.content}>
+          <Text style={styles.trophy}>🏆</Text>
+          <Text style={styles.title}>학습 완료!</Text>
+          <Text style={styles.subtitle}>수고했어요! 오늘도 잘했습니다</Text>
 
-        <View style={styles.statsCard}>
-          <View style={styles.subjectBadge}>
-            <Text style={styles.statsSubject}>{SUBJECT_LABELS[subject] || subject} · {total}문제</Text>
+          <View style={styles.statsCard}>
+            <View style={styles.subjectBadge}>
+              <Text style={styles.statsSubject}>{SUBJECT_LABELS[subject] || subject} · {total}문제</Text>
+            </View>
+            <View style={styles.statsRow}>
+              <Text style={styles.statsLabel}>정답</Text>
+              <Text style={styles.statsValue}>{correctFinal}/{total}</Text>
+            </View>
+            <View style={styles.statsRow}>
+              <Text style={styles.statsLabel}>정답률</Text>
+              <Text style={[styles.statsValue, { color: '#7ED4C0' }]}>{rate}%</Text>
+            </View>
+            <View style={styles.statsRow}>
+              <Text style={styles.statsLabel}>오답</Text>
+              <Text style={[styles.statsValue, { color: '#FF6B6B' }]}>{wrongFinal}문제</Text>
+            </View>
           </View>
-          <View style={styles.statsRow}>
-            <Text style={styles.statsLabel}>정답</Text>
-            <Text style={styles.statsValue}>{correctFinal}/{total}</Text>
-          </View>
-          <View style={styles.statsRow}>
-            <Text style={styles.statsLabel}>정답률</Text>
-            <Text style={[styles.statsValue, { color: '#7ED4C0' }]}>{rate}%</Text>
-          </View>
-          <View style={styles.statsRow}>
-            <Text style={styles.statsLabel}>오답</Text>
-            <Text style={[styles.statsValue, { color: '#FF6B6B' }]}>{wrongFinal}문제</Text>
-          </View>
+
+          <Text style={styles.encouragement}>
+            {rate === 100 ? '🎉 완벽해요! 최고!' : rate >= 70 ? '👏 잘했어요! 조금만 더 노력해봐요!' : '💪 다음에는 더 잘할 수 있어요!'}
+          </Text>
+
+          {/* AI 학습 분석 - 배움/스카이 회원만 */}
+          {tier !== 'free' && tier !== 'expired' && (
+            <View style={styles.aiCommentCard}>
+              <Text style={styles.aiCommentTitle}>🤖 AI 학습 분석</Text>
+              {aiLoading ? (
+                <View style={styles.aiLoadingContainer}>
+                  <ActivityIndicator size="small" color="#7ED4C0" />
+                  <Text style={styles.aiLoadingText}>
+                    AI가 학습을 분석하고 있어요...
+                  </Text>
+                </View>
+              ) : aiComment ? (
+                <>
+                  <Text style={styles.aiCommentText}>
+                    {aiComment}
+                  </Text>
+                  {aiTip && tier === 'sky' && (
+                    <View style={styles.aiTipCard}>
+                      <Text style={styles.aiTipTitle}>💡 맞춤 학습 팁</Text>
+                      <Text style={styles.aiTipText}>
+                        {aiTip}
+                      </Text>
+                    </View>
+                  )}
+                </>
+              ) : null}
+            </View>
+          )}
+
+          {/* 무료회원 업그레이드 안내 */}
+          {(tier === 'free' || tier === 'expired') && (
+            <View style={styles.upgradeCard}>
+              <Text style={styles.upgradeEmoji}>🔒</Text>
+              <Text style={styles.upgradeText}>
+                AI 학습 분석은 배움/스카이 회원 전용이에요
+              </Text>
+            </View>
+          )}
         </View>
 
-        <Text style={styles.encouragement}>
-          {rate === 100 ? '🎉 완벽해요! 최고!' : rate >= 70 ? '👏 잘했어요! 조금만 더 노력해봐요!' : '💪 다음에는 더 잘할 수 있어요!'}
-        </Text>
-
-        {/* AI 학습 분석 - 배움/스카이 회원만 */}
-        {tier !== 'free' && tier !== 'expired' && (
-          <View style={styles.aiCommentCard}>
-            <Text style={styles.aiCommentTitle}>🤖 AI 학습 분석</Text>
-            {aiLoading ? (
-              <View style={styles.aiLoadingContainer}>
-                <ActivityIndicator size="small" color="#7ED4C0" />
-                <Text style={styles.aiLoadingText}>
-                  AI가 학습을 분석하고 있어요...
-                </Text>
-              </View>
-            ) : aiComment ? (
-              <>
-                <Text style={styles.aiCommentText}>
-                  {aiComment}
-                </Text>
-                {aiTip && tier === 'sky' && (
-                  <View style={styles.aiTipCard}>
-                    <Text style={styles.aiTipTitle}>💡 맞춤 학습 팁</Text>
-                    <Text style={styles.aiTipText}>
-                      {aiTip}
-                    </Text>
-                  </View>
-                )}
-              </>
-            ) : null}
-          </View>
-        )}
-
-        {/* 무료회원 업그레이드 안내 */}
-        {(tier === 'free' || tier === 'expired') && (
-          <View style={styles.upgradeCard}>
-            <Text style={styles.upgradeEmoji}>🔒</Text>
-            <Text style={styles.upgradeText}>
-              AI 학습 분석은 배움/스카이 회원 전용이에요
-            </Text>
-          </View>
-        )}
-      </View>
-
-      <View style={styles.bottomBar}>
-        <TouchableOpacity style={styles.otherBtn} onPress={() => router.replace('/(tabs)/study')}>
-          <Text style={styles.otherBtnText}>다른 과목 풀기</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.homeBtn} onPress={() => router.replace('/(tabs)/home')}>
-          <Text style={styles.homeBtnText}>홈으로</Text>
-        </TouchableOpacity>
-      </View>
+        <View style={styles.bottomBar}>
+          <TouchableOpacity style={styles.otherBtn} onPress={() => router.replace('/(tabs)/study')}>
+            <Text style={styles.otherBtnText}>다른 과목 풀기</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.homeBtn} onPress={() => router.replace('/(tabs)/home')}>
+            <Text style={styles.homeBtnText}>홈으로</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFFFF' },
-  content: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24 },
+  scrollContent: { flexGrow: 1 },
+  content: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24, paddingVertical: 24 },
   trophy: { fontSize: 64, marginBottom: 16 },
   title: { fontSize: 28, fontWeight: 'bold', color: '#7ED4C0', marginBottom: 8 },
   subtitle: { fontSize: 15, color: '#9E9E9E', marginBottom: 32 },
@@ -165,7 +168,7 @@ const styles = StyleSheet.create({
   statsLabel: { fontSize: 15, fontWeight: 'bold', color: '#333' },
   statsValue: { fontSize: 15, fontWeight: 'bold', color: '#333' },
   encouragement: { fontSize: 15, color: '#666', marginTop: 24, textAlign: 'center' },
-  aiCommentCard: { marginTop: 16, width: '100%', padding: 16, backgroundColor: '#F8F9FA', borderRadius: 12 },
+  aiCommentCard: { marginTop: 16, width: '100%', paddingVertical: 16, paddingHorizontal: 16, backgroundColor: '#F8F9FA', borderRadius: 12 },
   aiCommentTitle: { fontSize: 14, fontWeight: 'bold', marginBottom: 8, color: '#333' },
   aiLoadingContainer: { alignItems: 'center', paddingVertical: 12 },
   aiLoadingText: { fontSize: 12, color: '#999', marginTop: 8 },
