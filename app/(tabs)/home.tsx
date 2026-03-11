@@ -1,6 +1,6 @@
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Modal, Pressable, Alert } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Modal, Pressable, Alert, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
@@ -25,12 +25,31 @@ export default function HomeScreen() {
   const [showExpiryModal, setShowExpiryModal] = useState(false);
   const [expiryMessage, setExpiryMessage] = useState('');
 
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+
   const TIER_LABELS: Record<string, string> = { free: '무료회원', baeum: '배움회원', sky: '스카이회원' };
   const TIER_COLORS: Record<string, string> = { free: '#E0E0E0', baeum: '#4ECDC4', sky: '#87CEEB' };
   const TIER_TEXT_COLORS: Record<string, string> = { free: '#666666', baeum: '#FFFFFF', sky: '#333333' };
 
   useEffect(() => {
     loadChildData();
+
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 0.6,
+          duration: 750,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 750,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    pulse.start();
+    return () => pulse.stop();
   }, []);
 
   const loadChildData = async () => {
@@ -345,9 +364,11 @@ export default function HomeScreen() {
         </View>
 
         {/* 5. LEARN BUTTON */}
-        <TouchableOpacity style={styles.learnButton} onPress={() => router.replace('/(tabs)/study')}>
-          <Text style={styles.learnButtonText}>학습하기 📝</Text>
-        </TouchableOpacity>
+        <Animated.View style={{ opacity: pulseAnim }}>
+          <TouchableOpacity style={styles.learnButton} onPress={() => router.replace('/(tabs)/study')}>
+            <Text style={styles.learnButtonText}>학습하기 📝</Text>
+          </TouchableOpacity>
+        </Animated.View>
       </ScrollView>
 
       {/* EXPIRY NOTIFICATION MODAL */}
