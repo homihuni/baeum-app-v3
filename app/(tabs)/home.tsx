@@ -673,9 +673,9 @@ const styles = StyleSheet.create({
   // 4. Calendar Card
   calendarCard: {
     marginHorizontal: 20,
-    marginTop: 12,
+    marginTop: 10,
     borderRadius: 12,
-    padding: 12,
+    padding: 10,
     backgroundColor: '#FFFFFF',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -687,7 +687,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 6,
   },
   arrowText: {
     fontSize: 18,
@@ -699,15 +699,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   monthTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#333333',
   },
   currentMonthButton: {
-    marginLeft: 12,
+    marginLeft: 10,
   },
   currentMonthText: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#7ED4C0',
     textDecorationLine: 'underline',
   },
@@ -716,39 +716,39 @@ const styles = StyleSheet.create({
   },
   weekRow: {
     flexDirection: 'row',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   weekDayText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
   },
   daysGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    height: 216,
+    height: 168,
   },
   dayCell: {
     width: '14.28%',
-    height: 36,
+    height: 28,
     justifyContent: 'center',
     alignItems: 'center',
   },
   dayText: {
-    fontSize: 14,
+    fontSize: 13,
   },
   todayCircle: {
     backgroundColor: '#7ED4C0',
-    borderRadius: 16,
-    width: 32,
-    height: 32,
+    borderRadius: 14,
+    width: 28,
+    height: 28,
     justifyContent: 'center',
     alignItems: 'center',
   },
   selectedCircle: {
     backgroundColor: '#E8F8F5',
-    borderRadius: 16,
-    width: 32,
-    height: 32,
+    borderRadius: 14,
+    width: 28,
+    height: 28,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -761,7 +761,7 @@ const styles = StyleSheet.create({
   legendRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 4,
+    marginTop: 2,
     gap: 16,
   },
   legendItem: {
@@ -781,7 +781,7 @@ const styles = StyleSheet.create({
   // 5. Learn Button
   learnButton: {
     marginHorizontal: 20,
-    marginTop: 16,
+    marginTop: 12,
     marginBottom: 20,
     backgroundColor: '#7ED4C0',
     borderRadius: 16,
