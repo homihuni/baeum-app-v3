@@ -25,7 +25,7 @@ export default function HomeScreen() {
   const [showExpiryModal, setShowExpiryModal] = useState(false);
   const [expiryMessage, setExpiryMessage] = useState('');
 
-  const characters = ['학', '습', '하', '기', ' 📚'];
+  const characters = ['학', '습', '하', '기', ' 🏆'];
   const charAnims = useRef(characters.map(() => new Animated.Value(0))).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
@@ -389,7 +389,7 @@ export default function HomeScreen() {
 
         {/* 5. LEARN BUTTON */}
         <TouchableOpacity style={styles.learnButton} onPress={() => router.replace('/(tabs)/study')}>
-          <Animated.View style={{ transform: [{ scale: scaleAnim }], flexDirection: 'row' }}>
+          <Animated.View style={{ transform: [{ scale: scaleAnim }], flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
             {characters.map((char, index) => (
               <Animated.Text key={index} style={[styles.learnButtonText, { opacity: charAnims[index] }]}>
                 {char}
@@ -637,6 +637,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#7ED4C0',
     borderRadius: 16,
     paddingVertical: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   learnButtonText: {
     fontSize: 18,
