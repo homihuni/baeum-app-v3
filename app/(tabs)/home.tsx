@@ -11,8 +11,8 @@ export default function HomeScreen() {
   const router = useRouter();
   const today = new Date();
   const [selectedDate, setSelectedDate] = useState(today.getDate());
-  const [currentYear, setCurrentYear] = useState(2026);
-  const [currentMonth, setCurrentMonth] = useState(2);
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() + 1);
   const [childName, setChildName] = useState('');
   const [childGrade, setChildGrade] = useState('');
   const [childTier, setChildTier] = useState('free');
