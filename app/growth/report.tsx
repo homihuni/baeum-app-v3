@@ -28,6 +28,8 @@ interface MonthlyData {
 interface SubjectData {
   subject: string;
   rate: number;
+  correct?: number;
+  total?: number;
 }
 
 const subjectColors: Record<string, string> = {
@@ -162,7 +164,7 @@ export default function ReportScreen() {
     const result: SubjectData[] = Object.keys(subjectMap).map((subject) => {
       const data = subjectMap[subject];
       const rate = data.total > 0 ? Math.round((data.correct / data.total) * 100) : 0;
-      return { subject, rate };
+      return { subject, rate, correct: data.correct, total: data.total };
     });
 
     console.log('=== 과목별 정답률:', result);
@@ -289,6 +291,14 @@ export default function ReportScreen() {
   };
 
   const generateAISummary = () => {
+    if (!subjectData || subjectData.length === 0) {
+      return '이번 달 학습 기록이 없습니다. 학습을 시작해보세요!';
+    }
+
+    const totalCorrect = subjectData.reduce((sum, s) => sum + (s.correct || 0), 0);
+    const totalQuestions = subjectData.reduce((sum, s) => sum + (s.total || 0), 0);
+    const overallRate = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
+
     const subjectNameMap: Record<string, string> = {
       math: '수학',
       korean: '국어',
@@ -298,38 +308,27 @@ export default function ReportScreen() {
       integrated: '통합교과'
     };
 
-    if (subjectData.length === 0) {
-      return '이번 달 학습 기록이 없어요. 첫 문제를 풀어보세요!';
-    }
+    const strong = subjectData.filter(s => s.rate >= 90).map(s => subjectNameMap[s.subject] || s.subject);
+    const weak = subjectData.filter(s => s.rate < 70).map(s => subjectNameMap[s.subject] || s.subject);
 
-    const strong = subjectData.filter(s => s.rate >= 80);
-    const weak = subjectData.filter(s => s.rate < 70);
-    const strongNames = strong.map(s => subjectNameMap[s.subject] || s.subject);
-    const weakNames = weak.map(s => subjectNameMap[s.subject] || s.subject);
-
-    let summary = `${childName || '학생'}은(는) 이번 달 `;
+    let summary = `이번 달 전체 정답률은 ${overallRate}%입니다. `;
+    summary += `총 ${subjectData.length}개 과목을 학습했습니다.\n\n`;
 
     if (strong.length > 0) {
-      summary += `${strongNames.join(', ')}에서 높은 정답률(${strong.map(s => s.rate + '%').join(', ')})을 보이고 있어요! 👏\n\n`;
+      summary += `${strong.join(', ')}은(는) 매우 잘하고 있어요! 90% 이상의 높은 정답률을 기록했어요.\n\n`;
     }
 
     if (weak.length > 0) {
-      summary += `${weakNames.join(', ')}은(는) 조금 더 연습하면 좋겠어요. 틀린 문제를 복습하면 금방 올라갈 거예요!\n\n`;
+      summary += `${weak.join(', ')}은(는) 조금 더 연습이 필요해요. 틀린 문제를 복습하면 빠르게 향상될 거예요.\n\n`;
     }
 
-    if (subjectData.length >= 3) {
-      summary += `${subjectData.length}개 과목을 골고루 학습하고 있어요! 균형 잡힌 학습 습관이 훌륭해요.\n\n`;
-    } else if (subjectData.length === 1) {
-      summary += `한 가지 과목에 집중하고 있어요. 다른 과목도 함께 풀어보면 더 균형 잡힌 학습이 될 거예요.\n\n`;
+    if (overallRate >= 90) {
+      summary += '전반적으로 훌륭한 학습 성과를 보이고 있습니다!';
+    } else if (overallRate >= 70) {
+      summary += '꾸준히 잘하고 있어요. 조금만 더 노력하면 더 좋아질 거예요!';
+    } else {
+      summary += '꾸준한 학습이 중요해요. 매일 조금씩 연습해봐요!';
     }
-
-    if (totalDays >= 15) {
-      summary += `이번 달 ${totalDays}일 동안 꾸준히 학습했어요. 대단해요! 🎉\n\n`;
-    } else if (totalDays >= 7) {
-      summary += `이번 달 ${totalDays}일 동안 학습했어요. 조금 더 자주 학습하면 더 큰 성장을 기대할 수 있어요!\n\n`;
-    }
-
-    summary += '꾸준히 학습하면 다음 달에는 더 큰 성장을 기대할 수 있어요! 💪';
 
     return summary;
   };
@@ -344,6 +343,10 @@ export default function ReportScreen() {
   };
 
   const generateSkyTips = () => {
+    if (!subjectData || subjectData.length === 0) {
+      return '학습 기록이 쌓이면 맞춤 팁을 제공해드릴게요!';
+    }
+
     const subjectNameMap: Record<string, string> = {
       math: '수학',
       korean: '국어',
@@ -353,16 +356,24 @@ export default function ReportScreen() {
       integrated: '통합교과'
     };
 
-    let tips = '';
+    const weak = subjectData.filter(s => s.rate < 70).sort((a, b) => a.rate - b.rate);
 
-    const weak = subjectData.filter(s => s.rate < 70);
-    if (weak.length > 0) {
-      const weakNames = weak.map(s => subjectNameMap[s.subject] || s.subject);
-      tips += `• ${weakNames.join(', ')} 과목의 틀린 문제를 내일 다시 풀어보세요. 반복 학습이 기억에 오래 남아요.\n\n`;
+    if (weak.length === 0) {
+      return '모든 과목을 잘하고 있어요! 지금처럼 꾸준히 학습하면 더욱 성장할 거예요.';
     }
 
-    tips += `• 매일 꾸준히 ${Math.min(subjectData.length + 1, 3)}개 과목을 풀어보는 것을 추천해요.\n\n`;
-    tips += '• 틀린 문제는 바로 다시 풀어보면 효과가 2배예요! 복습 습관을 만들어보세요.\n\n';
+    const target = weak[0];
+    const name = subjectNameMap[target.subject] || target.subject;
+
+    let tips = `• ${name} 정답률이 ${target.rate}%로 가장 낮아요. ${name} 문제를 매일 2~3문제씩 추가로 풀어보면 빠르게 향상될 거예요!\n\n`;
+
+    if (weak.length > 1) {
+      const secondWeak = weak[1];
+      const secondName = subjectNameMap[secondWeak.subject] || secondWeak.subject;
+      tips += `• ${secondName}(${secondWeak.rate}%)도 함께 보완하면 전체 성적이 더 올라갈 거예요.\n\n`;
+    }
+
+    tips += `• 틀린 문제는 바로 다시 풀어보면 효과가 2배예요! 복습 습관을 만들어보세요.\n\n`;
 
     if (totalDays < 10) {
       tips += `• 이번 달 ${totalDays}일 학습했어요. 주 3회 이상 학습하면 더 큰 성장을 기대할 수 있어요.`;
