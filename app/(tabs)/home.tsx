@@ -422,7 +422,7 @@ const styles = StyleSheet.create({
   },
   // 2. Banner
   banner: {
-    height: 120,
+    height: 90,
     marginHorizontal: 20,
     marginTop: 16,
     borderRadius: 12,
@@ -477,7 +477,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginTop: 12,
     borderRadius: 12,
-    padding: 16,
+    padding: 12,
     backgroundColor: '#FFFFFF',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -489,7 +489,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 10,
   },
   arrowText: {
     fontSize: 18,
@@ -518,7 +518,7 @@ const styles = StyleSheet.create({
   },
   weekRow: {
     flexDirection: 'row',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   weekDayText: {
     fontSize: 14,
@@ -527,11 +527,11 @@ const styles = StyleSheet.create({
   daysGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    height: 264,
+    height: 216,
   },
   dayCell: {
     width: '14.28%',
-    height: 44,
+    height: 36,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -540,17 +540,17 @@ const styles = StyleSheet.create({
   },
   todayCircle: {
     backgroundColor: '#7ED4C0',
-    borderRadius: 20,
-    width: 36,
-    height: 36,
+    borderRadius: 16,
+    width: 32,
+    height: 32,
     justifyContent: 'center',
     alignItems: 'center',
   },
   selectedCircle: {
     backgroundColor: '#E8F8F5',
-    borderRadius: 20,
-    width: 36,
-    height: 36,
+    borderRadius: 16,
+    width: 32,
+    height: 32,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -563,7 +563,7 @@ const styles = StyleSheet.create({
   legendRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 8,
+    marginTop: 4,
     gap: 16,
   },
   legendItem: {
