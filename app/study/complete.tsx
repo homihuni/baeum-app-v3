@@ -1,6 +1,10 @@
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '../../utils/firebase';
 
 const SUBJECT_LABELS: Record<string, string> = {
   korean: '국어', math: '수학', integrated: '통합교과',
@@ -15,6 +19,51 @@ export default function CompleteScreen() {
   const correctFinal = parseInt((params.correctFinal as string) || '0');
   const wrongFinal = parseInt((params.wrongFinal as string) || '0');
   const rate = total > 0 ? Math.round((correctFinal / total) * 100) : 0;
+
+  const [aiComment, setAiComment] = useState<string | null>(null);
+  const [aiTip, setAiTip] = useState<string | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [tier, setTier] = useState<string>('free');
+
+  useEffect(() => {
+    const fetchAIComment = async () => {
+      try {
+        const childId = await AsyncStorage.getItem('childId');
+        const childName = await AsyncStorage.getItem('childName');
+        const childGrade = await AsyncStorage.getItem('childGrade');
+        const childTier = await AsyncStorage.getItem('childTier');
+
+        setTier(childTier || 'free');
+
+        // 무료회원은 AI 호출 안 함
+        if (!childTier || childTier === 'free' || childTier === 'expired') {
+          return;
+        }
+
+        setAiLoading(true);
+        const generateAIComment = httpsCallable(functions, 'generateAIComment');
+
+        const result = await generateAIComment({
+          childId,
+          childName: childName || '학생',
+          grade: childGrade || '1',
+          tier: childTier,
+        });
+
+        const data = result.data as any;
+        if (data.success) {
+          setAiComment(data.analysis);
+          if (data.tip) setAiTip(data.tip);
+        }
+      } catch (error) {
+        console.log('AI 코멘트 생성 실패:', error);
+      } finally {
+        setAiLoading(false);
+      }
+    };
+
+    fetchAIComment();
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -44,6 +93,45 @@ export default function CompleteScreen() {
         <Text style={styles.encouragement}>
           {rate === 100 ? '🎉 완벽해요! 최고!' : rate >= 70 ? '👏 잘했어요! 조금만 더 노력해봐요!' : '💪 다음에는 더 잘할 수 있어요!'}
         </Text>
+
+        {/* AI 학습 분석 - 배움/스카이 회원만 */}
+        {tier !== 'free' && tier !== 'expired' && (
+          <View style={styles.aiCommentCard}>
+            <Text style={styles.aiCommentTitle}>🤖 AI 학습 분석</Text>
+            {aiLoading ? (
+              <View style={styles.aiLoadingContainer}>
+                <ActivityIndicator size="small" color="#7ED4C0" />
+                <Text style={styles.aiLoadingText}>
+                  AI가 학습을 분석하고 있어요...
+                </Text>
+              </View>
+            ) : aiComment ? (
+              <>
+                <Text style={styles.aiCommentText}>
+                  {aiComment}
+                </Text>
+                {aiTip && tier === 'sky' && (
+                  <View style={styles.aiTipCard}>
+                    <Text style={styles.aiTipTitle}>💡 맞춤 학습 팁</Text>
+                    <Text style={styles.aiTipText}>
+                      {aiTip}
+                    </Text>
+                  </View>
+                )}
+              </>
+            ) : null}
+          </View>
+        )}
+
+        {/* 무료회원 업그레이드 안내 */}
+        {(tier === 'free' || tier === 'expired') && (
+          <View style={styles.upgradeCard}>
+            <Text style={styles.upgradeEmoji}>🔒</Text>
+            <Text style={styles.upgradeText}>
+              AI 학습 분석은 배움/스카이 회원 전용이에요
+            </Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.bottomBar}>
@@ -71,6 +159,17 @@ const styles = StyleSheet.create({
   statsLabel: { fontSize: 15, fontWeight: 'bold', color: '#333' },
   statsValue: { fontSize: 15, fontWeight: 'bold', color: '#333' },
   encouragement: { fontSize: 15, color: '#666', marginTop: 24, textAlign: 'center' },
+  aiCommentCard: { marginTop: 16, width: '100%', padding: 16, backgroundColor: '#F8F9FA', borderRadius: 12 },
+  aiCommentTitle: { fontSize: 14, fontWeight: 'bold', marginBottom: 8, color: '#333' },
+  aiLoadingContainer: { alignItems: 'center', paddingVertical: 12 },
+  aiLoadingText: { fontSize: 12, color: '#999', marginTop: 8 },
+  aiCommentText: { fontSize: 13, color: '#555', lineHeight: 20 },
+  aiTipCard: { marginTop: 12, padding: 12, backgroundColor: '#E8F5E9', borderRadius: 8 },
+  aiTipTitle: { fontSize: 13, fontWeight: 'bold', color: '#2E7D32', marginBottom: 4 },
+  aiTipText: { fontSize: 12, color: '#388E3C', lineHeight: 18 },
+  upgradeCard: { marginTop: 16, width: '100%', padding: 16, backgroundColor: '#F5F5F5', borderRadius: 12, alignItems: 'center' },
+  upgradeEmoji: { fontSize: 20, marginBottom: 8 },
+  upgradeText: { fontSize: 13, color: '#999', textAlign: 'center' },
   bottomBar: { padding: 20, gap: 10 },
   otherBtn: { backgroundColor: '#7ED4C0', borderRadius: 16, paddingVertical: 16, alignItems: 'center' },
   otherBtnText: { fontSize: 16, fontWeight: 'bold', color: '#FFFFFF' },
