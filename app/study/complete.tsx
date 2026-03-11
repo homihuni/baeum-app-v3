@@ -30,6 +30,7 @@ export default function CompleteScreen() {
         const childName = await AsyncStorage.getItem('childName');
         const childGrade = await AsyncStorage.getItem('childGrade');
         const childTier = await AsyncStorage.getItem('childTier');
+        const parentId = await AsyncStorage.getItem('parentId');
 
         setTier(childTier || 'free');
 
@@ -49,6 +50,7 @@ export default function CompleteScreen() {
               childName: childName || '학생',
               grade: childGrade || '1',
               tier: childTier,
+              parentId: parentId,
             }
           })
         });
