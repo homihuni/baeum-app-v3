@@ -130,14 +130,21 @@ export default function GrowthScreen() {
       setStreakDays(streak);
       console.log("=== 최종 streak ===", streak);
 
+      // tier 정보 저장 (AI 함수에서 사용)
+      const currentTier = childDoc.exists() && childDoc.data().tier
+        ? childDoc.data().tier
+        : (await getDoc(doc(db, 'Parents', parentId))).exists()
+          ? (await getDoc(doc(db, 'Parents', parentId))).data()?.tier || 'free'
+          : 'free';
+
       // AI 하루 피드백 로드 (배움/스카이 회원만)
       const hasTodayLearning = todayRecords.length > 0;
-      if (tier === 'baeum' || tier === 'sky') {
-        await loadDailyAIComment(parentId, childId, todayStr, hasTodayLearning);
+      if (currentTier === 'baeum' || currentTier === 'sky') {
+        await loadDailyAIComment(parentId, childId, todayStr, hasTodayLearning, currentTier);
       }
 
       // AI 월간 종합 분석 로드 (스카이 회원만)
-      if (tier === 'sky') {
+      if (currentTier === 'sky') {
         await loadMonthlyAIComment(parentId, childId, monthStr);
       }
 
@@ -145,10 +152,10 @@ export default function GrowthScreen() {
     finally { setLoading(false); }
   };
 
-  const loadDailyAIComment = async (parentId: string, childId: string, todayStr: string, hasTodayLearning: boolean) => {
+  const loadDailyAIComment = async (parentId: string, childId: string, todayStr: string, hasTodayLearning: boolean, currentTier: string) => {
     try {
       if (!hasTodayLearning) {
-        setAiDailyComment('오늘 학습 기록이 없습니다. 첫 문제를 풀어보세요! 📚');
+        setAiDailyComment('오늘 학습 기록이 없습니다. 문제를 풀면 AI 분석을 받을 수 있어요!');
         return;
       }
 
@@ -169,7 +176,6 @@ export default function GrowthScreen() {
 
       const childName = await AsyncStorage.getItem('childName');
       const childGrade = await AsyncStorage.getItem('childGrade');
-      const childTier = await AsyncStorage.getItem('childTier');
 
       const response = await fetch('https://us-central1-baeum-app.cloudfunctions.net/generateAIComment', {
         method: 'POST',
@@ -179,7 +185,7 @@ export default function GrowthScreen() {
             childId: childId,
             childName: childName || '학생',
             grade: childGrade || '1',
-            tier: childTier,
+            tier: currentTier,
             parentId: parentId,
           }
         })
@@ -279,7 +285,7 @@ export default function GrowthScreen() {
       return (
         <View style={styles.aiLoadingContainer}>
           <ActivityIndicator size="small" color="#7ED4C0" />
-          <Text style={styles.aiLoadingText}>AI가 학습을 분석하고 있어요...</Text>
+          <Text style={styles.aiLoadingText}>AI가 분석 중입니다...</Text>
         </View>
       );
     }
