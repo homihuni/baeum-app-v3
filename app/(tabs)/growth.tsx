@@ -257,6 +257,39 @@ export default function GrowthScreen() {
     }
   };
 
+  const parseAIComment = (text: string) => {
+    try {
+      const lines = text.split('\n').filter(line => line.trim());
+      let summary = '';
+      const subjects: { name: string; content: string }[] = [];
+      let encouragement = '';
+      let tip = '';
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+
+        if (line.startsWith('[요약]')) {
+          summary = line.replace('[요약]', '').trim();
+        } else if (line.startsWith('[통합교과]') || line.startsWith('[국어]') ||
+                   line.startsWith('[수학]') || line.startsWith('[과학]') ||
+                   line.startsWith('[사회]') || line.startsWith('[영어]')) {
+          const match = line.match(/\[(.*?)\](.*)/);
+          if (match) {
+            subjects.push({ name: match[1], content: match[2].trim() });
+          }
+        } else if (line.startsWith('[응원]')) {
+          encouragement = line.replace('[응원]', '').trim();
+        } else if (line.startsWith('[팁]')) {
+          tip = line.replace('[팁]', '').trim();
+        }
+      }
+
+      return { summary, subjects, encouragement, tip, hasStructure: summary || subjects.length > 0 };
+    } catch (error) {
+      return { summary: '', subjects: [], encouragement: '', tip: '', hasStructure: false };
+    }
+  };
+
   const renderDailyAIComment = () => {
     console.log('=== growth.tsx 렌더링 시 tier:', tier, 'free 여부:', tier === 'free');
 
@@ -290,8 +323,47 @@ export default function GrowthScreen() {
       );
     }
 
+    if (!aiDailyComment) {
+      return null;
+    }
+
+    const parsed = parseAIComment(aiDailyComment);
+
+    // 파싱 실패 시 원본 텍스트 표시 (fallback)
+    if (!parsed.hasStructure) {
+      return <Text style={styles.aiTextPaid}>{aiDailyComment}</Text>;
+    }
+
+    // 구조화된 표시
     return (
-      <Text style={styles.aiTextPaid}>{aiDailyComment}</Text>
+      <View>
+        {parsed.summary ? (
+          <>
+            <Text style={styles.aiSummaryText}>📊 {parsed.summary}</Text>
+            {parsed.subjects.length > 0 && <View style={styles.aiDivider} />}
+          </>
+        ) : null}
+
+        {parsed.subjects.map((subject, index) => (
+          <Text key={index} style={styles.aiSubjectText}>
+            • {subject.name}: {subject.content}
+          </Text>
+        ))}
+
+        {parsed.encouragement ? (
+          <>
+            {parsed.subjects.length > 0 && <View style={styles.aiDivider} />}
+            <Text style={styles.aiEncouragementText}>💪 {parsed.encouragement}</Text>
+          </>
+        ) : null}
+
+        {parsed.tip ? (
+          <>
+            <View style={styles.aiDivider} />
+            <Text style={styles.aiTipText}>💡 {parsed.tip}</Text>
+          </>
+        ) : null}
+      </View>
     );
   };
 
@@ -482,4 +554,9 @@ const styles = StyleSheet.create({
   modalMessage:{fontSize:15,color:'#333',textAlign:'center',lineHeight:24,marginBottom:24},
   modalButton:{backgroundColor:'#4CAF50',borderRadius:12,paddingVertical:14,paddingHorizontal:40},
   modalButtonText:{fontSize:16,fontWeight:'bold',color:'#FFFFFF'},
+  aiSummaryText:{fontSize:15,fontWeight:'bold',color:'#333',lineHeight:22,marginBottom:8},
+  aiDivider:{height:1,backgroundColor:'#E0E0E0',marginVertical:10},
+  aiSubjectText:{fontSize:13,color:'#555',lineHeight:20,marginBottom:4},
+  aiEncouragementText:{fontSize:14,fontWeight:'bold',color:'#4CAF50',lineHeight:22,marginTop:4},
+  aiTipText:{fontSize:13,color:'#666',lineHeight:20,marginTop:4,fontStyle:'italic'},
 });
