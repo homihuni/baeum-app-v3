@@ -17,7 +17,10 @@ export default function GrowthScreen() {
   const [todayStats, setTodayStats] = useState<Record<string,{correct:number,wrong:number}>>({});
   const [monthlyStats, setMonthlyStats] = useState({accessDays:0,totalProblems:0,correctCount:0,average:0});
   const [streakDays, setStreakDays] = useState(0);
-  const [aiComment, setAiComment] = useState('');
+  const [aiDailyComment, setAiDailyComment] = useState('');
+  const [aiDailyLoading, setAiDailyLoading] = useState(false);
+  const [aiMonthlyComment, setAiMonthlyComment] = useState('');
+  const [aiMonthlyLoading, setAiMonthlyLoading] = useState(false);
   const [showFreeModal, setShowFreeModal] = useState(false);
 
   useFocusEffect(
@@ -127,29 +130,134 @@ export default function GrowthScreen() {
       setStreakDays(streak);
       console.log("=== 최종 streak ===", streak);
 
-      // AI Comment - 오늘 학습 데이터 기준으로 판단
+      // AI 하루 피드백 로드 (배움/스카이 회원만)
       const hasTodayLearning = todayRecords.length > 0;
-      if (!hasTodayLearning) {
-        setAiComment('아직 학습 기록이 없어요. 첫 문제를 풀어보세요! 📚');
-      } else if (avg >= 90) {
-        setAiComment('🎉 정답률 ' + avg + '%! 정말 대단해요! 이 조자로 계속 가면 최고예요!');
-      } else if (avg >= 70) {
-        setAiComment('👍 정답률 ' + avg + '%로 잘하고 있어요! 조금만 더 노력하면 90점 넘을 수 있어요!');
-      } else {
-        setAiComment('📚 정답률 ' + avg + '%예요. 틀린 문제를 다시 풀어보면 금방 올라갈 거예요!');
+      if (tier === 'baeum' || tier === 'sky') {
+        await loadDailyAIComment(parentId, childId, todayStr, hasTodayLearning);
+      }
+
+      // AI 월간 종합 분석 로드 (스카이 회원만)
+      if (tier === 'sky') {
+        await loadMonthlyAIComment(parentId, childId, monthStr);
       }
 
     } catch (error) { console.log('Growth load error:', error); }
     finally { setLoading(false); }
   };
 
-  const renderAIComment = () => {
+  const loadDailyAIComment = async (parentId: string, childId: string, todayStr: string, hasTodayLearning: boolean) => {
+    try {
+      if (!hasTodayLearning) {
+        setAiDailyComment('오늘 학습 기록이 없습니다. 첫 문제를 풀어보세요! 📚');
+        return;
+      }
+
+      // Firestore에서 오늘 날짜 AI 코멘트 확인
+      const aiCommentRef = doc(db, 'Parents', parentId, 'Children', childId, 'AIComments', todayStr);
+      const aiCommentSnap = await getDoc(aiCommentRef);
+
+      if (aiCommentSnap.exists()) {
+        const data = aiCommentSnap.data();
+        console.log('=== 저장된 AI 하루 피드백 사용 ===', todayStr);
+        setAiDailyComment(data.analysis || '');
+        return;
+      }
+
+      // Firestore에 없으면 Cloud Function 호출
+      console.log('=== AI 하루 피드백 Cloud Function 호출 ===');
+      setAiDailyLoading(true);
+
+      const childName = await AsyncStorage.getItem('childName');
+      const childGrade = await AsyncStorage.getItem('childGrade');
+      const childTier = await AsyncStorage.getItem('childTier');
+
+      const response = await fetch('https://us-central1-baeum-app.cloudfunctions.net/generateAIComment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          data: {
+            childId: childId,
+            childName: childName || '학생',
+            grade: childGrade || '1',
+            tier: childTier,
+            parentId: parentId,
+          }
+        })
+      });
+      const result = await response.json();
+      const data = result.result;
+
+      if (data && data.success && data.analysis) {
+        setAiDailyComment(data.analysis);
+        console.log('=== AI 하루 피드백 생성 완료 ===');
+      } else {
+        setAiDailyComment('AI 분석을 생성하는데 실패했습니다.');
+      }
+    } catch (error) {
+      console.log('AI 하루 피드백 로드 실패:', error);
+      setAiDailyComment('AI 분석을 불러올 수 없습니다.');
+    } finally {
+      setAiDailyLoading(false);
+    }
+  };
+
+  const loadMonthlyAIComment = async (parentId: string, childId: string, monthStr: string) => {
+    try {
+      // Firestore에서 월간 AI 분석 확인
+      const aiMonthlyRef = doc(db, 'Parents', parentId, 'Children', childId, 'AIMonthly', monthStr);
+      const aiMonthlySnap = await getDoc(aiMonthlyRef);
+
+      if (aiMonthlySnap.exists()) {
+        const data = aiMonthlySnap.data();
+        console.log('=== 저장된 AI 월간 분석 사용 ===', monthStr);
+        setAiMonthlyComment(data.analysis || '');
+        return;
+      }
+
+      // Firestore에 없으면 Cloud Function 호출
+      console.log('=== AI 월간 분석 Cloud Function 호출 ===');
+      setAiMonthlyLoading(true);
+
+      const childName = await AsyncStorage.getItem('childName');
+      const childGrade = await AsyncStorage.getItem('childGrade');
+
+      const response = await fetch('https://us-central1-baeum-app.cloudfunctions.net/generateMonthlyAIComment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          data: {
+            childId: childId,
+            childName: childName || '학생',
+            grade: childGrade || '1',
+            parentId: parentId,
+            month: monthStr,
+          }
+        })
+      });
+      const result = await response.json();
+      const data = result.result;
+
+      if (data && data.success && data.analysis) {
+        setAiMonthlyComment(data.analysis);
+        console.log('=== AI 월간 분석 생성 완료 ===');
+      } else {
+        setAiMonthlyComment('AI 월간 분석을 생성하는데 실패했습니다.');
+      }
+    } catch (error) {
+      console.log('AI 월간 분석 로드 실패:', error);
+      setAiMonthlyComment('AI 월간 분석을 불러올 수 없습니다.');
+    } finally {
+      setAiMonthlyLoading(false);
+    }
+  };
+
+  const renderDailyAIComment = () => {
     console.log('=== growth.tsx 렌더링 시 tier:', tier, 'free 여부:', tier === 'free');
 
-    if (tier === 'free') {
+    if (tier === 'free' || tier === 'expired') {
       return (
         <View style={styles.aiCommentContainer}>
-          <Text style={styles.aiTextFree}>{aiComment}</Text>
+          <Text style={styles.aiTextFree}>오늘 학습 기록이 있으면 여기에 AI 분석이 표시됩니다.</Text>
           <View style={styles.blurContainer}>
             <Text style={styles.dummyText}>
               과목별 상세 분석 내용이 여기에 표시됩니다...{'\n'}
@@ -165,111 +273,54 @@ export default function GrowthScreen() {
           </View>
         </View>
       );
-    } else if (tier === 'baeum') {
+    }
+
+    if (aiDailyLoading) {
       return (
-        <Text style={styles.aiTextPaid}>
-          {generateBaeumComment()}
-        </Text>
-      );
-    } else if (tier === 'sky') {
-      return (
-        <View>
-          <Text style={styles.aiTextPaid}>
-            {generateBaeumComment()}
-          </Text>
-          <View style={styles.skyTipBox}>
-            <Text style={styles.aiTextPaid}>
-              {generateSkyTip()}
-            </Text>
-          </View>
+        <View style={styles.aiLoadingContainer}>
+          <ActivityIndicator size="small" color="#7ED4C0" />
+          <Text style={styles.aiLoadingText}>AI가 학습을 분석하고 있어요...</Text>
         </View>
       );
     }
-    return null;
+
+    return (
+      <Text style={styles.aiTextPaid}>{aiDailyComment}</Text>
+    );
   };
 
-  const generateBaeumComment = () => {
-    // todayStats 기반 과목별 정답률 계산
-    const subjectNameMap: Record<string, string> = {
-      math: '수학',
-      korean: '국어',
-      english: '영어',
-      social: '사회',
-      science: '과학',
-      integrated: '통합교과'
-    };
-
-    const subjects = Object.keys(todayStats);
-    if (subjects.length === 0) {
-      return '아직 오늘 학습 기록이 없어요. 첫 문제를 풀어보세요! 📚';
+  const renderMonthlyAIComment = () => {
+    if (tier !== 'sky') {
+      return (
+        <View style={styles.upgradeCard}>
+          <Ionicons name="lock-closed" size={24} color="#4CAF50" style={{marginBottom: 8}} />
+          <Text style={styles.upgradeText}>스카이 회원 전용 기능입니다</Text>
+          <TouchableOpacity
+            style={styles.upgradeButton}
+            onPress={() => router.push('/settings/grade')}
+          >
+            <Text style={styles.upgradeButtonText}>업그레이드</Text>
+          </TouchableOpacity>
+        </View>
+      );
     }
 
-    // 오늘 푼 과목 나열
-    const subjectRates = subjects.map(s => {
-      const stat = todayStats[s];
-      const total = stat.correct + stat.wrong;
-      const rate = total > 0 ? Math.round((stat.correct / total) * 100) : 0;
-      return { subject: s, rate, total };
-    });
-
-    let comment = `${childName || '학생'}이(가) 오늘 `;
-    const subjectNames = subjectRates.map(sr => {
-      const name = subjectNameMap[sr.subject] || sr.subject;
-      return `${name} ${sr.rate}%`;
-    });
-    comment += subjectNames.join(', ') + '의 정답률을 기록했어요!\n\n';
-    comment += '📊 과목별 분석\n';
-
-    subjectRates.forEach(sr => {
-      const name = subjectNameMap[sr.subject] || sr.subject;
-      if (sr.rate >= 90) {
-        comment += `• ${name}: 정답률 ${sr.rate}%! 아주 잘하고 있어요.\n`;
-      } else if (sr.rate >= 70) {
-        comment += `• ${name}: 정답률 ${sr.rate}%로 잘하고 있어요. 틀린 문제를 복습하면 더 올라갈 거예요.\n`;
-      } else {
-        comment += `• ${name}: 정답률 ${sr.rate}%예요. 어려운 부분을 다시 풀어보면 금방 올라갈 거예요.\n`;
-      }
-    });
-
-    // 학습 패턴 팁
-    if (subjects.length === 1) {
-      const name = subjectNameMap[subjects[0]] || subjects[0];
-      comment += `\n💡 오늘은 ${name}만 공부했어요. 다른 과목도 함께 풀어보면 균형 잡힌 학습이 될 거예요!`;
-    } else {
-      comment += `\n💡 ${subjects.length}개 과목을 골고루 공부했어요. 훌륭해요!`;
+    if (aiMonthlyLoading) {
+      return (
+        <View style={styles.aiLoadingContainer}>
+          <ActivityIndicator size="small" color="#7ED4C0" />
+          <Text style={styles.aiLoadingText}>월간 분석을 생성하고 있어요...</Text>
+        </View>
+      );
     }
 
-    return comment;
-  };
-
-  const generateSkyTip = () => {
-    const subjectNameMap: Record<string, string> = {
-      math: '수학',
-      korean: '국어',
-      english: '영어',
-      social: '사회',
-      science: '과학',
-      integrated: '통합교과'
-    };
-
-    const subjects = Object.keys(todayStats);
-    let skyTip = '🎯 AI 맞춤 학습 팁\n';
-
-    const weakSubjects = subjects.filter(s => {
-      const stat = todayStats[s];
-      const total = stat.correct + stat.wrong;
-      const rate = total > 0 ? Math.round((stat.correct / total) * 100) : 0;
-      return rate < 70;
-    });
-
-    if (weakSubjects.length > 0) {
-      const weakNames = weakSubjects.map(s => subjectNameMap[s] || s);
-      skyTip += `• ${weakNames.join(', ')} 과목의 틀린 문제를 내일 다시 풀어보세요. 반복 학습이 기억에 오래 남아요.\n`;
+    if (!aiMonthlyComment) {
+      return <Text style={styles.emptyText}>월간 분석 데이터가 없습니다.</Text>;
     }
-    skyTip += `• 매일 꾸준히 ${Math.min(subjects.length + 1, 3)}개 과목을 풀어보는 것을 추천해요.\n`;
-    skyTip += '• 틀린 문제는 바로 다시 풀어보면 효과가 2배예요!';
 
-    return skyTip;
+    return (
+      <Text style={styles.aiTextPaid}>{aiMonthlyComment}</Text>
+    );
   };
 
   const handleReportPress = () => {
@@ -296,9 +347,16 @@ export default function GrowthScreen() {
         <Text style={styles.subtitle}>{childName || '학생'}의 학습 현황</Text>
 
         <View style={styles.aiCard}>
-          <Text style={styles.cardTitleSmall}>🤖 AI 학습 코멘트</Text>
-          {renderAIComment()}
+          <Text style={styles.cardTitleSmall}>🤖 AI 하루 피드백</Text>
+          {renderDailyAIComment()}
         </View>
+
+        {(tier === 'baeum' || tier === 'sky') && (
+          <View style={styles.aiCard}>
+            <Text style={styles.cardTitleSmall}>📈 AI 종합 분석 (월간)</Text>
+            {renderMonthlyAIComment()}
+          </View>
+        )}
 
         <View style={styles.cardSmall}>
           <Text style={styles.cardTitleSmall}>📊 오늘의 학습</Text>
@@ -391,7 +449,12 @@ const styles = StyleSheet.create({
   lockText1:{fontSize:13,color:'#666',textAlign:'center'},
   lockText2:{fontSize:13,color:'#4CAF50',fontWeight:'bold',textAlign:'center'},
   aiTextPaid:{fontSize:14,color:'#444',lineHeight:22},
-  skyTipBox:{backgroundColor:'#F0F8FF',borderRadius:12,padding:12,marginTop:12},
+  aiLoadingContainer:{alignItems:'center',paddingVertical:12},
+  aiLoadingText:{fontSize:12,color:'#999',marginTop:8},
+  upgradeCard:{backgroundColor:'#F5F5F5',borderRadius:12,padding:16,alignItems:'center'},
+  upgradeText:{fontSize:13,color:'#666',textAlign:'center',marginBottom:12},
+  upgradeButton:{backgroundColor:'#4CAF50',borderRadius:8,paddingVertical:10,paddingHorizontal:20},
+  upgradeButtonText:{fontSize:14,fontWeight:'bold',color:'#FFFFFF'},
   emptyText:{fontSize:14,color:'#999',textAlign:'center',paddingVertical:12},
   subjectRow:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',paddingVertical:6,borderBottomWidth:1,borderBottomColor:'#F0F0F0'},
   subjectNameSmall:{fontSize:13,fontWeight:'600',color:'#333'},
