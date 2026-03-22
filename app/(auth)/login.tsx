@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithRedirect, getRedirectResult } from 'firebase/auth';
 import { auth, db } from '../../utils/firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -11,56 +11,75 @@ const googleProvider = new GoogleAuthProvider();
 
 export default function LoginScreen() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const handleGoogleLogin = async () => {
+  useEffect(() => {
+    handleRedirectResult();
+  }, []);
+
+  const handleRedirectResult = async () => {
     try {
-      setLoading(true);
-      setError(null);
+      const result = await getRedirectResult(auth);
 
-      const result = await signInWithPopup(auth, googleProvider);
-      const user = result.user;
+      if (result) {
+        const user = result.user;
+        const parentRef = doc(db, 'Parents', user.uid);
+        const parentDoc = await getDoc(parentRef);
 
-      const parentRef = doc(db, 'Parents', user.uid);
-      const parentDoc = await getDoc(parentRef);
+        if (!parentDoc.exists()) {
+          await setDoc(parentRef, {
+            email: user.email || '',
+            name: user.displayName || '',
+            loginType: 'google',
+            tier: 'free',
+            maxChildren: 5,
+            createdAt: serverTimestamp(),
+            lastLoginAt: serverTimestamp(),
+            notificationSettings: {
+              marketing: false,
+              nightMarketing: false,
+              notice: true,
+              payment: true,
+            },
+          });
+        } else {
+          await setDoc(parentRef, { lastLoginAt: serverTimestamp() }, { merge: true });
+        }
 
-      if (!parentDoc.exists()) {
-        await setDoc(parentRef, {
-          email: user.email || '',
-          name: user.displayName || '',
-          loginType: 'google',
-          tier: 'free',
-          maxChildren: 5,
-          createdAt: serverTimestamp(),
-          lastLoginAt: serverTimestamp(),
-          notificationSettings: {
-            marketing: false,
-            nightMarketing: false,
-            notice: true,
-            payment: true,
-          },
-        });
-      } else {
-        await setDoc(parentRef, { lastLoginAt: serverTimestamp() }, { merge: true });
+        await AsyncStorage.setItem('parentId', user.uid);
+        router.replace('/(auth)/select-child');
+        return;
       }
-
-      await AsyncStorage.setItem('parentId', user.uid);
 
       setLoading(false);
-      router.replace('/(auth)/select-child');
     } catch (err: any) {
-      console.log('Google 로그인 실패:', err);
-      if (err.code === 'auth/popup-closed-by-user') {
-        setError(null);
-      } else if (err.code === 'auth/popup-blocked') {
-        setError('팝업이 차단되었습니다. 팝업 허용 후 다시 시도해주세요.');
-      } else {
-        setError('Google 로그인에 실패했습니다. 다시 시도해주세요.');
-      }
+      console.log('리다이렉트 결과 처리 실패:', err);
+      setError('로그인 처리 중 문제가 발생했습니다. 다시 시도해주세요.');
       setLoading(false);
     }
   };
+
+  const handleGoogleLogin = async () => {
+    try {
+      setError(null);
+      await signInWithRedirect(auth, googleProvider);
+    } catch (err: any) {
+      console.log('Google 로그인 실패:', err);
+      setError('Google 로그인에 실패했습니다. 다시 시도해주세요.');
+    }
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#7ED4C0" />
+          <Text style={styles.loadingText}>로그인 확인 중...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -78,15 +97,10 @@ export default function LoginScreen() {
 
         <View style={styles.buttonArea}>
           <TouchableOpacity
-            style={[styles.googleButton, loading && styles.buttonDisabled]}
+            style={styles.googleButton}
             onPress={handleGoogleLogin}
-            disabled={loading}
           >
-            {loading ? (
-              <ActivityIndicator color="#333333" />
-            ) : (
-              <Text style={styles.googleButtonText}>Google로 시작하기</Text>
-            )}
+            <Text style={styles.googleButtonText}>Google로 시작하기</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={[styles.appleButton, styles.buttonDisabled]} disabled={true}>
@@ -119,6 +133,16 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     paddingHorizontal: 32,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#999999',
+    marginTop: 16,
   },
   logoArea: {
     alignItems: 'center',
