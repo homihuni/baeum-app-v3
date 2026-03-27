@@ -3,47 +3,19 @@ import { View, Text, TouchableOpacity, StyleSheet, Image, Animated, Dimensions }
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
+const TEXT_HEIGHT = width * 0.5;
 
 export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const anim1 = useRef(new Animated.Value(0)).current;
-  const anim2 = useRef(new Animated.Value(0)).current;
-  const anim3 = useRef(new Animated.Value(0)).current;
-  const animButtons = useRef(new Animated.Value(0)).current;
-
-  const slide1 = useRef(new Animated.Value(120)).current;
-  const slide2 = useRef(new Animated.Value(120)).current;
-  const slide3 = useRef(new Animated.Value(120)).current;
-
-  const scale1 = useRef(new Animated.Value(0.2)).current;
-  const scale2 = useRef(new Animated.Value(0.2)).current;
-  const scale3 = useRef(new Animated.Value(0.2)).current;
+  const textSlide = useRef(new Animated.Value(TEXT_HEIGHT)).current;
 
   useEffect(() => {
     Animated.sequence([
-      Animated.delay(300),
-      Animated.parallel([
-        Animated.spring(anim1, { toValue: 1, friction: 5, tension: 50, useNativeDriver: true }),
-        Animated.spring(slide1, { toValue: 0, friction: 5, tension: 50, useNativeDriver: true }),
-        Animated.spring(scale1, { toValue: 1, friction: 5, tension: 50, useNativeDriver: true }),
-      ]),
-      Animated.delay(100),
-      Animated.parallel([
-        Animated.spring(anim2, { toValue: 1, friction: 5, tension: 50, useNativeDriver: true }),
-        Animated.spring(slide2, { toValue: 0, friction: 5, tension: 50, useNativeDriver: true }),
-        Animated.spring(scale2, { toValue: 1, friction: 5, tension: 50, useNativeDriver: true }),
-      ]),
-      Animated.delay(100),
-      Animated.parallel([
-        Animated.spring(anim3, { toValue: 1, friction: 5, tension: 50, useNativeDriver: true }),
-        Animated.spring(slide3, { toValue: 0, friction: 5, tension: 50, useNativeDriver: true }),
-        Animated.spring(scale3, { toValue: 1, friction: 5, tension: 50, useNativeDriver: true }),
-      ]),
-      Animated.delay(400),
-      Animated.timing(animButtons, { toValue: 1, duration: 500, useNativeDriver: true }),
+      Animated.delay(500),
+      Animated.spring(textSlide, { toValue: 0, friction: 7, tension: 35, useNativeDriver: true }),
     ]).start();
   }, []);
 
@@ -63,36 +35,30 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.logoArea}>
-        <Animated.View style={{ opacity: anim1, transform: [{ translateY: slide1 }, { scale: scale1 }] }}>
-          <Image source={require('../../assets/images/logo_jeocheol.png')} style={styles.logoLine1} resizeMode="contain" />
+      <Image
+        source={require('../../assets/images/login_bg.png')}
+        style={styles.bgImage}
+        resizeMode="cover"
+      />
+
+      <View style={styles.textMask}>
+        <Animated.View style={{ transform: [{ translateY: textSlide }] }}>
+          <Image
+            source={require('../../assets/images/login_text.png')}
+            style={styles.textImage}
+            resizeMode="contain"
+          />
         </Animated.View>
-        <View style={styles.logoRow}>
-          <Animated.View style={{ opacity: anim2, transform: [{ translateY: slide2 }, { scale: scale2 }] }}>
-            <Image source={require('../../assets/images/logo_baeum.png')} style={styles.logoLine2} resizeMode="contain" />
-          </Animated.View>
-          <Animated.View style={{ opacity: anim3, transform: [{ translateY: slide3 }, { scale: scale3 }] }}>
-            <Image source={require('../../assets/images/logo_chodeung.png')} style={styles.logoLine2} resizeMode="contain" />
-          </Animated.View>
-        </View>
       </View>
 
-      <Animated.View style={[styles.buttonArea, { opacity: animButtons }]}>
+      <View style={styles.buttonArea}>
         <View style={styles.socialRow}>
-          <TouchableOpacity style={styles.socialCircle} onPress={() => handleTestLogin('google')} disabled={loading}>
-            <Image source={require('../../assets/images/icon_google.png')} style={styles.socialIcon} resizeMode="contain" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.socialCircle} onPress={() => handleTestLogin('apple')} disabled={loading}>
-            <Image source={require('../../assets/images/icon_apple.png')} style={styles.socialIcon} resizeMode="contain" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.socialCircle} onPress={() => handleTestLogin('kakao')} disabled={loading}>
-            <Image source={require('../../assets/images/icon_kakao.png')} style={styles.socialIcon} resizeMode="contain" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.socialCircle} onPress={() => handleTestLogin('naver')} disabled={loading}>
-            <Image source={require('../../assets/images/icon_naver.png')} style={styles.socialIcon} resizeMode="contain" />
-          </TouchableOpacity>
+          <TouchableOpacity style={styles.socialTouch} onPress={() => handleTestLogin('google')} disabled={loading} />
+          <TouchableOpacity style={styles.socialTouch} onPress={() => handleTestLogin('apple')} disabled={loading} />
+          <TouchableOpacity style={styles.socialTouch} onPress={() => handleTestLogin('kakao')} disabled={loading} />
+          <TouchableOpacity style={styles.socialTouch} onPress={() => handleTestLogin('naver')} disabled={loading} />
         </View>
-      </Animated.View>
+      </View>
 
       {error !== '' && (
         <View style={styles.errorBox}>
@@ -111,32 +77,29 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    paddingTop: 120,
   },
-  logoArea: {
-    alignItems: 'flex-start',
-    paddingHorizontal: 32,
-    width: '100%',
+  bgImage: {
+    position: 'absolute',
+    width: width,
+    height: height,
+    top: 0,
+    left: 0,
   },
-  logoLine1: {
-    width: width * 0.35,
-    height: width * 0.2,
-    marginBottom: -8,
-    marginLeft: 8,
+  textMask: {
+    position: 'absolute',
+    top: height * 0.12,
+    left: 24,
+    width: width * 0.7,
+    height: TEXT_HEIGHT,
+    overflow: 'hidden',
   },
-  logoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  logoLine2: {
-    width: width * 0.4,
-    height: width * 0.25,
+  textImage: {
+    width: width * 0.7,
+    height: TEXT_HEIGHT,
   },
   buttonArea: {
     position: 'absolute',
-    bottom: 100,
+    bottom: height * 0.12,
     width: '100%',
     alignItems: 'center',
   },
@@ -145,26 +108,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 16,
   },
-  socialCircle: {
+  socialTouch: {
     width: 52,
     height: 52,
     borderRadius: 26,
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
-  },
-  socialIcon: {
-    width: 52,
-    height: 52,
   },
   errorBox: {
     position: 'absolute',
-    bottom: 160,
+    bottom: height * 0.22,
+    left: 20,
+    right: 20,
     backgroundColor: '#FDECEA',
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
-    width: '90%',
   },
   errorText: {
     color: '#D32F2F',
@@ -174,6 +131,7 @@ const styles = StyleSheet.create({
   devNotice: {
     position: 'absolute',
     bottom: 40,
+    alignSelf: 'center',
     backgroundColor: '#FFF3CD',
     paddingVertical: 8,
     paddingHorizontal: 16,
