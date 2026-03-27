@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image, ImageSourcePropType } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -31,7 +31,7 @@ const getQuestionsPerSubject = (tier: string) => {
 export default function StudyScreen() {
   const router = useRouter();
   const [childName, setChildName] = useState('');
-  const [childAvatar, setChildAvatar] = useState('🍎');
+  const [childAvatar, setChildAvatar] = useState<ImageSourcePropType>(require('../../assets/images/avatar_01.png'));
   const [childGrade, setChildGrade] = useState(1);
   const [childTier, setChildTier] = useState('free');
   const [subjects, setSubjects] = useState<string[]>([]);
@@ -69,7 +69,7 @@ export default function StudyScreen() {
           console.log('study avatar:', data.avatar);
           console.log('study name:', data.name);
           console.log('study tier from Firebase:', data.tier);
-          setChildAvatar(data.avatar || '🍎');
+          if (data.avatar) setChildAvatar(data.avatar);
           setChildName(data.name || '학생');
 
           // Firebase에서 최신 tier 읽기
@@ -95,7 +95,10 @@ export default function StudyScreen() {
 
         <View style={styles.profileCard}>
           <View style={styles.profileRow}>
-            <Text style={styles.profileName}>{childAvatar} {childName || '학생'}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Image source={childAvatar} style={{ width: 32, height: 32, borderRadius: 16 }} />
+              <Text style={styles.profileName}>{childName || '학생'}</Text>
+            </View>
             <View style={styles.gradeBadge}>
               <Text style={styles.gradeText}>{childGrade}학년</Text>
             </View>

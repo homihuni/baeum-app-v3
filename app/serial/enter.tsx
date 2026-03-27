@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, TextInput, Modal, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, TextInput, Modal, ScrollView, Image, ImageSourcePropType } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,7 +10,7 @@ export default function EnterSerialScreen() {
   const [parentId, setParentId] = useState('');
   const [childId, setChildId] = useState('');
   const [childName, setChildName] = useState('');
-  const [childAvatar, setChildAvatar] = useState('🍎');
+  const [childAvatar, setChildAvatar] = useState<ImageSourcePropType>(require('../../assets/images/avatar_01.png'));
   const [childGrade, setChildGrade] = useState('1');
   const [serialCode, setSerialCode] = useState('');
   const [loading, setLoading] = useState(true);
@@ -40,7 +40,7 @@ export default function EnterSerialScreen() {
       const childData = await getChild(pId, cId) as any;
       if (childData) {
         setChildName(childData.name || '학생');
-        setChildAvatar(childData.avatar || '🍎');
+        if (childData.avatar) setChildAvatar(childData.avatar);
         setChildGrade(childData.grade?.toString() || '1');
 
         if (childData.tier === 'baeum' || childData.tier === 'sky') {
@@ -151,7 +151,7 @@ export default function EnterSerialScreen() {
 
       <ScrollView style={styles.content}>
         <View style={styles.childInfoCard}>
-          <Text style={styles.childAvatar}>{childAvatar}</Text>
+          <Image source={childAvatar} style={{ width: 48, height: 48, borderRadius: 24 }} />
           <View style={styles.childInfoText}>
             <Text style={styles.childName}>{childName}</Text>
             <Text style={styles.childGrade}>{childGrade}학년</Text>
@@ -249,10 +249,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderWidth: 1,
     borderColor: '#5BBFAA',
-  },
-  childAvatar: {
-    fontSize: 48,
-    marginRight: 16,
+    gap: 16,
   },
   childInfoText: {
     flex: 1,
