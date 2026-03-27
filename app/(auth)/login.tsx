@@ -4,7 +4,7 @@ import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get('window');
-const TEXT_HEIGHT = width * 0.5;
+const TEXT_HEIGHT = width * 0.65;
 
 export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
@@ -14,7 +14,7 @@ export default function LoginScreen() {
 
   useEffect(() => {
     Animated.sequence([
-      Animated.delay(500),
+      Animated.delay(400),
       Animated.spring(textSlide, { toValue: 0, friction: 7, tension: 35, useNativeDriver: true }),
     ]).start();
   }, []);
@@ -52,12 +52,10 @@ export default function LoginScreen() {
       </View>
 
       <View style={styles.buttonArea}>
-        <View style={styles.socialRow}>
-          <TouchableOpacity style={styles.socialTouch} onPress={() => handleTestLogin('google')} disabled={loading} />
-          <TouchableOpacity style={styles.socialTouch} onPress={() => handleTestLogin('apple')} disabled={loading} />
-          <TouchableOpacity style={styles.socialTouch} onPress={() => handleTestLogin('kakao')} disabled={loading} />
-          <TouchableOpacity style={styles.socialTouch} onPress={() => handleTestLogin('naver')} disabled={loading} />
-        </View>
+        <TouchableOpacity style={styles.socialTouch} onPress={() => handleTestLogin('google')} disabled={loading} />
+        <TouchableOpacity style={styles.socialTouch} onPress={() => handleTestLogin('apple')} disabled={loading} />
+        <TouchableOpacity style={styles.socialTouch} onPress={() => handleTestLogin('kakao')} disabled={loading} />
+        <TouchableOpacity style={styles.socialTouch} onPress={() => handleTestLogin('naver')} disabled={loading} />
       </View>
 
       {error !== '' && (
@@ -87,35 +85,32 @@ const styles = StyleSheet.create({
   },
   textMask: {
     position: 'absolute',
-    top: height * 0.12,
-    left: 24,
-    width: width * 0.7,
+    top: height * 0.08,
+    alignSelf: 'center',
+    width: width * 0.8,
     height: TEXT_HEIGHT,
     overflow: 'hidden',
   },
   textImage: {
-    width: width * 0.7,
+    width: width * 0.8,
     height: TEXT_HEIGHT,
   },
   buttonArea: {
     position: 'absolute',
-    bottom: height * 0.12,
+    bottom: height * 0.115,
     width: '100%',
-    alignItems: 'center',
-  },
-  socialRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 16,
+    gap: 12,
   },
   socialTouch: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
   },
   errorBox: {
     position: 'absolute',
-    bottom: height * 0.22,
+    bottom: height * 0.25,
     left: 20,
     right: 20,
     backgroundColor: '#FDECEA',
