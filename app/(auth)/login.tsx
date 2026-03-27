@@ -1,11 +1,44 @@
-import { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image, ActivityIndicator } from 'react-native';
+import { useState, useEffect, useRef } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Image, Animated, Dimensions } from 'react-native';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const { width } = Dimensions.get('window');
 
 export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const anim1 = useRef(new Animated.Value(0)).current;
+  const anim2 = useRef(new Animated.Value(0)).current;
+  const anim3 = useRef(new Animated.Value(0)).current;
+  const animButtons = useRef(new Animated.Value(0)).current;
+
+  const slide1 = useRef(new Animated.Value(40)).current;
+  const slide2 = useRef(new Animated.Value(40)).current;
+  const slide3 = useRef(new Animated.Value(40)).current;
+
+  useEffect(() => {
+    Animated.sequence([
+      Animated.delay(300),
+      Animated.parallel([
+        Animated.timing(anim1, { toValue: 1, duration: 500, useNativeDriver: true }),
+        Animated.timing(slide1, { toValue: 0, duration: 500, useNativeDriver: true }),
+      ]),
+      Animated.delay(200),
+      Animated.parallel([
+        Animated.timing(anim2, { toValue: 1, duration: 500, useNativeDriver: true }),
+        Animated.timing(slide2, { toValue: 0, duration: 500, useNativeDriver: true }),
+      ]),
+      Animated.delay(200),
+      Animated.parallel([
+        Animated.timing(anim3, { toValue: 1, duration: 500, useNativeDriver: true }),
+        Animated.timing(slide3, { toValue: 0, duration: 500, useNativeDriver: true }),
+      ]),
+      Animated.delay(300),
+      Animated.timing(animButtons, { toValue: 1, duration: 400, useNativeDriver: true }),
+    ]).start();
+  }, []);
 
   const handleTestLogin = async (loginType: string) => {
     setLoading(true);
@@ -24,48 +57,33 @@ export default function LoginScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.logoArea}>
-        <Text style={styles.logoEmoji}>📚</Text>
-        <Text style={styles.logoText}>배움학습</Text>
-        <Text style={styles.logoSub}>초등학생 맞춤 AI 학습</Text>
+        <Animated.View style={{ opacity: anim1, transform: [{ translateY: slide1 }] }}>
+          <Image source={require('../../assets/images/logo_jeocheol.png')} style={styles.logoImage} resizeMode="contain" />
+        </Animated.View>
+        <Animated.View style={{ opacity: anim2, transform: [{ translateY: slide2 }] }}>
+          <Image source={require('../../assets/images/logo_baeum.png')} style={styles.logoImage} resizeMode="contain" />
+        </Animated.View>
+        <Animated.View style={{ opacity: anim3, transform: [{ translateY: slide3 }] }}>
+          <Image source={require('../../assets/images/logo_chodeung.png')} style={styles.logoImage} resizeMode="contain" />
+        </Animated.View>
       </View>
 
-      <View style={styles.buttonArea}>
-        <TouchableOpacity
-          style={[styles.socialButton, styles.googleButton]}
-          onPress={() => handleTestLogin('google')}
-          disabled={loading}
-        >
-          <Text style={styles.googleButtonText}>Google로 시작하기</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.socialButton, styles.appleButton]}
-          onPress={() => handleTestLogin('apple')}
-          disabled={loading}
-        >
-          <Text style={styles.appleButtonText}>Apple로 시작하기</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.socialButton, styles.kakaoButton]}
-          onPress={() => handleTestLogin('kakao')}
-          disabled={loading}
-        >
-          <Text style={styles.kakaoButtonText}>카카오로 시작하기</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.socialButton, styles.naverButton]}
-          onPress={() => handleTestLogin('naver')}
-          disabled={loading}
-        >
-          <Text style={styles.naverButtonText}>네이버로 시작하기</Text>
-        </TouchableOpacity>
-      </View>
-
-      {loading && (
-        <ActivityIndicator size="large" color="#4A90D9" style={styles.loader} />
-      )}
+      <Animated.View style={[styles.buttonArea, { opacity: animButtons }]}>
+        <View style={styles.socialRow}>
+          <TouchableOpacity style={styles.socialCircle} onPress={() => handleTestLogin('google')} disabled={loading}>
+            <Image source={require('../../assets/images/icon_google.png')} style={styles.socialIcon} resizeMode="contain" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.socialCircle} onPress={() => handleTestLogin('apple')} disabled={loading}>
+            <Image source={require('../../assets/images/icon_apple.png')} style={styles.socialIcon} resizeMode="contain" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.socialCircle} onPress={() => handleTestLogin('kakao')} disabled={loading}>
+            <Image source={require('../../assets/images/icon_kakao.png')} style={styles.socialIcon} resizeMode="contain" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.socialCircle} onPress={() => handleTestLogin('naver')} disabled={loading}>
+            <Image source={require('../../assets/images/icon_naver.png')} style={styles.socialIcon} resizeMode="contain" />
+          </TouchableOpacity>
+        </View>
+      </Animated.View>
 
       {error !== '' && (
         <View style={styles.errorBox}>
@@ -83,76 +101,41 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 24,
   },
   logoArea: {
     alignItems: 'center',
-    marginBottom: 48,
+    marginBottom: 60,
   },
-  logoEmoji: {
-    fontSize: 64,
-    marginBottom: 12,
-  },
-  logoText: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#2D3436',
-    marginBottom: 8,
-  },
-  logoSub: {
-    fontSize: 16,
-    color: '#636E72',
+  logoImage: {
+    width: width * 0.5,
+    height: 80,
+    marginBottom: 4,
   },
   buttonArea: {
     width: '100%',
-    gap: 12,
-  },
-  socialButton: {
-    width: '100%',
-    height: 52,
-    borderRadius: 12,
-    justifyContent: 'center',
     alignItems: 'center',
   },
-  googleButton: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#DADCE0',
+  socialRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 20,
   },
-  googleButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#3C4043',
+  socialCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F5F5F5',
+    overflow: 'hidden',
   },
-  appleButton: {
-    backgroundColor: '#000000',
-  },
-  appleButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  kakaoButton: {
-    backgroundColor: '#FEE500',
-  },
-  kakaoButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#191919',
-  },
-  naverButton: {
-    backgroundColor: '#03C75A',
-  },
-  naverButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  loader: {
-    marginTop: 20,
+  socialIcon: {
+    width: 56,
+    height: 56,
   },
   errorBox: {
     marginTop: 16,
