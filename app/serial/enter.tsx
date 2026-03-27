@@ -5,12 +5,58 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getSerialCode, useSerialCode, upgradeChildTier, getChild } from '../../utils/firestore';
 
+const AVATAR_MAP: Record<string, ImageSourcePropType> = {
+  avatar_01: require('../../assets/images/avatar_01.png'),
+  avatar_02: require('../../assets/images/avatar_02.png'),
+  avatar_03: require('../../assets/images/avatar_03.png'),
+  avatar_04: require('../../assets/images/avatar_04.png'),
+  avatar_05: require('../../assets/images/avatar_05.png'),
+  avatar_06: require('../../assets/images/avatar_06.png'),
+  avatar_07: require('../../assets/images/avatar_07.png'),
+  avatar_08: require('../../assets/images/avatar_08.png'),
+  avatar_09: require('../../assets/images/avatar_09.png'),
+  avatar_10: require('../../assets/images/avatar_10.png'),
+  avatar_11: require('../../assets/images/avatar_11.png'),
+  avatar_12: require('../../assets/images/avatar_12.png'),
+  avatar_13: require('../../assets/images/avatar_13.png'),
+  avatar_14: require('../../assets/images/avatar_14.png'),
+  avatar_15: require('../../assets/images/avatar_15.png'),
+  avatar_16: require('../../assets/images/avatar_16.png'),
+  avatar_17: require('../../assets/images/avatar_17.png'),
+  avatar_18: require('../../assets/images/avatar_18.png'),
+  avatar_19: require('../../assets/images/avatar_19.png'),
+  avatar_20: require('../../assets/images/avatar_20.png'),
+  avatar_21: require('../../assets/images/avatar_21.png'),
+  avatar_22: require('../../assets/images/avatar_22.png'),
+  avatar_23: require('../../assets/images/avatar_23.png'),
+  avatar_24: require('../../assets/images/avatar_24.png'),
+  avatar_25: require('../../assets/images/avatar_25.png'),
+  avatar_26: require('../../assets/images/avatar_26.png'),
+  avatar_27: require('../../assets/images/avatar_27.png'),
+  avatar_28: require('../../assets/images/avatar_28.png'),
+  avatar_29: require('../../assets/images/avatar_29.png'),
+};
+
+const DEFAULT_AVATAR = require('../../assets/images/avatar_01.png');
+
+function resolveAvatar(value: any): ImageSourcePropType {
+  if (!value) return DEFAULT_AVATAR;
+  if (typeof value === 'string') {
+    if (AVATAR_MAP[value]) return AVATAR_MAP[value];
+    const match = value.match(/avatar_(\d+)/);
+    if (match && AVATAR_MAP[`avatar_${match[1]}`]) return AVATAR_MAP[`avatar_${match[1]}`];
+    return DEFAULT_AVATAR;
+  }
+  if (typeof value === 'object' && value.uri) return DEFAULT_AVATAR;
+  return DEFAULT_AVATAR;
+}
+
 export default function EnterSerialScreen() {
   const router = useRouter();
   const [parentId, setParentId] = useState('');
   const [childId, setChildId] = useState('');
   const [childName, setChildName] = useState('');
-  const [childAvatar, setChildAvatar] = useState<ImageSourcePropType>(require('../../assets/images/avatar_01.png'));
+  const [childAvatar, setChildAvatar] = useState<ImageSourcePropType>(DEFAULT_AVATAR);
   const [childGrade, setChildGrade] = useState('1');
   const [serialCode, setSerialCode] = useState('');
   const [loading, setLoading] = useState(true);
@@ -40,7 +86,7 @@ export default function EnterSerialScreen() {
       const childData = await getChild(pId, cId) as any;
       if (childData) {
         setChildName(childData.name || '학생');
-        if (childData.avatar) setChildAvatar(childData.avatar);
+        setChildAvatar(resolveAvatar(childData.avatar));
         setChildGrade(childData.grade?.toString() || '1');
 
         if (childData.tier === 'baeum' || childData.tier === 'sky') {
@@ -81,7 +127,6 @@ export default function EnterSerialScreen() {
       return;
     }
 
-    // 정규식 검증: 10자리
     const serialRegex = /^[A-Z0-9]{10}$/;
     if (!serialRegex.test(trimmedCode)) {
       showErrorModal('시리얼 번호 확인', '시리얼번호를 다시 확인해주세요.\n배움달력 뒷면의 10자리를 입력해주세요.\n(예: 26JH26A7K3)');
@@ -103,12 +148,10 @@ export default function EnterSerialScreen() {
         return;
       }
 
-      // 검증 통과 - 시리얼 사용 처리
       console.log('=== 시리얼 사용 처리 시작 ===');
       await useSerialCode(trimmedCode, childId);
       console.log('=== 시리얼 사용 처리 완료 ===');
 
-      // 자녀 등급 업그레이드
       console.log('=== 등급 업그레이드 시작 ===');
       await upgradeChildTier(parentId, childId, 'baeum', trimmedCode, serialData.expiry, serialData.calendarYear);
       console.log('=== 등급 업그레이드 성공 ===');
@@ -151,7 +194,7 @@ export default function EnterSerialScreen() {
 
       <ScrollView style={styles.content}>
         <View style={styles.childInfoCard}>
-          <Image source={childAvatar} style={{ width: 48, height: 48, borderRadius: 24 }} />
+          <Image source={childAvatar} style={styles.avatarImage} />
           <View style={styles.childInfoText}>
             <Text style={styles.childName}>{childName}</Text>
             <Text style={styles.childGrade}>{childGrade}학년</Text>
@@ -239,6 +282,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#999',
     marginTop: 20,
+  },
+  avatarImage: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
   },
   childInfoCard: {
     flexDirection: 'row',
