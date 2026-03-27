@@ -78,8 +78,8 @@ const styles = StyleSheet.create({
   },
   bgImage: {
     position: 'absolute',
-    width: width,
-    height: height,
+    width: '100%',
+    height: '100%',
     top: 0,
     left: 0,
   },
@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
   },
   buttonArea: {
     position: 'absolute',
-    bottom: height * 0.115,
+    bottom: height * 0.16,
     width: '100%',
     flexDirection: 'row',
     justifyContent: 'center',
@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
   },
   errorBox: {
     position: 'absolute',
-    bottom: height * 0.25,
+    bottom: height * 0.28,
     left: 20,
     right: 20,
     backgroundColor: '#FDECEA',
