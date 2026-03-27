@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Image, Animated, Dimensions }
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
@@ -14,33 +14,33 @@ export default function LoginScreen() {
   const anim3 = useRef(new Animated.Value(0)).current;
   const animButtons = useRef(new Animated.Value(0)).current;
 
-  const slide1 = useRef(new Animated.Value(100)).current;
-  const slide2 = useRef(new Animated.Value(100)).current;
-  const slide3 = useRef(new Animated.Value(100)).current;
+  const slide1 = useRef(new Animated.Value(120)).current;
+  const slide2 = useRef(new Animated.Value(120)).current;
+  const slide3 = useRef(new Animated.Value(120)).current;
 
-  const scale1 = useRef(new Animated.Value(0.3)).current;
-  const scale2 = useRef(new Animated.Value(0.3)).current;
-  const scale3 = useRef(new Animated.Value(0.3)).current;
+  const scale1 = useRef(new Animated.Value(0.2)).current;
+  const scale2 = useRef(new Animated.Value(0.2)).current;
+  const scale3 = useRef(new Animated.Value(0.2)).current;
 
   useEffect(() => {
     Animated.sequence([
       Animated.delay(300),
       Animated.parallel([
-        Animated.spring(anim1, { toValue: 1, friction: 6, tension: 40, useNativeDriver: true }),
-        Animated.spring(slide1, { toValue: 0, friction: 6, tension: 40, useNativeDriver: true }),
-        Animated.spring(scale1, { toValue: 1, friction: 6, tension: 40, useNativeDriver: true }),
+        Animated.spring(anim1, { toValue: 1, friction: 5, tension: 50, useNativeDriver: true }),
+        Animated.spring(slide1, { toValue: 0, friction: 5, tension: 50, useNativeDriver: true }),
+        Animated.spring(scale1, { toValue: 1, friction: 5, tension: 50, useNativeDriver: true }),
       ]),
-      Animated.delay(150),
+      Animated.delay(100),
       Animated.parallel([
-        Animated.spring(anim2, { toValue: 1, friction: 6, tension: 40, useNativeDriver: true }),
-        Animated.spring(slide2, { toValue: 0, friction: 6, tension: 40, useNativeDriver: true }),
-        Animated.spring(scale2, { toValue: 1, friction: 6, tension: 40, useNativeDriver: true }),
+        Animated.spring(anim2, { toValue: 1, friction: 5, tension: 50, useNativeDriver: true }),
+        Animated.spring(slide2, { toValue: 0, friction: 5, tension: 50, useNativeDriver: true }),
+        Animated.spring(scale2, { toValue: 1, friction: 5, tension: 50, useNativeDriver: true }),
       ]),
-      Animated.delay(150),
+      Animated.delay(100),
       Animated.parallel([
-        Animated.spring(anim3, { toValue: 1, friction: 6, tension: 40, useNativeDriver: true }),
-        Animated.spring(slide3, { toValue: 0, friction: 6, tension: 40, useNativeDriver: true }),
-        Animated.spring(scale3, { toValue: 1, friction: 6, tension: 40, useNativeDriver: true }),
+        Animated.spring(anim3, { toValue: 1, friction: 5, tension: 50, useNativeDriver: true }),
+        Animated.spring(slide3, { toValue: 0, friction: 5, tension: 50, useNativeDriver: true }),
+        Animated.spring(scale3, { toValue: 1, friction: 5, tension: 50, useNativeDriver: true }),
       ]),
       Animated.delay(400),
       Animated.timing(animButtons, { toValue: 1, duration: 500, useNativeDriver: true }),
@@ -65,14 +65,14 @@ export default function LoginScreen() {
     <View style={styles.container}>
       <View style={styles.logoArea}>
         <Animated.View style={{ opacity: anim1, transform: [{ translateY: slide1 }, { scale: scale1 }] }}>
-          <Image source={require('../../assets/images/logo_jeocheol.png')} style={styles.logoImageSmall} resizeMode="contain" />
+          <Image source={require('../../assets/images/logo_jeocheol.png')} style={styles.logoLine1} resizeMode="contain" />
         </Animated.View>
         <View style={styles.logoRow}>
           <Animated.View style={{ opacity: anim2, transform: [{ translateY: slide2 }, { scale: scale2 }] }}>
-            <Image source={require('../../assets/images/logo_baeum.png')} style={styles.logoImageLarge} resizeMode="contain" />
+            <Image source={require('../../assets/images/logo_baeum.png')} style={styles.logoLine2} resizeMode="contain" />
           </Animated.View>
           <Animated.View style={{ opacity: anim3, transform: [{ translateY: slide3 }, { scale: scale3 }] }}>
-            <Image source={require('../../assets/images/logo_chodeung.png')} style={styles.logoImageLarge} resizeMode="contain" />
+            <Image source={require('../../assets/images/logo_chodeung.png')} style={styles.logoLine2} resizeMode="contain" />
           </Animated.View>
         </View>
       </View>
@@ -111,27 +111,28 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 24,
+    paddingTop: 120,
   },
   logoArea: {
-    alignItems: 'center',
-    marginBottom: 80,
+    alignItems: 'flex-start',
+    paddingHorizontal: 32,
+    width: '100%',
   },
-  logoImageSmall: {
-    width: width * 0.45,
-    height: height * 0.1,
-    marginBottom: -4,
+  logoLine1: {
+    width: width * 0.35,
+    height: width * 0.2,
+    marginBottom: -8,
+    marginLeft: 8,
   },
   logoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 4,
   },
-  logoImageLarge: {
-    width: width * 0.38,
-    height: height * 0.12,
+  logoLine2: {
+    width: width * 0.4,
+    height: width * 0.25,
   },
   buttonArea: {
     position: 'absolute',
