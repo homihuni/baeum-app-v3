@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, TextInput, Modal, Alert, Image } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, TextInput, Modal, Image } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,43 +7,63 @@ import { getChild, updateChild, getChildren } from '../../utils/firestore';
 import { Timestamp, db } from '../../utils/firebase';
 import { collection, doc, getDocs, updateDoc, serverTimestamp } from 'firebase/firestore';
 
-const AVATARS = [
-  require('../../assets/images/avatar_01.png'),
-  require('../../assets/images/avatar_02.png'),
-  require('../../assets/images/avatar_03.png'),
-  require('../../assets/images/avatar_04.png'),
-  require('../../assets/images/avatar_05.png'),
-  require('../../assets/images/avatar_06.png'),
-  require('../../assets/images/avatar_07.png'),
-  require('../../assets/images/avatar_08.png'),
-  require('../../assets/images/avatar_09.png'),
-  require('../../assets/images/avatar_10.png'),
-  require('../../assets/images/avatar_11.png'),
-  require('../../assets/images/avatar_12.png'),
-  require('../../assets/images/avatar_13.png'),
-  require('../../assets/images/avatar_14.png'),
-  require('../../assets/images/avatar_15.png'),
-  require('../../assets/images/avatar_16.png'),
-  require('../../assets/images/avatar_17.png'),
-  require('../../assets/images/avatar_18.png'),
-  require('../../assets/images/avatar_19.png'),
-  require('../../assets/images/avatar_20.png'),
-  require('../../assets/images/avatar_21.png'),
-  require('../../assets/images/avatar_22.png'),
-  require('../../assets/images/avatar_23.png'),
-  require('../../assets/images/avatar_24.png'),
-  require('../../assets/images/avatar_25.png'),
-  require('../../assets/images/avatar_26.png'),
-  require('../../assets/images/avatar_27.png'),
-  require('../../assets/images/avatar_28.png'),
-  require('../../assets/images/avatar_29.png'),
+const AVATAR_KEYS = [
+  'avatar_01', 'avatar_02', 'avatar_03', 'avatar_04', 'avatar_05',
+  'avatar_06', 'avatar_07', 'avatar_08', 'avatar_09', 'avatar_10',
+  'avatar_11', 'avatar_12', 'avatar_13', 'avatar_14', 'avatar_15',
+  'avatar_16', 'avatar_17', 'avatar_18', 'avatar_19', 'avatar_20',
+  'avatar_21', 'avatar_22', 'avatar_23', 'avatar_24', 'avatar_25',
+  'avatar_26', 'avatar_27', 'avatar_28', 'avatar_29',
 ];
+
+const AVATAR_MAP: Record<string, any> = {
+  avatar_01: require('../../assets/images/avatar_01.png'),
+  avatar_02: require('../../assets/images/avatar_02.png'),
+  avatar_03: require('../../assets/images/avatar_03.png'),
+  avatar_04: require('../../assets/images/avatar_04.png'),
+  avatar_05: require('../../assets/images/avatar_05.png'),
+  avatar_06: require('../../assets/images/avatar_06.png'),
+  avatar_07: require('../../assets/images/avatar_07.png'),
+  avatar_08: require('../../assets/images/avatar_08.png'),
+  avatar_09: require('../../assets/images/avatar_09.png'),
+  avatar_10: require('../../assets/images/avatar_10.png'),
+  avatar_11: require('../../assets/images/avatar_11.png'),
+  avatar_12: require('../../assets/images/avatar_12.png'),
+  avatar_13: require('../../assets/images/avatar_13.png'),
+  avatar_14: require('../../assets/images/avatar_14.png'),
+  avatar_15: require('../../assets/images/avatar_15.png'),
+  avatar_16: require('../../assets/images/avatar_16.png'),
+  avatar_17: require('../../assets/images/avatar_17.png'),
+  avatar_18: require('../../assets/images/avatar_18.png'),
+  avatar_19: require('../../assets/images/avatar_19.png'),
+  avatar_20: require('../../assets/images/avatar_20.png'),
+  avatar_21: require('../../assets/images/avatar_21.png'),
+  avatar_22: require('../../assets/images/avatar_22.png'),
+  avatar_23: require('../../assets/images/avatar_23.png'),
+  avatar_24: require('../../assets/images/avatar_24.png'),
+  avatar_25: require('../../assets/images/avatar_25.png'),
+  avatar_26: require('../../assets/images/avatar_26.png'),
+  avatar_27: require('../../assets/images/avatar_27.png'),
+  avatar_28: require('../../assets/images/avatar_28.png'),
+  avatar_29: require('../../assets/images/avatar_29.png'),
+};
+
+function resolveAvatarKey(value: any): string {
+  if (!value) return 'avatar_01';
+  if (typeof value === 'string' && AVATAR_MAP[value]) return value;
+  if (typeof value === 'string') {
+    const match = value.match(/avatar_(\d+)/);
+    if (match && AVATAR_MAP['avatar_' + match[1]]) return 'avatar_' + match[1];
+    return 'avatar_01';
+  }
+  return 'avatar_01';
+}
 
 export default function EditChildScreen() {
   const router = useRouter();
   const { childId } = useLocalSearchParams();
   const [parentId, setParentId] = useState('');
-  const [avatar, setAvatar] = useState(AVATARS[0]);
+  const [selectedAvatarKey, setSelectedAvatarKey] = useState('avatar_01');
   const [name, setName] = useState('');
   const [tier, setTier] = useState<string>('free');
   const [grade, setGrade] = useState<number>(1);
@@ -69,7 +89,7 @@ export default function EditChildScreen() {
       const childData = await getChild(pId, childId as string) as any;
 
       if (childData) {
-        setAvatar(childData.avatar || AVATARS[0]);
+        setSelectedAvatarKey(resolveAvatarKey(childData.avatar));
         setName(childData.name || '');
         setTier(childData.tier || 'free');
         setGrade(childData.grade || 1);
@@ -84,10 +104,6 @@ export default function EditChildScreen() {
   };
 
   const handleSave = async () => {
-    console.log('=== 저장 버튼 클릭 ===');
-    console.log('selectedAvatar:', avatar);
-    console.log('name:', name);
-
     if (!name.trim()) {
       return;
     }
@@ -102,12 +118,8 @@ export default function EditChildScreen() {
 
   const saveData = async () => {
     try {
-      console.log('=== Firebase 저장 시도 ===');
-      console.log('parentId:', parentId);
-      console.log('childId:', childId);
-
       const updateData: any = {
-        avatar,
+        avatar: selectedAvatarKey,
         name: name.trim(),
         grade,
       };
@@ -117,11 +129,9 @@ export default function EditChildScreen() {
       }
 
       await updateChild(parentId, childId as string, updateData);
-
-      console.log('=== Firebase 저장 성공 ===');
       setShowCompleteModal(true);
     } catch (error) {
-      console.log('=== Firebase 저장 실패 ===', error);
+      console.log('Firebase save error:', error);
     }
   };
 
@@ -147,7 +157,6 @@ export default function EditChildScreen() {
         return;
       }
 
-      // 조건 통과 → 삭제 확인 모달 표시
       setShowDeleteModal(true);
     } catch (error) {
       console.log('Delete check error:', error);
@@ -166,7 +175,6 @@ export default function EditChildScreen() {
         isDeleted: true,
         deletedAt: serverTimestamp()
       });
-      console.log('=== 자녀 삭제 완료:', childId, '===');
       setShowDeleteModal(false);
       router.back();
     } catch (error) {
@@ -199,13 +207,13 @@ export default function EditChildScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>아바타</Text>
           <View style={styles.avatarGrid}>
-            {AVATARS.map((img, index) => (
+            {AVATAR_KEYS.map((key) => (
               <TouchableOpacity
-                key={index}
-                style={[styles.avatarOption, avatar === img && styles.avatarOptionSelected]}
-                onPress={() => setAvatar(img)}
+                key={key}
+                style={[styles.avatarOption, selectedAvatarKey === key && styles.avatarOptionSelected]}
+                onPress={() => setSelectedAvatarKey(key)}
               >
-                <Image source={img} style={styles.avatarGridImage} />
+                <Image source={AVATAR_MAP[key]} style={styles.avatarGridImage} />
               </TouchableOpacity>
             ))}
           </View>
@@ -334,7 +342,6 @@ export default function EditChildScreen() {
         </View>
       </Modal>
 
-      {/* 삭제 확인 모달 */}
       <Modal visible={showDeleteModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>
@@ -360,7 +367,6 @@ export default function EditChildScreen() {
         </View>
       </Modal>
 
-      {/* 삭제 에러 모달 */}
       <Modal visible={showDeleteErrorModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>
@@ -376,7 +382,6 @@ export default function EditChildScreen() {
         </View>
       </Modal>
 
-      {/* 학년 변경 확인 모달 */}
       <Modal visible={showGradeChangeModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>
