@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Image, Animated, Dimensions }
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
@@ -14,29 +14,36 @@ export default function LoginScreen() {
   const anim3 = useRef(new Animated.Value(0)).current;
   const animButtons = useRef(new Animated.Value(0)).current;
 
-  const slide1 = useRef(new Animated.Value(40)).current;
-  const slide2 = useRef(new Animated.Value(40)).current;
-  const slide3 = useRef(new Animated.Value(40)).current;
+  const slide1 = useRef(new Animated.Value(100)).current;
+  const slide2 = useRef(new Animated.Value(100)).current;
+  const slide3 = useRef(new Animated.Value(100)).current;
+
+  const scale1 = useRef(new Animated.Value(0.3)).current;
+  const scale2 = useRef(new Animated.Value(0.3)).current;
+  const scale3 = useRef(new Animated.Value(0.3)).current;
 
   useEffect(() => {
     Animated.sequence([
       Animated.delay(300),
       Animated.parallel([
-        Animated.timing(anim1, { toValue: 1, duration: 500, useNativeDriver: true }),
-        Animated.timing(slide1, { toValue: 0, duration: 500, useNativeDriver: true }),
+        Animated.spring(anim1, { toValue: 1, friction: 6, tension: 40, useNativeDriver: true }),
+        Animated.spring(slide1, { toValue: 0, friction: 6, tension: 40, useNativeDriver: true }),
+        Animated.spring(scale1, { toValue: 1, friction: 6, tension: 40, useNativeDriver: true }),
       ]),
-      Animated.delay(200),
+      Animated.delay(150),
       Animated.parallel([
-        Animated.timing(anim2, { toValue: 1, duration: 500, useNativeDriver: true }),
-        Animated.timing(slide2, { toValue: 0, duration: 500, useNativeDriver: true }),
+        Animated.spring(anim2, { toValue: 1, friction: 6, tension: 40, useNativeDriver: true }),
+        Animated.spring(slide2, { toValue: 0, friction: 6, tension: 40, useNativeDriver: true }),
+        Animated.spring(scale2, { toValue: 1, friction: 6, tension: 40, useNativeDriver: true }),
       ]),
-      Animated.delay(200),
+      Animated.delay(150),
       Animated.parallel([
-        Animated.timing(anim3, { toValue: 1, duration: 500, useNativeDriver: true }),
-        Animated.timing(slide3, { toValue: 0, duration: 500, useNativeDriver: true }),
+        Animated.spring(anim3, { toValue: 1, friction: 6, tension: 40, useNativeDriver: true }),
+        Animated.spring(slide3, { toValue: 0, friction: 6, tension: 40, useNativeDriver: true }),
+        Animated.spring(scale3, { toValue: 1, friction: 6, tension: 40, useNativeDriver: true }),
       ]),
-      Animated.delay(300),
-      Animated.timing(animButtons, { toValue: 1, duration: 400, useNativeDriver: true }),
+      Animated.delay(400),
+      Animated.timing(animButtons, { toValue: 1, duration: 500, useNativeDriver: true }),
     ]).start();
   }, []);
 
@@ -57,15 +64,17 @@ export default function LoginScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.logoArea}>
-        <Animated.View style={{ opacity: anim1, transform: [{ translateY: slide1 }] }}>
-          <Image source={require('../../assets/images/logo_jeocheol.png')} style={styles.logoImage} resizeMode="contain" />
+        <Animated.View style={{ opacity: anim1, transform: [{ translateY: slide1 }, { scale: scale1 }] }}>
+          <Image source={require('../../assets/images/logo_jeocheol.png')} style={styles.logoImageSmall} resizeMode="contain" />
         </Animated.View>
-        <Animated.View style={{ opacity: anim2, transform: [{ translateY: slide2 }] }}>
-          <Image source={require('../../assets/images/logo_baeum.png')} style={styles.logoImage} resizeMode="contain" />
-        </Animated.View>
-        <Animated.View style={{ opacity: anim3, transform: [{ translateY: slide3 }] }}>
-          <Image source={require('../../assets/images/logo_chodeung.png')} style={styles.logoImage} resizeMode="contain" />
-        </Animated.View>
+        <View style={styles.logoRow}>
+          <Animated.View style={{ opacity: anim2, transform: [{ translateY: slide2 }, { scale: scale2 }] }}>
+            <Image source={require('../../assets/images/logo_baeum.png')} style={styles.logoImageLarge} resizeMode="contain" />
+          </Animated.View>
+          <Animated.View style={{ opacity: anim3, transform: [{ translateY: slide3 }, { scale: scale3 }] }}>
+            <Image source={require('../../assets/images/logo_chodeung.png')} style={styles.logoImageLarge} resizeMode="contain" />
+          </Animated.View>
+        </View>
       </View>
 
       <Animated.View style={[styles.buttonArea, { opacity: animButtons }]}>
@@ -108,42 +117,53 @@ const styles = StyleSheet.create({
   },
   logoArea: {
     alignItems: 'center',
-    marginBottom: 60,
+    marginBottom: 80,
   },
-  logoImage: {
-    width: width * 0.5,
-    height: 80,
-    marginBottom: 4,
+  logoImageSmall: {
+    width: width * 0.45,
+    height: height * 0.1,
+    marginBottom: -4,
+  },
+  logoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  logoImageLarge: {
+    width: width * 0.38,
+    height: height * 0.12,
   },
   buttonArea: {
+    position: 'absolute',
+    bottom: 100,
     width: '100%',
     alignItems: 'center',
   },
   socialRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 20,
+    gap: 16,
   },
   socialCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F5F5F5',
     overflow: 'hidden',
   },
   socialIcon: {
-    width: 56,
-    height: 56,
+    width: 52,
+    height: 52,
   },
   errorBox: {
-    marginTop: 16,
+    position: 'absolute',
+    bottom: 160,
     backgroundColor: '#FDECEA',
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
-    width: '100%',
+    width: '90%',
   },
   errorText: {
     color: '#D32F2F',
