@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Modal } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Modal, Image } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useState, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
@@ -171,7 +171,7 @@ export default function ManageChildrenScreen() {
                   style={styles.childInfo}
                   onPress={() => handleSelectChild(child)}
                 >
-                  <Text style={styles.childEmoji}>{child.avatar}</Text>
+                  <Image source={child.avatar} style={styles.childEmoji} />
                   <View style={styles.childDetails}>
                     <View style={styles.childNameRow}>
                       <Text style={styles.childName}>{child.name}</Text>
@@ -402,7 +402,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   childEmoji: {
-    fontSize: 40,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     marginRight: 12,
   },
   childDetails: {

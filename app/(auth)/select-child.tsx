@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { getChildren } from '../../utils/firestore';
@@ -76,7 +76,7 @@ export default function SelectChildScreen() {
                 ]}
                 onPress={() => selectChild(child)}
               >
-                <Text style={styles.avatar}>{child.avatar || '🍓'}</Text>
+                <Image source={child.avatar} style={styles.avatar} />
                 <Text style={styles.childName}>{child.name}</Text>
                 {(child.isLocked || child.tier === 'expired') && (
                   <View style={{
@@ -110,7 +110,7 @@ export default function SelectChildScreen() {
               ]}
               onPress={() => selectChild(activeChildren[2])}
             >
-              <Text style={styles.avatar}>{activeChildren[2].avatar || '🍓'}</Text>
+              <Image source={activeChildren[2].avatar} style={styles.avatar} />
               <Text style={styles.childName}>{activeChildren[2].name}</Text>
               {(activeChildren[2].isLocked || activeChildren[2].tier === 'expired') && (
                 <View style={{
@@ -149,7 +149,7 @@ export default function SelectChildScreen() {
             ]}
             onPress={() => selectChild(child)}
           >
-            <Text style={styles.avatar}>{child.avatar || '🍓'}</Text>
+            <Image source={child.avatar} style={styles.avatar} />
             <Text style={styles.childName}>{child.name}</Text>
             {(child.isLocked || child.tier === 'expired') && (
               <View style={{
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
   topRow: { flexDirection: 'row', gap: 16, justifyContent: 'center', width: '100%' },
   bottomRow: { flexDirection: 'row', justifyContent: 'center', width: '100%', marginTop: 16 },
   childCard: { width: 140, backgroundColor: '#FFFFFF', borderRadius: 16, padding: 20, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
-  avatar: { fontSize: 40, marginBottom: 8 },
+  avatar: { width: 50, height: 50, borderRadius: 25, marginBottom: 8 },
   childName: { fontSize: 16, fontWeight: 'bold', color: '#333' },
   childGrade: { fontSize: 13, color: '#666', marginTop: 4 },
   tierBadge: { marginTop: 8, paddingHorizontal: 10, paddingVertical: 3, borderRadius: 10 },

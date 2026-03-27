@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, TextInput, Modal, Alert } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, TextInput, Modal, Alert, Image } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,17 +8,42 @@ import { Timestamp, db } from '../../utils/firebase';
 import { collection, doc, getDocs, updateDoc, serverTimestamp } from 'firebase/firestore';
 
 const AVATARS = [
-  '🍓', '🍎', '🍊', '🍋', '🍇', '🍉',
-  '🍑', '🍒', '🫐', '🥝', '🐶', '🐱',
-  '🐰', '🐻', '🦊', '🐼', '🐨', '🦁',
-  '🐯', '🐸'
+  require('../../assets/images/avatar_01.png'),
+  require('../../assets/images/avatar_02.png'),
+  require('../../assets/images/avatar_03.png'),
+  require('../../assets/images/avatar_04.png'),
+  require('../../assets/images/avatar_05.png'),
+  require('../../assets/images/avatar_06.png'),
+  require('../../assets/images/avatar_07.png'),
+  require('../../assets/images/avatar_08.png'),
+  require('../../assets/images/avatar_09.png'),
+  require('../../assets/images/avatar_10.png'),
+  require('../../assets/images/avatar_11.png'),
+  require('../../assets/images/avatar_12.png'),
+  require('../../assets/images/avatar_13.png'),
+  require('../../assets/images/avatar_14.png'),
+  require('../../assets/images/avatar_15.png'),
+  require('../../assets/images/avatar_16.png'),
+  require('../../assets/images/avatar_17.png'),
+  require('../../assets/images/avatar_18.png'),
+  require('../../assets/images/avatar_19.png'),
+  require('../../assets/images/avatar_20.png'),
+  require('../../assets/images/avatar_21.png'),
+  require('../../assets/images/avatar_22.png'),
+  require('../../assets/images/avatar_23.png'),
+  require('../../assets/images/avatar_24.png'),
+  require('../../assets/images/avatar_25.png'),
+  require('../../assets/images/avatar_26.png'),
+  require('../../assets/images/avatar_27.png'),
+  require('../../assets/images/avatar_28.png'),
+  require('../../assets/images/avatar_29.png'),
 ];
 
 export default function EditChildScreen() {
   const router = useRouter();
   const { childId } = useLocalSearchParams();
   const [parentId, setParentId] = useState('');
-  const [avatar, setAvatar] = useState('🍓');
+  const [avatar, setAvatar] = useState(AVATARS[0]);
   const [name, setName] = useState('');
   const [tier, setTier] = useState<string>('free');
   const [grade, setGrade] = useState<number>(1);
@@ -44,7 +69,7 @@ export default function EditChildScreen() {
       const childData = await getChild(pId, childId as string) as any;
 
       if (childData) {
-        setAvatar(childData.avatar || '🍓');
+        setAvatar(childData.avatar || AVATARS[0]);
         setName(childData.name || '');
         setTier(childData.tier || 'free');
         setGrade(childData.grade || 1);
@@ -174,13 +199,13 @@ export default function EditChildScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>아바타</Text>
           <View style={styles.avatarGrid}>
-            {AVATARS.map((emoji) => (
+            {AVATARS.map((img, index) => (
               <TouchableOpacity
-                key={emoji}
-                style={[styles.avatarOption, avatar === emoji && styles.avatarOptionSelected]}
-                onPress={() => setAvatar(emoji)}
+                key={index}
+                style={[styles.avatarOption, avatar === img && styles.avatarOptionSelected]}
+                onPress={() => setAvatar(img)}
               >
-                <Text style={styles.avatarEmoji}>{emoji}</Text>
+                <Image source={img} style={styles.avatarGridImage} />
               </TouchableOpacity>
             ))}
           </View>
@@ -449,8 +474,10 @@ const styles = StyleSheet.create({
     borderColor: '#5BBFAA',
     backgroundColor: '#F0F9F7',
   },
-  avatarEmoji: {
-    fontSize: 28,
+  avatarGridImage: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
   },
   input: {
     backgroundColor: '#F5F5F5',

@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Modal, Pressable, Alert, Animated, Image, Linking, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Modal, Pressable, Alert, Animated, Image, Linking, Dimensions, ImageSourcePropType } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -16,7 +16,7 @@ export default function HomeScreen() {
   const [childName, setChildName] = useState('');
   const [childGrade, setChildGrade] = useState('');
   const [childTier, setChildTier] = useState('free');
-  const [childAvatar, setChildAvatar] = useState('🍓');
+  const [childAvatar, setChildAvatar] = useState<ImageSourcePropType>(require('../../assets/images/avatar_01.png'));
   const [studyDays, setStudyDays] = useState<Set<number>>(new Set());
   const [totalProblems, setTotalProblems] = useState(0);
   const [monthlyAverage, setMonthlyAverage] = useState(0);
@@ -389,7 +389,7 @@ export default function HomeScreen() {
         {/* 1. PROFILE HEADER BAR */}
         <View style={styles.profileHeader}>
           <View style={styles.profileLeft}>
-            <Text style={styles.profileEmoji}>{childAvatar}</Text>
+            <Image source={childAvatar} style={styles.avatarImage} />
             <Text style={styles.profileName}>{displayName || '김배움'}</Text>
             <View style={[styles.badge, { backgroundColor: TIER_COLORS[childTier] || '#E0E0E0' }]}>
               <Text style={[styles.badgeText, { color: TIER_TEXT_COLORS[childTier] || '#666666' }]}>{TIER_LABELS[childTier] || '무료회원'}</Text>
@@ -587,8 +587,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  profileEmoji: {
-    fontSize: 32,
+  avatarImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     marginRight: 8,
   },
   profileName: {

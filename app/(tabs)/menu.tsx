@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Image, ImageSourcePropType } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useState, useCallback } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
@@ -10,7 +10,7 @@ export default function MenuScreen() {
   const router = useRouter();
   const [parentName, setParentName] = useState('');
   const [parentEmail, setParentEmail] = useState('');
-  const [childEmoji, setChildEmoji] = useState('🍎');
+  const [childEmoji, setChildEmoji] = useState<ImageSourcePropType>(require('../../assets/images/avatar_01.png'));
 
   useFocusEffect(
     useCallback(() => {
@@ -60,7 +60,10 @@ export default function MenuScreen() {
       <ScrollView>
         <View style={styles.profileSection}>
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>{childEmoji} {parentName || '부모님'}</Text>
+            <View style={styles.profileNameRow}>
+              <Image source={childEmoji} style={styles.avatarImage} />
+              <Text style={styles.profileName}>{parentName || '부모님'}</Text>
+            </View>
             <Text style={styles.profileEmail}>{parentEmail || ''}</Text>
           </View>
           <TouchableOpacity
@@ -99,6 +102,16 @@ const styles = StyleSheet.create({
   },
   profileInfo: {
     flex: 1,
+  },
+  profileNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  avatarImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
   profileName: {
     fontSize: 16,

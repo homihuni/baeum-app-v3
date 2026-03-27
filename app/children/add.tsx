@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, TextInput, Alert, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,15 +6,40 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createChild } from '../../utils/firestore';
 
 const AVATARS = [
-  '🍓', '🍎', '🍊', '🍋', '🍇', '🍉',
-  '🍑', '🍒', '🫐', '🥝', '🐶', '🐱',
-  '🐰', '🐻', '🦊', '🐼', '🐨', '🦁',
-  '🐯', '🐸'
+  require('../../assets/images/avatar_01.png'),
+  require('../../assets/images/avatar_02.png'),
+  require('../../assets/images/avatar_03.png'),
+  require('../../assets/images/avatar_04.png'),
+  require('../../assets/images/avatar_05.png'),
+  require('../../assets/images/avatar_06.png'),
+  require('../../assets/images/avatar_07.png'),
+  require('../../assets/images/avatar_08.png'),
+  require('../../assets/images/avatar_09.png'),
+  require('../../assets/images/avatar_10.png'),
+  require('../../assets/images/avatar_11.png'),
+  require('../../assets/images/avatar_12.png'),
+  require('../../assets/images/avatar_13.png'),
+  require('../../assets/images/avatar_14.png'),
+  require('../../assets/images/avatar_15.png'),
+  require('../../assets/images/avatar_16.png'),
+  require('../../assets/images/avatar_17.png'),
+  require('../../assets/images/avatar_18.png'),
+  require('../../assets/images/avatar_19.png'),
+  require('../../assets/images/avatar_20.png'),
+  require('../../assets/images/avatar_21.png'),
+  require('../../assets/images/avatar_22.png'),
+  require('../../assets/images/avatar_23.png'),
+  require('../../assets/images/avatar_24.png'),
+  require('../../assets/images/avatar_25.png'),
+  require('../../assets/images/avatar_26.png'),
+  require('../../assets/images/avatar_27.png'),
+  require('../../assets/images/avatar_28.png'),
+  require('../../assets/images/avatar_29.png'),
 ];
 
 export default function AddChildScreen() {
   const router = useRouter();
-  const [avatar, setAvatar] = useState('🍓');
+  const [avatar, setAvatar] = useState(AVATARS[0]);
   const [name, setName] = useState('');
   const [grade, setGrade] = useState(1);
   const [gender, setGender] = useState<'male' | 'female'>('male');
@@ -111,13 +136,13 @@ export default function AddChildScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>아바타</Text>
           <View style={styles.avatarGrid}>
-            {AVATARS.map((emoji) => (
+            {AVATARS.map((img, index) => (
               <TouchableOpacity
-                key={emoji}
-                style={[styles.avatarOption, avatar === emoji && styles.avatarOptionSelected]}
-                onPress={() => setAvatar(emoji)}
+                key={index}
+                style={[styles.avatarOption, avatar === img && styles.avatarOptionSelected]}
+                onPress={() => setAvatar(img)}
               >
-                <Text style={styles.avatarEmoji}>{emoji}</Text>
+                <Image source={img} style={styles.avatarGridImage} />
               </TouchableOpacity>
             ))}
           </View>
@@ -257,8 +282,10 @@ const styles = StyleSheet.create({
     borderColor: '#5BBFAA',
     backgroundColor: '#F0F9F7',
   },
-  avatarEmoji: {
-    fontSize: 28,
+  avatarGridImage: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
   },
   input: {
     backgroundColor: '#F5F5F5',

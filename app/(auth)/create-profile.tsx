@@ -1,15 +1,40 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { createChild } from '../../utils/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const AVATARS = [
-  '🍓', '🍎', '🍊', '🍋', '🍇', '🍉',
-  '🍑', '🍒', '🫐', '🥝', '🐶', '🐱',
-  '🐰', '🐻', '🦊', '🐼', '🐨', '🦁',
-  '🐯', '🐸'
+  require('../../assets/images/avatar_01.png'),
+  require('../../assets/images/avatar_02.png'),
+  require('../../assets/images/avatar_03.png'),
+  require('../../assets/images/avatar_04.png'),
+  require('../../assets/images/avatar_05.png'),
+  require('../../assets/images/avatar_06.png'),
+  require('../../assets/images/avatar_07.png'),
+  require('../../assets/images/avatar_08.png'),
+  require('../../assets/images/avatar_09.png'),
+  require('../../assets/images/avatar_10.png'),
+  require('../../assets/images/avatar_11.png'),
+  require('../../assets/images/avatar_12.png'),
+  require('../../assets/images/avatar_13.png'),
+  require('../../assets/images/avatar_14.png'),
+  require('../../assets/images/avatar_15.png'),
+  require('../../assets/images/avatar_16.png'),
+  require('../../assets/images/avatar_17.png'),
+  require('../../assets/images/avatar_18.png'),
+  require('../../assets/images/avatar_19.png'),
+  require('../../assets/images/avatar_20.png'),
+  require('../../assets/images/avatar_21.png'),
+  require('../../assets/images/avatar_22.png'),
+  require('../../assets/images/avatar_23.png'),
+  require('../../assets/images/avatar_24.png'),
+  require('../../assets/images/avatar_25.png'),
+  require('../../assets/images/avatar_26.png'),
+  require('../../assets/images/avatar_27.png'),
+  require('../../assets/images/avatar_28.png'),
+  require('../../assets/images/avatar_29.png'),
 ];
 const GRADES = [1, 2, 3, 4, 5, 6];
 
@@ -19,7 +44,7 @@ export default function CreateProfileScreen() {
   const [birthDate, setBirthDate] = useState('');
   const [grade, setGrade] = useState(1);
   const [gender, setGender] = useState<'male' | 'female'>('male');
-  const [avatar, setAvatar] = useState('🍓');
+  const [avatar, setAvatar] = useState(AVATARS[0]);
   const [loading, setLoading] = useState(false);
 
   const handleCreate = async () => {
@@ -67,9 +92,9 @@ export default function CreateProfileScreen() {
 
         <Text style={styles.sectionLabel}>프로필 아바타</Text>
         <View style={styles.avatarRow}>
-          {AVATARS.map((a) => (
-            <TouchableOpacity key={a} style={[styles.avatarBtn, avatar === a && styles.avatarSelected]} onPress={() => setAvatar(a)}>
-              <Text style={styles.avatarEmoji}>{a}</Text>
+          {AVATARS.map((img, index) => (
+            <TouchableOpacity key={index} style={[styles.avatarBtn, avatar === img && styles.avatarSelected]} onPress={() => setAvatar(img)}>
+              <Image source={img} style={styles.avatarGridImage} />
             </TouchableOpacity>
           ))}
         </View>
@@ -116,7 +141,7 @@ const styles = StyleSheet.create({
   avatarRow: { flexDirection: 'row', justifyContent: 'center', gap: 12 },
   avatarBtn: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#F5F5F5', justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: 'transparent' },
   avatarSelected: { borderColor: '#7ED4C0', backgroundColor: '#E8F8F5' },
-  avatarEmoji: { fontSize: 28 },
+  avatarGridImage: { width: 36, height: 36, borderRadius: 18 },
   input: { backgroundColor: '#F5F5F5', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, color: '#333' },
   gradeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   gradeBtn: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, backgroundColor: '#F5F5F5', borderWidth: 1, borderColor: '#E0E0E0' },
