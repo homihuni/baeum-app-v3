@@ -1,10 +1,53 @@
 import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
+
+const AVATAR_MAP: Record<string, any> = {
+  avatar_01: require('../../assets/images/avatar_01.png'),
+  avatar_02: require('../../assets/images/avatar_02.png'),
+  avatar_03: require('../../assets/images/avatar_03.png'),
+  avatar_04: require('../../assets/images/avatar_04.png'),
+  avatar_05: require('../../assets/images/avatar_05.png'),
+  avatar_06: require('../../assets/images/avatar_06.png'),
+  avatar_07: require('../../assets/images/avatar_07.png'),
+  avatar_08: require('../../assets/images/avatar_08.png'),
+  avatar_09: require('../../assets/images/avatar_09.png'),
+  avatar_10: require('../../assets/images/avatar_10.png'),
+  avatar_11: require('../../assets/images/avatar_11.png'),
+  avatar_12: require('../../assets/images/avatar_12.png'),
+  avatar_13: require('../../assets/images/avatar_13.png'),
+  avatar_14: require('../../assets/images/avatar_14.png'),
+  avatar_15: require('../../assets/images/avatar_15.png'),
+  avatar_16: require('../../assets/images/avatar_16.png'),
+  avatar_17: require('../../assets/images/avatar_17.png'),
+  avatar_18: require('../../assets/images/avatar_18.png'),
+  avatar_19: require('../../assets/images/avatar_19.png'),
+  avatar_20: require('../../assets/images/avatar_20.png'),
+  avatar_21: require('../../assets/images/avatar_21.png'),
+  avatar_22: require('../../assets/images/avatar_22.png'),
+  avatar_23: require('../../assets/images/avatar_23.png'),
+  avatar_24: require('../../assets/images/avatar_24.png'),
+  avatar_25: require('../../assets/images/avatar_25.png'),
+  avatar_26: require('../../assets/images/avatar_26.png'),
+  avatar_27: require('../../assets/images/avatar_27.png'),
+  avatar_28: require('../../assets/images/avatar_28.png'),
+  avatar_29: require('../../assets/images/avatar_29.png'),
+};
+const DEFAULT_AVATAR = require('../../assets/images/avatar_01.png');
+function resolveAvatar(value: any): any {
+  if (!value) return DEFAULT_AVATAR;
+  if (typeof value === 'string' && AVATAR_MAP[value]) return AVATAR_MAP[value];
+  if (typeof value === 'string') {
+    const match = value.match(/avatar_(\d+)/);
+    if (match && AVATAR_MAP['avatar_' + match[1]]) return AVATAR_MAP['avatar_' + match[1]];
+    return DEFAULT_AVATAR;
+  }
+  return DEFAULT_AVATAR;
+}
 
 const TIER_CONFIG: Record<string, { label: string; color: string; bgColor: string }> = {
   free: { label: '무료', color: '#9E9E9E', bgColor: '#F5F5F5' },
@@ -66,7 +109,7 @@ export default function LearningPlanScreen() {
         {/* 현재 자녀 플랜 카드 */}
         <View style={[styles.currentCard, { borderColor: tierConfig.color }]}>
           <View style={styles.currentCardTop}>
-            <Text style={styles.currentAvatar}>{childAvatar}</Text>
+            <Image source={resolveAvatar(childAvatar)} style={{ width: 48, height: 48, borderRadius: 24 }} />
             <View style={styles.currentInfo}>
               <Text style={styles.currentName}>{childName}</Text>
               <Text style={styles.currentGrade}>{childGrade}학년</Text>
@@ -204,8 +247,7 @@ const styles = StyleSheet.create({
   // 현재 플랜 카드
   currentCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 20, borderWidth: 2, marginBottom: 24 },
   currentCardTop: { flexDirection: 'row', alignItems: 'center' },
-  currentAvatar: { fontSize: 40, marginRight: 12 },
-  currentInfo: { flex: 1 },
+  currentInfo: { flex: 1, marginLeft: 12 },
   currentName: { fontSize: 18, fontWeight: 'bold', color: '#333' },
   currentGrade: { fontSize: 14, color: '#666', marginTop: 2 },
   currentBadge: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20 },
