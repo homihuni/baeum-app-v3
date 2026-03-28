@@ -1,10 +1,17 @@
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, TextInput, Modal, ScrollView, Image, ImageSourcePropType } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getSerialCode, useSerialCode, upgradeChildTier, getChild } from '../../utils/firestore';
 import { DEFAULT_AVATAR, resolveAvatar } from '../../utils/avatars';
+
+function formatSerial(raw: string): string {
+  const clean = raw.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (clean.length <= 4) return clean;
+  if (clean.length <= 6) return clean.slice(0, 4) + '-' + clean.slice(4);
+  return clean.slice(0, 4) + '-' + clean.slice(4, 6) + '-' + clean.slice(6, 10);
+}
 
 export default function EnterSerialScreen() {
   const router = useRouter();
@@ -14,19 +21,14 @@ export default function EnterSerialScreen() {
   const [childAvatar, setChildAvatar] = useState<ImageSourcePropType>(DEFAULT_AVATAR);
   const [childGrade, setChildGrade] = useState('1');
   const [serialCode, setSerialCode] = useState('');
-  const [serial1, setSerial1] = useState('');
-  const [serial2, setSerial2] = useState('');
-  const [serial3, setSerial3] = useState('');
+  const [serialDisplay, setSerialDisplay] = useState('');
+  const [serialRaw, setSerialRaw] = useState('');
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [modalTitle, setModalTitle] = useState('');
   const [modalMessage, setModalMessage] = useState('');
   const [modalType, setModalType] = useState<'error' | 'success'>('error');
   const [isVerified, setIsVerified] = useState(false);
-
-  const input1Ref = useRef<TextInput>(null);
-  const input2Ref = useRef<TextInput>(null);
-  const input3Ref = useRef<TextInput>(null);
 
   useEffect(() => {
     loadChildData();
@@ -55,10 +57,8 @@ export default function EnterSerialScreen() {
           setIsVerified(true);
           setSerialCode(childData.serialNumber || '');
           if (childData.serialNumber) {
-            const sn = childData.serialNumber;
-            setSerial1(sn.substring(0, 4));
-            setSerial2(sn.substring(4, 6));
-            setSerial3(sn.substring(6, 10));
+            setSerialRaw(childData.serialNumber);
+            setSerialDisplay(formatSerial(childData.serialNumber));
           }
           console.log("이미 인증된 회원:", childData.tier);
         }
@@ -86,10 +86,9 @@ export default function EnterSerialScreen() {
 
   const handleVerify = async () => {
     console.log('=== 인증 버튼 클릭 ===');
-    const fullSerialCode = serial1 + serial2 + serial3;
-    console.log('입력값:', fullSerialCode);
+    console.log('입력값:', serialRaw);
 
-    const trimmedCode = fullSerialCode.trim();
+    const trimmedCode = serialRaw.trim();
 
     if (!trimmedCode) {
       showErrorModal('입력 오류', '시리얼번호를 입력해주세요');
@@ -151,8 +150,6 @@ export default function EnterSerialScreen() {
 
   console.log("현재 isVerified:", isVerified);
 
-  const fullSerialCode = serial1 + serial2 + serial3;
-
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -176,57 +173,23 @@ export default function EnterSerialScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>시리얼번호</Text>
-          <View style={styles.serialInputRow}>
-            <TextInput
-              ref={input1Ref}
-              style={[styles.serialInput, styles.serialInput4, isVerified && styles.inputDisabled]}
-              value={serial1}
-              onChangeText={(text) => {
-                const upper = text.toUpperCase().replace(/[^A-Z0-9]/g, '');
-                setSerial1(upper);
-                if (upper.length === 4) input2Ref.current?.focus();
-              }}
-              placeholder="0000"
-              placeholderTextColor="#999"
-              maxLength={4}
-              autoCapitalize="characters"
-              editable={!isVerified}
-            />
-            <Text style={styles.serialDash}>-</Text>
-            <TextInput
-              ref={input2Ref}
-              style={[styles.serialInput, styles.serialInput2, isVerified && styles.inputDisabled]}
-              value={serial2}
-              onChangeText={(text) => {
-                const upper = text.toUpperCase().replace(/[^A-Z0-9]/g, '');
-                setSerial2(upper);
-                if (upper.length === 2) input3Ref.current?.focus();
-                if (upper.length === 0) input1Ref.current?.focus();
-              }}
-              placeholder="00"
-              placeholderTextColor="#999"
-              maxLength={2}
-              autoCapitalize="characters"
-              editable={!isVerified}
-            />
-            <Text style={styles.serialDash}>-</Text>
-            <TextInput
-              ref={input3Ref}
-              style={[styles.serialInput, styles.serialInput4, isVerified && styles.inputDisabled]}
-              value={serial3}
-              onChangeText={(text) => {
-                const upper = text.toUpperCase().replace(/[^A-Z0-9]/g, '');
-                setSerial3(upper);
-                if (upper.length === 0) input2Ref.current?.focus();
-              }}
-              placeholder="0000"
-              placeholderTextColor="#999"
-              maxLength={4}
-              autoCapitalize="characters"
-              editable={!isVerified}
-            />
-          </View>
-          <Text style={styles.charCount}>{fullSerialCode.length}/10</Text>
+          <TextInput
+            style={[styles.input, isVerified && styles.inputDisabled]}
+            value={serialDisplay}
+            onChangeText={(text) => {
+              const clean = text.toUpperCase().replace(/[^A-Z0-9-]/g, '').replace(/-/g, '');
+              if (clean.length <= 10) {
+                setSerialRaw(clean);
+                setSerialDisplay(formatSerial(clean));
+              }
+            }}
+            placeholder="0000-00-0000"
+            placeholderTextColor="#999"
+            maxLength={12}
+            autoCapitalize="characters"
+            editable={!isVerified}
+          />
+          <Text style={styles.charCount}>{serialRaw.length}/10</Text>
         </View>
 
         <View style={styles.guideBox}>
