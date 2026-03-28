@@ -1,5 +1,4 @@
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Switch } from 'react-native';
-import SubHeader from '../../components/SubHeader';
 import BottomTabBar from '../../components/BottomTabBar';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -98,8 +97,6 @@ export default function PushSettingScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <SubHeader title="알림 설정" />
-
       <ScrollView>
         {/* 섹션 1: 배움학습 알림 */}
         <Text style={styles.sectionHeader}>배움학습 알림</Text>

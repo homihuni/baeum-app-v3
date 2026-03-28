@@ -1,5 +1,4 @@
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Modal } from 'react-native';
-import SubHeader from '../../components/SubHeader';
 import BottomTabBar from '../../components/BottomTabBar';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -128,8 +127,6 @@ export default function SettingsDetailScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <SubHeader title="상세" />
-
       <ScrollView>
         {/* 섹션 1: 고객센터 */}
         <Text style={styles.sectionHeader}>고객센터</Text>

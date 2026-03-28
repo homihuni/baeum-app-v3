@@ -1,6 +1,5 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Image } from 'react-native';
 import SafeLayout from '../../components/SafeLayout';
-import SubHeader from '../../components/SubHeader';
 import BottomTabBar from '../../components/BottomTabBar';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -127,8 +126,6 @@ export default function AddChildScreen() {
 
   return (
     <SafeLayout>
-      <SubHeader title="자녀 추가" />
-
       <ScrollView style={styles.content}>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>아바타</Text>

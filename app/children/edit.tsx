@@ -1,6 +1,5 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Image } from 'react-native';
 import SafeLayout from '../../components/SafeLayout';
-import SubHeader from '../../components/SubHeader';
 import BottomTabBar from '../../components/BottomTabBar';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useState, useEffect } from 'react';
@@ -147,8 +146,6 @@ export default function EditChildScreen() {
 
   return (
     <SafeLayout>
-      <SubHeader title="자녀 정보 수정" />
-
       <ScrollView style={styles.content}>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>아바타</Text>

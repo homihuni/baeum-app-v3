@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Image } from 'react-native';
-import SubHeader from '../../components/SubHeader';
 import BottomTabBar from '../../components/BottomTabBar';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -56,8 +55,6 @@ export default function LearningPlanScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <SubHeader title="학습 플랜" />
-
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
         {/* 현재 자녀 플랜 카드 */}

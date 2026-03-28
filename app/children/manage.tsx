@@ -1,6 +1,5 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Image } from 'react-native';
 import SafeLayout from '../../components/SafeLayout';
-import SubHeader from '../../components/SubHeader';
 import BottomTabBar from '../../components/BottomTabBar';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useState, useCallback } from 'react';
@@ -156,8 +155,6 @@ export default function ManageChildrenScreen() {
 
   return (
     <SafeLayout>
-      <SubHeader title="자녀 관리" />
-
       <ScrollView style={styles.content}>
         {loading ? (
           <Text style={styles.loadingText}>로딩 중...</Text>

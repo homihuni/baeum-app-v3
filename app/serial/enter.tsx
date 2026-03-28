@@ -1,5 +1,4 @@
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, TextInput, Modal, ScrollView, Image, ImageSourcePropType } from 'react-native';
-import SubHeader from '../../components/SubHeader';
 import BottomTabBar from '../../components/BottomTabBar';
 import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
@@ -154,8 +153,6 @@ export default function EnterSerialScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <SubHeader title="시리얼 입력" />
-
       <ScrollView style={styles.content}>
         <View style={styles.childInfoCard}>
           <Image source={childAvatar} style={styles.avatarImage} />

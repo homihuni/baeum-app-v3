@@ -1,6 +1,5 @@
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Modal } from 'react-native';
 import SafeLayout from '../../components/SafeLayout';
-import SubHeader from '../../components/SubHeader';
 import BottomTabBar from '../../components/BottomTabBar';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
@@ -133,8 +132,6 @@ export default function SerialScreen() {
 
   return (
     <SafeLayout>
-      <SubHeader title="시리얼 등록" />
-
       <View style={styles.content}>
         <Text style={styles.infoText}>{childName}의 시리얼 코드를 입력해주세요</Text>
 

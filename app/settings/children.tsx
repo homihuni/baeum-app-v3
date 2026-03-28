@@ -1,5 +1,4 @@
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
-import SubHeader from '../../components/SubHeader';
 import BottomTabBar from '../../components/BottomTabBar';
 import { useRouter } from 'expo-router';
 
@@ -8,7 +7,6 @@ export default function ChildrenScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <SubHeader title="자녀 관리" />
       <View style={styles.content}>
         <Text style={styles.messageText}>준비 중입니다</Text>
       </View>

@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
-import SubHeader from '../../components/SubHeader';
 import BottomTabBar from '../../components/BottomTabBar';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -71,8 +70,6 @@ export default function NoticeListScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <SubHeader title="공지사항" />
-
       <ScrollView showsVerticalScrollIndicator={false}>
         {loading ? (
           <View style={styles.loadingContainer}>
