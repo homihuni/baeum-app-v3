@@ -95,6 +95,17 @@ export default function TabLayout() {
         }}
       />
 
+      <Tabs.Screen name="children/manage" options={{ href: null, tabBarStyle: { display: 'flex' } }} />
+      <Tabs.Screen name="children/edit" options={{ href: null, tabBarStyle: { display: 'flex' } }} />
+      <Tabs.Screen name="children/add" options={{ href: null, tabBarStyle: { display: 'flex' } }} />
+      <Tabs.Screen name="children/serial" options={{ href: null, tabBarStyle: { display: 'flex' } }} />
+      <Tabs.Screen name="serial/enter" options={{ href: null, tabBarStyle: { display: 'flex' } }} />
+      <Tabs.Screen name="settings/grade" options={{ href: null, tabBarStyle: { display: 'flex' } }} />
+      <Tabs.Screen name="settings/subscribe" options={{ href: null, tabBarStyle: { display: 'flex' } }} />
+      <Tabs.Screen name="settings/notice-list" options={{ href: null, tabBarStyle: { display: 'flex' } }} />
+      <Tabs.Screen name="settings/detail" options={{ href: null, tabBarStyle: { display: 'flex' } }} />
+      <Tabs.Screen name="settings/index" options={{ href: null, tabBarStyle: { display: 'flex' } }} />
+
     </Tabs>
   );
 }
