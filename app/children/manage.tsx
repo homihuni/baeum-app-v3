@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Image } from 'react-native';
 import SafeLayout from '../../components/SafeLayout';
+import BottomTabBar from '../../components/BottomTabBar';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useState, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
@@ -349,6 +350,7 @@ export default function ManageChildrenScreen() {
           </View>
         </View>
       </Modal>
+      <BottomTabBar />
     </SafeLayout>
   );
 }

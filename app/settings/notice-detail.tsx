@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import BottomTabBar from '../../components/BottomTabBar';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { doc, getDoc } from 'firebase/firestore';
@@ -83,6 +84,7 @@ export default function NoticeDetailScreen() {
           </View>
         )}
       </ScrollView>
+      <BottomTabBar />
     </SafeAreaView>
   );
 }

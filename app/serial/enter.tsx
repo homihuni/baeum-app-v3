@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, TextInput, Modal, ScrollView, Image, ImageSourcePropType } from 'react-native';
+import BottomTabBar from '../../components/BottomTabBar';
 import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
@@ -219,6 +220,7 @@ export default function EnterSerialScreen() {
           </View>
         </View>
       </Modal>
+      <BottomTabBar />
     </SafeAreaView>
   );
 }

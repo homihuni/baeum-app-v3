@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
+import BottomTabBar from '../../components/BottomTabBar';
 import { useRouter } from 'expo-router';
 
 export default function WithdrawScreen() {
@@ -16,6 +17,7 @@ export default function WithdrawScreen() {
       <View style={styles.content}>
         <Text style={styles.messageText}>준비 중입니다</Text>
       </View>
+      <BottomTabBar />
     </SafeAreaView>
   );
 }

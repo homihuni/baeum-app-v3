@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Image } from 'react-native';
 import SafeLayout from '../../components/SafeLayout';
+import BottomTabBar from '../../components/BottomTabBar';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
@@ -222,6 +223,7 @@ export default function AddChildScreen() {
           <Text style={styles.addButtonText}>{isSubmitting ? '등록 중...' : '등록'}</Text>
         </TouchableOpacity>
       </ScrollView>
+      <BottomTabBar />
     </SafeLayout>
   );
 }

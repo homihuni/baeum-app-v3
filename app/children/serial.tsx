@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Modal } from 'react-native';
 import SafeLayout from '../../components/SafeLayout';
+import BottomTabBar from '../../components/BottomTabBar';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
@@ -170,6 +171,7 @@ export default function SerialScreen() {
           </View>
         </View>
       </Modal>
+      <BottomTabBar />
     </SafeLayout>
   );
 }
