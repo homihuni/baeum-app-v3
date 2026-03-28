@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { View, Text, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const ACTIVE = '#5BBFAA';
 const INACTIVE = '#B0BEC5';
@@ -29,22 +30,27 @@ function TabIcon({ children, label, focused }: { children: React.ReactNode; labe
 }
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
+
   return (
     <Tabs screenOptions={{
       headerShown: false,
       tabBarShowLabel: false,
       tabBarStyle: {
-        height: Platform.OS === 'ios' ? 80 : 60,
+        height: 56 + insets.bottom,
         backgroundColor: '#FFFFFF',
         borderTopWidth: 1,
         borderTopColor: '#D4EDE7',
-        paddingTop: 10,
-        paddingBottom: Platform.OS === 'ios' ? 20 : 5,
+        paddingTop: 8,
+        paddingBottom: insets.bottom,
         elevation: 8,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: -2 },
         shadowOpacity: 0.08,
         shadowRadius: 4,
+      },
+      sceneStyle: {
+        paddingTop: insets.top,
       },
     }}>
 
