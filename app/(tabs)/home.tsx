@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Modal, Pressable, Alert, Animated, Image, Linking, Dimensions, ImageSourcePropType } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Pressable, Alert, Animated, Image, Linking, Dimensions, ImageSourcePropType } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -386,7 +387,7 @@ export default function HomeScreen() {
   return (
     <View style={styles.rootContainer}>
       <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
+      <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView} contentContainerStyle={{ paddingBottom: 30 }}>
         {/* 1. PROFILE HEADER BAR */}
         <View style={styles.profileHeader}>
           <View style={styles.profileLeft}>
@@ -582,6 +583,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 12,
+    paddingTop: 8,
     backgroundColor: '#FFFFFF',
   },
   profileLeft: {
@@ -814,6 +816,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 20,
+    marginBottom: 24,
     borderTopWidth: 1,
     borderTopColor: '#E0E0E0',
   },
