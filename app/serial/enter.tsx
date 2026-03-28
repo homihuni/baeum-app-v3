@@ -186,7 +186,7 @@ export default function EnterSerialScreen() {
                 setSerial1(upper);
                 if (upper.length === 4) input2Ref.current?.focus();
               }}
-              placeholder="XXXX"
+              placeholder="0000"
               placeholderTextColor="#999"
               maxLength={4}
               autoCapitalize="characters"
@@ -203,7 +203,7 @@ export default function EnterSerialScreen() {
                 if (upper.length === 2) input3Ref.current?.focus();
                 if (upper.length === 0) input1Ref.current?.focus();
               }}
-              placeholder="XX"
+              placeholder="00"
               placeholderTextColor="#999"
               maxLength={2}
               autoCapitalize="characters"
@@ -219,7 +219,7 @@ export default function EnterSerialScreen() {
                 setSerial3(upper);
                 if (upper.length === 0) input2Ref.current?.focus();
               }}
-              placeholder="XXXX"
+              placeholder="0000"
               placeholderTextColor="#999"
               maxLength={4}
               autoCapitalize="characters"
@@ -354,17 +354,17 @@ const styles = StyleSheet.create({
   serialInputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
+    gap: 6,
   },
   serialInput: {
     backgroundColor: '#F5F5F5',
     borderRadius: 8,
-    padding: 12,
-    fontSize: 18,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    fontSize: 16,
     color: '#333',
     fontWeight: 'bold',
-    letterSpacing: 2,
+    letterSpacing: 1,
     textAlign: 'center',
   },
   serialInput4: {
@@ -374,7 +374,7 @@ const styles = StyleSheet.create({
     flex: 2,
   },
   serialDash: {
-    fontSize: 20,
+    fontSize: 16,
     color: '#999',
     fontWeight: 'bold',
   },
