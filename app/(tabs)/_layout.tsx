@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { View, Text, Platform } from 'react-native';
+import { View, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const ACTIVE = '#5BBFAA';
@@ -48,9 +48,6 @@ export default function TabLayout() {
         shadowOffset: { width: 0, height: -2 },
         shadowOpacity: 0.08,
         shadowRadius: 4,
-      },
-      sceneStyle: {
-        paddingTop: insets.top,
       },
     }}>
 

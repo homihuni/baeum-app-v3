@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Image, ImageSourcePropType } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ImageSourcePropType } from 'react-native';
+import SafeLayout from '../../components/SafeLayout';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useState, useCallback } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
@@ -57,7 +58,7 @@ export default function MenuScreen() {
   ];
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeLayout>
       <ScrollView>
         <View style={styles.profileSection}>
           <View style={styles.profileInfo}>
@@ -83,7 +84,7 @@ export default function MenuScreen() {
           </TouchableOpacity>
         ))}
       </ScrollView>
-    </SafeAreaView>
+    </SafeLayout>
   );
 }
 

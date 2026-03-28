@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Pressable, Alert, Animated, Image, Linking, Dimensions, ImageSourcePropType } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import SafeLayout from '../../components/SafeLayout';
 import { useRouter } from 'expo-router';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -385,9 +385,8 @@ export default function HomeScreen() {
   const displayName = childName.length > 5 ? childName.substring(0, 5) + '..' : childName;
 
   return (
-    <View style={styles.rootContainer}>
-      <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView} contentContainerStyle={{ paddingBottom: 30 }}>
+    <SafeLayout backgroundColor="#F5F5F5">
+      <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView} contentContainerStyle={{ paddingBottom: 0 }}>
         {/* 1. PROFILE HEADER BAR */}
         <View style={styles.profileHeader}>
           <View style={styles.profileLeft}>
@@ -556,8 +555,7 @@ export default function HomeScreen() {
           </View>
         </View>
       </Modal>
-      </SafeAreaView>
-    </View>
+    </SafeLayout>
   );
 }
 
@@ -816,7 +814,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 20,
-    marginBottom: 24,
+    marginBottom: 0,
     borderTopWidth: 1,
     borderTopColor: '#E0E0E0',
   },

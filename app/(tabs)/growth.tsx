@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Modal } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import SafeLayout from '../../components/SafeLayout';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
@@ -416,10 +416,10 @@ export default function GrowthScreen() {
     router.push('/settings/grade');
   };
 
-  if (loading) return (<SafeAreaView style={styles.container}><ActivityIndicator size="large" color="#7ED4C0" style={{marginTop:100}}/></SafeAreaView>);
+  if (loading) return (<SafeLayout><ActivityIndicator size="large" color="#7ED4C0" style={{marginTop:100}}/></SafeLayout>);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeLayout>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <Text style={styles.title}>성장 리포트</Text>
         <Text style={styles.subtitle}>{childName || '학생'}의 학습 현황</Text>
@@ -506,7 +506,7 @@ export default function GrowthScreen() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </SafeLayout>
   );
 }
 

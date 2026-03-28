@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image, ImageSourcePropType } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import SafeLayout from '../../components/SafeLayout';
 import { useRouter, useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { doc, getDoc } from 'firebase/firestore';
@@ -81,7 +81,7 @@ export default function StudyScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeLayout backgroundColor="#F5F5F5">
       <ScrollView showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>과목 선택</Text>
         <Text style={styles.subtitle}>학습할 과목을 선택하세요</Text>
@@ -118,7 +118,7 @@ export default function StudyScreen() {
 
         <Text style={styles.bottomNote}>매일 꾸준히 학습해요! 💪</Text>
       </ScrollView>
-    </SafeAreaView>
+    </SafeLayout>
   );
 }
 
