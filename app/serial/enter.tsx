@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getSerialCode, useSerialCode, upgradeChildTier, getChild } from '../../utils/firestore';
-import { resolveAvatar } from '../../utils/avatars';
+import { DEFAULT_AVATAR, resolveAvatar } from '../../utils/avatars';
 
 export default function EnterSerialScreen() {
   const router = useRouter();
