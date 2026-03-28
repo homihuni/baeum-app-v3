@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, TextInput, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Modal } from 'react-native';
+import SafeLayout from '../../components/SafeLayout';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
@@ -129,7 +130,7 @@ export default function SerialScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeLayout>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#333" />
@@ -169,7 +170,7 @@ export default function SerialScreen() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </SafeLayout>
   );
 }
 
@@ -186,6 +187,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
+    backgroundColor: '#FFFFFF',
   },
   backButton: {
     width: 40,

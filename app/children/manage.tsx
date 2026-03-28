@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Modal, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Image } from 'react-native';
+import SafeLayout from '../../components/SafeLayout';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useState, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
@@ -152,7 +153,7 @@ export default function ManageChildrenScreen() {
 
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeLayout>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#333" />
@@ -348,7 +349,7 @@ export default function ManageChildrenScreen() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </SafeLayout>
   );
 }
 
@@ -365,6 +366,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
+    backgroundColor: '#FFFFFF',
   },
   backButton: {
     width: 40,

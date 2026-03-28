@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator, Image } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import SafeLayout from '../../components/SafeLayout';
 import { useRouter } from 'expo-router';
 import { createChild } from '../../utils/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -85,7 +85,7 @@ export default function CreateProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeLayout>
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={styles.title}>자녀 프로필 만들기</Text>
         <Text style={styles.subtitle}>학습할 자녀의 정보를 입력해주세요</Text>
@@ -128,7 +128,7 @@ export default function CreateProfileScreen() {
           {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.createText}>프로필 만들기</Text>}
         </TouchableOpacity>
       </ScrollView>
-    </SafeAreaView>
+    </SafeLayout>
   );
 }
 

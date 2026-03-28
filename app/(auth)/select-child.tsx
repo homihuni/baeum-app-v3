@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Image } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import SafeLayout from '../../components/SafeLayout';
 import { useRouter } from 'expo-router';
 import { getChildren } from '../../utils/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -52,9 +52,9 @@ export default function SelectChildScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeLayout backgroundColor="#F5F5F5">
         <ActivityIndicator size="large" color="#7ED4C0" style={{ marginTop: 100 }} />
-      </SafeAreaView>
+      </SafeLayout>
     );
   }
 
@@ -176,14 +176,14 @@ export default function SelectChildScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeLayout backgroundColor="#F5F5F5">
       <Text style={styles.title}>누가 공부할까요?</Text>
       <Text style={styles.subtitle}>학습할 자녀를 선택하세요</Text>
 
       <View style={styles.cardContainer}>
         {renderChildCards()}
       </View>
-    </SafeAreaView>
+    </SafeLayout>
   );
 }
 

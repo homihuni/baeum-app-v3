@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, TextInput, Alert, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Image } from 'react-native';
+import SafeLayout from '../../components/SafeLayout';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
@@ -123,7 +124,7 @@ export default function AddChildScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeLayout>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#333" />
@@ -221,7 +222,7 @@ export default function AddChildScreen() {
           <Text style={styles.addButtonText}>{isSubmitting ? '등록 중...' : '등록'}</Text>
         </TouchableOpacity>
       </ScrollView>
-    </SafeAreaView>
+    </SafeLayout>
   );
 }
 
@@ -238,6 +239,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
+    backgroundColor: '#FFFFFF',
   },
   backButton: {
     width: 40,
