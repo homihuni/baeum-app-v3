@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, TextInput, Modal, ScrollView, Image, ImageSourcePropType } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getSerialCode, useSerialCode, upgradeChildTier, getChild } from '../../utils/firestore';
@@ -14,12 +14,19 @@ export default function EnterSerialScreen() {
   const [childAvatar, setChildAvatar] = useState<ImageSourcePropType>(DEFAULT_AVATAR);
   const [childGrade, setChildGrade] = useState('1');
   const [serialCode, setSerialCode] = useState('');
+  const [serial1, setSerial1] = useState('');
+  const [serial2, setSerial2] = useState('');
+  const [serial3, setSerial3] = useState('');
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [modalTitle, setModalTitle] = useState('');
   const [modalMessage, setModalMessage] = useState('');
   const [modalType, setModalType] = useState<'error' | 'success'>('error');
   const [isVerified, setIsVerified] = useState(false);
+
+  const input1Ref = useRef<TextInput>(null);
+  const input2Ref = useRef<TextInput>(null);
+  const input3Ref = useRef<TextInput>(null);
 
   useEffect(() => {
     loadChildData();
@@ -47,6 +54,12 @@ export default function EnterSerialScreen() {
         if (childData.tier === 'baeum' || childData.tier === 'sky') {
           setIsVerified(true);
           setSerialCode(childData.serialNumber || '');
+          if (childData.serialNumber) {
+            const sn = childData.serialNumber;
+            setSerial1(sn.substring(0, 4));
+            setSerial2(sn.substring(4, 6));
+            setSerial3(sn.substring(6, 10));
+          }
           console.log("이미 인증된 회원:", childData.tier);
         }
       }
@@ -73,9 +86,10 @@ export default function EnterSerialScreen() {
 
   const handleVerify = async () => {
     console.log('=== 인증 버튼 클릭 ===');
-    console.log('입력값:', serialCode);
+    const fullSerialCode = serial1 + serial2 + serial3;
+    console.log('입력값:', fullSerialCode);
 
-    const trimmedCode = serialCode.trim();
+    const trimmedCode = fullSerialCode.trim();
 
     if (!trimmedCode) {
       showErrorModal('입력 오류', '시리얼번호를 입력해주세요');
@@ -137,6 +151,8 @@ export default function EnterSerialScreen() {
 
   console.log("현재 isVerified:", isVerified);
 
+  const fullSerialCode = serial1 + serial2 + serial3;
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -160,17 +176,57 @@ export default function EnterSerialScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>시리얼번호</Text>
-          <TextInput
-            style={[styles.input, isVerified && styles.inputDisabled]}
-            value={serialCode}
-            onChangeText={setSerialCode}
-            placeholder="예: 26JH26A7K3"
-            placeholderTextColor="#999"
-            maxLength={10}
-            autoCapitalize="characters"
-            editable={!isVerified}
-          />
-          <Text style={styles.charCount}>{serialCode.length}/10</Text>
+          <View style={styles.serialInputRow}>
+            <TextInput
+              ref={input1Ref}
+              style={[styles.serialInput, styles.serialInput4, isVerified && styles.inputDisabled]}
+              value={serial1}
+              onChangeText={(text) => {
+                const upper = text.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                setSerial1(upper);
+                if (upper.length === 4) input2Ref.current?.focus();
+              }}
+              placeholder="XXXX"
+              placeholderTextColor="#999"
+              maxLength={4}
+              autoCapitalize="characters"
+              editable={!isVerified}
+            />
+            <Text style={styles.serialDash}>-</Text>
+            <TextInput
+              ref={input2Ref}
+              style={[styles.serialInput, styles.serialInput2, isVerified && styles.inputDisabled]}
+              value={serial2}
+              onChangeText={(text) => {
+                const upper = text.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                setSerial2(upper);
+                if (upper.length === 2) input3Ref.current?.focus();
+                if (upper.length === 0) input1Ref.current?.focus();
+              }}
+              placeholder="XX"
+              placeholderTextColor="#999"
+              maxLength={2}
+              autoCapitalize="characters"
+              editable={!isVerified}
+            />
+            <Text style={styles.serialDash}>-</Text>
+            <TextInput
+              ref={input3Ref}
+              style={[styles.serialInput, styles.serialInput4, isVerified && styles.inputDisabled]}
+              value={serial3}
+              onChangeText={(text) => {
+                const upper = text.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                setSerial3(upper);
+                if (upper.length === 0) input2Ref.current?.focus();
+              }}
+              placeholder="XXXX"
+              placeholderTextColor="#999"
+              maxLength={4}
+              autoCapitalize="characters"
+              editable={!isVerified}
+            />
+          </View>
+          <Text style={styles.charCount}>{fullSerialCode.length}/10</Text>
         </View>
 
         <View style={styles.guideBox}>
@@ -294,6 +350,33 @@ const styles = StyleSheet.create({
   inputDisabled: {
     backgroundColor: '#E0E0E0',
     color: '#999',
+  },
+  serialInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  serialInput: {
+    backgroundColor: '#F5F5F5',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 18,
+    color: '#333',
+    fontWeight: 'bold',
+    letterSpacing: 2,
+    textAlign: 'center',
+  },
+  serialInput4: {
+    flex: 4,
+  },
+  serialInput2: {
+    flex: 2,
+  },
+  serialDash: {
+    fontSize: 20,
+    color: '#999',
+    fontWeight: 'bold',
   },
   charCount: {
     textAlign: 'right',
