@@ -6,17 +6,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
 import { resolveAvatar } from '../../utils/avatars';
+import { SUBJECT_ICONS, SUBJECT_LABELS } from '../../utils/subjects';
 
 const TIER_LABELS: Record<string, string> = { free: '무료회원', baeum: '배움회원', sky: '스카이회원' };
-
-const SUBJECT_CONFIG: Record<string, { emoji: string; label: string }> = {
-  korean: { emoji: '📖', label: '국어' },
-  math: { emoji: '🔢', label: '수학' },
-  integrated: { emoji: '🌿', label: '통합교과' },
-  science: { emoji: '🔬', label: '과학' },
-  social: { emoji: '🌍', label: '사회' },
-  english: { emoji: '🔤', label: '영어' },
-};
 
 const getSubjectsForGrade = (grade: number) => {
   if (grade <= 2) return ['korean', 'math', 'integrated'];
@@ -108,8 +100,6 @@ export default function StudyScreen() {
         </View>
 
         {subjects.map((subjectKey) => {
-          const config = SUBJECT_CONFIG[subjectKey];
-          if (!config) return null;
           return (
             <TouchableOpacity
               key={subjectKey}
@@ -117,8 +107,8 @@ export default function StudyScreen() {
               onPress={() => router.push({ pathname: '/study/questions', params: { subject: subjectKey, grade: String(childGrade), tier: childTier } })}
             >
               <View style={styles.subjectLeft}>
-                <Text style={styles.subjectEmoji}>{config.emoji}</Text>
-                <Text style={styles.subjectName}>{config.label}</Text>
+                <Image source={SUBJECT_ICONS[subjectKey]} style={styles.subjectIcon} />
+                <Text style={styles.subjectName}>{SUBJECT_LABELS[subjectKey]}</Text>
                 <Text style={styles.subjectRemaining}>남은 {questionsPerSubject}문제</Text>
               </View>
               <Text style={styles.subjectArrow}>{'>'}</Text>
@@ -144,7 +134,7 @@ const styles = StyleSheet.create({
   profileTier: { fontSize: 13, color: '#9E9E9E', marginTop: 4 },
   subjectCard: { marginHorizontal: 20, marginTop: 12, backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   subjectLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  subjectEmoji: { fontSize: 20 },
+  subjectIcon: { width: 28, height: 28, borderRadius: 6 },
   subjectName: { fontSize: 16, fontWeight: 'bold', color: '#333' },
   subjectRemaining: { fontSize: 13, color: '#7ED4C0', marginLeft: 4 },
   subjectArrow: { fontSize: 20, color: '#9E9E9E' },
