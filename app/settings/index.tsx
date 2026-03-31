@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import SafeLayout from '../../components/SafeLayout';
 import BottomTabBar from '../../components/BottomTabBar';
 import { useRouter } from 'expo-router';
 
@@ -6,20 +7,16 @@ export default function SettingsScreen() {
   const router = useRouter();
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeLayout showHeader headerTitle="설정">
       <View style={styles.content}>
         <Text style={styles.messageText}>준비 중입니다</Text>
       </View>
       <BottomTabBar />
-    </SafeAreaView>
+    </SafeLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
   content: {
     flex: 1,
     justifyContent: 'center',

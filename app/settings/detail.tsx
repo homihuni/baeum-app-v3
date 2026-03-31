@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal } from 'react-native';
+import SafeLayout from '../../components/SafeLayout';
 import BottomTabBar from '../../components/BottomTabBar';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,7 +22,6 @@ export default function SettingsDetailScreen() {
   }, []);
 
   const handleLogout = () => {
-    console.log('=== 로그아웃 모달 표시 ===');
     setLogoutModalVisible(true);
   };
 
@@ -29,9 +29,7 @@ export default function SettingsDetailScreen() {
     try {
       const keysToRemove = ['parentId', 'childId', 'childTier', 'childName', 'childAvatar', 'childGrade'];
       await AsyncStorage.multiRemove(keysToRemove);
-      console.log('=== 로그아웃 완료, AsyncStorage 초기화 ===');
       setLogoutModalVisible(false);
-      console.log('=== 로그아웃 → 로그인 화면 이동 ===');
       router.replace('/(auth)/login');
     } catch (error) {
       console.error('로그아웃 에러:', error);
@@ -39,19 +37,16 @@ export default function SettingsDetailScreen() {
   };
 
   const handleWithdraw = () => {
-    console.log('=== 회원탈퇴 1차 모달 표시 ===');
     setWithdrawModalVisible(true);
   };
 
   const showWithdrawConfirm = () => {
-    console.log('=== 회원탈퇴 2차 최종 확인 모달 ===');
     setWithdrawModalVisible(false);
     setWithdrawConfirmModalVisible(true);
   };
 
   const confirmWithdraw = async () => {
     setWithdrawConfirmModalVisible(false);
-
     try {
       const parentId = await AsyncStorage.getItem('parentId');
       const childId = await AsyncStorage.getItem('childId');
@@ -62,50 +57,31 @@ export default function SettingsDetailScreen() {
         return;
       }
 
-      // Step 1: 시리얼번호 영구 폐기
       const childDoc = await getDoc(doc(db, 'Parents', parentId, 'Children', childId));
       if (childDoc.exists()) {
         const childData = childDoc.data();
         const serialNumber = childData.serialNumber;
-
         if (serialNumber) {
           const now = new Date();
           const kstTime = new Date(now.getTime() + (9 * 60 * 60 * 1000));
           const withdrawnAt = kstTime.toISOString().replace('T', ' ').substring(0, 19);
-
           await updateDoc(doc(db, 'Serials', serialNumber), {
             usedBy: 'WITHDRAWN',
             withdrawnAt: withdrawnAt,
           });
-          console.log('=== 시리얼 폐기 완료:', serialNumber);
         }
       }
 
-      // Step 2: 학습 기록 삭제
       const recordsSnapshot = await getDocs(collection(db, 'Parents', parentId, 'Children', childId, 'Records'));
-      let count = 0;
       for (const recordDoc of recordsSnapshot.docs) {
         await deleteDoc(recordDoc.ref);
-        count++;
       }
-      console.log('=== 학습 기록 삭제 완료, 삭제 건수:', count);
 
-      // Step 3: 자녀 프로필 삭제
       await deleteDoc(doc(db, 'Parents', parentId, 'Children', childId));
-      console.log('=== 자녀 프로필 삭제 완료');
-
-      // Step 4: 부모 문서 삭제
       await deleteDoc(doc(db, 'Parents', parentId));
-      console.log('=== 부모 문서 삭제 완료');
-
-      // Step 5: AsyncStorage 전체 초기화
       await AsyncStorage.clear();
-      console.log('=== AsyncStorage 전체 초기화 완료');
-
-      // Step 6: 탈퇴 완료 모달 표시
       setWithdrawCompleteModalVisible(true);
     } catch (error) {
-      console.log('=== 회원탈퇴 에러:', error);
       setErrorMessage('탈퇴 처리 중 문제가 발생했습니다.\n잠시 후 다시 시도해주세요.');
       setErrorModalVisible(true);
     }
@@ -126,9 +102,8 @@ export default function SettingsDetailScreen() {
   const renderDivider = () => <View style={styles.divider} />;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeLayout>
       <ScrollView>
-        {/* 섹션 1: 고객센터 */}
         <Text style={styles.sectionHeader}>고객센터</Text>
         {renderMenuItem('자주 묻는 질문', () => console.log('FAQ 클릭'))}
         {renderDivider()}
@@ -136,11 +111,9 @@ export default function SettingsDetailScreen() {
         {renderDivider()}
         {renderMenuItem('1:1 문의 내역 확인', () => console.log('문의 내역 클릭'))}
 
-        {/* 섹션 2: 알림 */}
         <Text style={styles.sectionHeader}>알림</Text>
         {renderMenuItem('푸시 알림 설정', () => router.push('/settings/push-setting'))}
 
-        {/* 섹션 3: 약관 및 정책 */}
         <Text style={styles.sectionHeader}>약관 및 정책</Text>
         {renderMenuItem('이용약관', () => console.log('이용약관 클릭'))}
         {renderDivider()}
@@ -148,14 +121,12 @@ export default function SettingsDetailScreen() {
         {renderDivider()}
         {renderMenuItem('운영정책', () => console.log('운영정책 클릭'))}
 
-        {/* 섹션 4: 앱 정보 */}
         <Text style={styles.sectionHeader}>앱 정보</Text>
         <View style={styles.menuItem}>
           <Text style={styles.menuText}>앱 버전</Text>
           <Text style={styles.versionText}>1.0.0</Text>
         </View>
 
-        {/* 섹션 5: 계정 */}
         <View style={styles.accountSection}>
           <Text style={styles.withdrawWarning}>
             배움학습을 탈퇴하면 동일한 계정으로 재가입 및 접속이 불가능합니다.
@@ -163,40 +134,25 @@ export default function SettingsDetailScreen() {
           {renderMenuItem('회원탈퇴', handleWithdraw, '#FF4444', '#FF4444')}
         </View>
 
-        {/* 섹션 6: 로그아웃 */}
         <View style={styles.logoutSection}>
           <View style={styles.divider} />
-          <TouchableOpacity
-            style={styles.logoutButton}
-            onPress={handleLogout}
-          >
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
             <Text style={styles.logoutText}>로그아웃</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
 
       {/* 로그아웃 모달 */}
-      <Modal
-        visible={logoutModalVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setLogoutModalVisible(false)}
-      >
+      <Modal visible={logoutModalVisible} transparent animationType="fade" onRequestClose={() => setLogoutModalVisible(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>
             <Text style={styles.modalTitle}>로그아웃 하시겠습니까?</Text>
             <Text style={styles.modalSubtitle}>다시 로그인하면 학습 기록은 유지됩니다.</Text>
             <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={styles.modalCancelButton}
-                onPress={() => setLogoutModalVisible(false)}
-              >
+              <TouchableOpacity style={styles.modalCancelButton} onPress={() => setLogoutModalVisible(false)}>
                 <Text style={styles.modalCancelText}>취소</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.modalConfirmButton}
-                onPress={confirmLogout}
-              >
+              <TouchableOpacity style={styles.modalConfirmButton} onPress={confirmLogout}>
                 <Text style={styles.modalConfirmText}>로그아웃</Text>
               </TouchableOpacity>
             </View>
@@ -205,12 +161,7 @@ export default function SettingsDetailScreen() {
       </Modal>
 
       {/* 회원탈퇴 1차 모달 */}
-      <Modal
-        visible={withdrawModalVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setWithdrawModalVisible(false)}
-      >
+      <Modal visible={withdrawModalVisible} transparent animationType="fade" onRequestClose={() => setWithdrawModalVisible(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>
             <View style={styles.warningIconContainer}>
@@ -224,16 +175,10 @@ export default function SettingsDetailScreen() {
               • 동일 계정으로 재가입 불가
             </Text>
             <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={styles.modalCancelButton}
-                onPress={() => setWithdrawModalVisible(false)}
-              >
+              <TouchableOpacity style={styles.modalCancelButton} onPress={() => setWithdrawModalVisible(false)}>
                 <Text style={styles.modalCancelText}>취소</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.modalConfirmButton}
-                onPress={showWithdrawConfirm}
-              >
+              <TouchableOpacity style={styles.modalConfirmButton} onPress={showWithdrawConfirm}>
                 <Text style={styles.modalConfirmText}>탈퇴하기</Text>
               </TouchableOpacity>
             </View>
@@ -242,28 +187,17 @@ export default function SettingsDetailScreen() {
       </Modal>
 
       {/* 회원탈퇴 2차 최종 확인 모달 */}
-      <Modal
-        visible={withdrawConfirmModalVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setWithdrawConfirmModalVisible(false)}
-      >
+      <Modal visible={withdrawConfirmModalVisible} transparent animationType="fade" onRequestClose={() => setWithdrawConfirmModalVisible(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>
             <Text style={styles.modalFinalConfirm}>
               마지막 확인입니다.{'\n'}정말 배움학습을 탈퇴하시겠습니까?
             </Text>
             <View style={styles.modalButtonsColumn}>
-              <TouchableOpacity
-                style={styles.modalStayButtonFull}
-                onPress={() => setWithdrawConfirmModalVisible(false)}
-              >
+              <TouchableOpacity style={styles.modalStayButtonFull} onPress={() => setWithdrawConfirmModalVisible(false)}>
                 <Text style={styles.modalStayTextFull}>아니요, 계속 이용할게요</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.modalConfirmButtonFull}
-                onPress={confirmWithdraw}
-              >
+              <TouchableOpacity style={styles.modalConfirmButtonFull} onPress={confirmWithdraw}>
                 <Text style={styles.modalConfirmTextFull}>네, 탈퇴합니다</Text>
               </TouchableOpacity>
             </View>
@@ -272,29 +206,13 @@ export default function SettingsDetailScreen() {
       </Modal>
 
       {/* 탈퇴 완료 모달 */}
-      <Modal
-        visible={withdrawCompleteModalVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => {
-          setWithdrawCompleteModalVisible(false);
-          console.log('=== 회원탈퇴 → 로그인 화면 이동 ===');
-          router.replace('/(auth)/login');
-        }}
-      >
+      <Modal visible={withdrawCompleteModalVisible} transparent animationType="fade" onRequestClose={() => { setWithdrawCompleteModalVisible(false); router.replace('/(auth)/login'); }}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>
             <Text style={styles.modalCompleteText}>
               탈퇴가 완료되었습니다.{'\n'}그동안 배움학습을 이용해주셔서{'\n'}감사합니다.
             </Text>
-            <TouchableOpacity
-              style={styles.modalSingleButton}
-              onPress={() => {
-                setWithdrawCompleteModalVisible(false);
-                console.log('=== 회원탈퇴 → 로그인 화면 이동 ===');
-                router.replace('/(auth)/login');
-              }}
-            >
+            <TouchableOpacity style={styles.modalSingleButton} onPress={() => { setWithdrawCompleteModalVisible(false); router.replace('/(auth)/login'); }}>
               <Text style={styles.modalSingleButtonText}>확인</Text>
             </TouchableOpacity>
           </View>
@@ -302,26 +220,19 @@ export default function SettingsDetailScreen() {
       </Modal>
 
       {/* 에러 모달 */}
-      <Modal
-        visible={errorModalVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setErrorModalVisible(false)}
-      >
+      <Modal visible={errorModalVisible} transparent animationType="fade" onRequestClose={() => setErrorModalVisible(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>
             <Text style={styles.modalCompleteText}>{errorMessage}</Text>
-            <TouchableOpacity
-              style={styles.modalSingleButton}
-              onPress={() => setErrorModalVisible(false)}
-            >
+            <TouchableOpacity style={styles.modalSingleButton} onPress={() => setErrorModalVisible(false)}>
               <Text style={styles.modalSingleButtonText}>확인</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
+
       <BottomTabBar />
-    </SafeAreaView>
+    </SafeLayout>
   );
 }
 
@@ -465,41 +376,6 @@ const styles = StyleSheet.create({
     color: '#333',
     textAlign: 'center',
   },
-  modalStayButton: {
-    flex: 1,
-    backgroundColor: '#4CAF50',
-    borderRadius: 10,
-    paddingVertical: 12,
-    marginRight: 8,
-    alignItems: 'center',
-  },
-  modalStayText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  modalCompleteText: {
-    fontSize: 15,
-    color: '#333',
-    textAlign: 'center',
-    lineHeight: 24,
-  },
-  modalSingleButton: {
-    backgroundColor: '#4CAF50',
-    borderRadius: 10,
-    paddingVertical: 12,
-    marginTop: 20,
-    alignItems: 'center',
-  },
-  modalSingleButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-  },
-  modalButtonsColumn: {
-    flexDirection: 'column',
-    marginTop: 20,
-  },
   modalStayButtonFull: {
     backgroundColor: '#4CAF50',
     borderRadius: 10,
@@ -526,5 +402,27 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#FFFFFF',
     textAlign: 'center',
+  },
+  modalCompleteText: {
+    fontSize: 15,
+    color: '#333',
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  modalSingleButton: {
+    backgroundColor: '#4CAF50',
+    borderRadius: 10,
+    paddingVertical: 12,
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  modalSingleButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  modalButtonsColumn: {
+    flexDirection: 'column',
+    marginTop: 20,
   },
 });

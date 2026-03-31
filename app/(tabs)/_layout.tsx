@@ -10,9 +10,8 @@ function TabIcon({ children, label, focused }: { children: React.ReactNode; labe
   return (
     <View style={{
       alignItems: 'center',
-      justifyContent: 'flex-end',
+      justifyContent: 'center',
       width: 70,
-      height: 42,
     }}>
       <View style={{ height: 24, alignItems: 'center', justifyContent: 'center' }}>
         {children}
@@ -50,7 +49,6 @@ export default function TabLayout() {
         shadowRadius: 4,
       },
     }}>
-
       <Tabs.Screen
         name="home"
         options={{
@@ -61,7 +59,6 @@ export default function TabLayout() {
           ),
         }}
       />
-
       <Tabs.Screen
         name="study"
         options={{
@@ -72,7 +69,6 @@ export default function TabLayout() {
           ),
         }}
       />
-
       <Tabs.Screen
         name="growth"
         options={{
@@ -83,18 +79,16 @@ export default function TabLayout() {
           ),
         }}
       />
-
       <Tabs.Screen
         name="menu"
         options={{
           tabBarIcon: ({ focused }) => (
             <TabIcon label="전체메뉴" focused={focused}>
-              <Ionicons name="menu" size={22} color={focused ? ACTIVE : INACTIVE} />
+            <Ionicons name={focused ? 'grid' : 'grid-outline'} size={22} color={focused ? ACTIVE : INACTIVE} />
             </TabIcon>
           ),
         }}
       />
-
     </Tabs>
   );
 }
