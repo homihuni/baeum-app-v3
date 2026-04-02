@@ -1,8 +1,8 @@
 import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import SafeLayout from '../../components/SafeLayout';
 import BottomTabBar from '../../components/BottomTabBar';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
@@ -54,7 +54,7 @@ export default function LearningPlanScreen() {
   const isLowGrade = childGrade <= 2;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeLayout showHeader headerTitle="학습플랜">
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
         {/* 현재 자녀 플랜 카드 */}
@@ -73,7 +73,7 @@ export default function LearningPlanScreen() {
             <View style={styles.currentDetail}>
               <Text style={styles.currentDetailText}>시리얼: {serialNumber} · 만료: {(() => {
                 if (!serialExpiry) return '정보 없음';
-                if (serialExpiry?.seconds) return new Date(serialExpiry.seconds * 1000).toLocaleDateString('ko-KR');
+                if ((serialExpiry as any)?.seconds) return new Date((serialExpiry as any).seconds * 1000).toLocaleDateString('ko-KR');
                 const date = new Date(serialExpiry);
                 return isNaN(date.getTime()) ? '정보 없음' : date.toLocaleDateString('ko-KR');
               })()}</Text>
@@ -138,7 +138,7 @@ export default function LearningPlanScreen() {
           )}
         </View>
 
-        {/* 스카이 플랜 카드 — 강조 */}
+        {/* 스카이 플랜 카드 */}
         <View style={[styles.planCard, styles.skyCard, childTier === 'sky' && styles.planCardActive, { borderColor: '#87CEEB' }]}>
           <View style={styles.skyRecommend}>
             <Text style={styles.skyRecommendText}>추천</Text>
@@ -185,15 +185,13 @@ export default function LearningPlanScreen() {
 
       </ScrollView>
       <BottomTabBar />
-    </SafeAreaView>
+    </SafeLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F5F5F5' },
   scrollContent: { padding: 20, paddingBottom: 40 },
 
-  // 현재 플랜 카드
   currentCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 20, borderWidth: 2, marginBottom: 24 },
   currentCardTop: { flexDirection: 'row', alignItems: 'center' },
   currentInfo: { flex: 1, marginLeft: 12 },
@@ -204,11 +202,9 @@ const styles = StyleSheet.create({
   currentDetail: { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#F0F0F0' },
   currentDetailText: { fontSize: 13, color: '#666' },
 
-  // 섹션 제목
   sectionTitle: { fontSize: 20, fontWeight: 'bold', color: '#333', marginBottom: 4 },
   sectionSubtitle: { fontSize: 14, color: '#999', marginBottom: 16 },
 
-  // 플랜 카드 공통
   planCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 20, marginBottom: 16, borderWidth: 1, borderColor: '#E0E0E0', position: 'relative' },
   planCardActive: { borderWidth: 2 },
   planCurrentTag: { position: 'absolute', top: 12, right: 12, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
@@ -219,13 +215,11 @@ const styles = StyleSheet.create({
   priceRow: { flexDirection: 'row', alignItems: 'center' },
   planFeatures: { marginBottom: 12 },
   featureItem: { fontSize: 14, color: '#333', lineHeight: 26 },
-  featureDisabled: { color: '#CCCCCC' },
   featureHighlight: { color: '#333', fontWeight: '500' },
   planNote: { fontSize: 12, color: '#999', marginBottom: 12 },
   planButton: { borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
   planButtonText: { fontSize: 16, fontWeight: 'bold', color: '#FFFFFF' },
 
-  // 스카이 특별 스타일
   skyCard: { borderWidth: 2, borderColor: '#87CEEB', backgroundColor: '#FAFEFF' },
   skyRecommend: { position: 'absolute', top: -12, left: 20, backgroundColor: '#FF6B6B', paddingHorizontal: 14, paddingVertical: 4, borderRadius: 12, zIndex: 1 },
   skyRecommendText: { fontSize: 12, fontWeight: 'bold', color: '#FFFFFF' },
@@ -234,7 +228,6 @@ const styles = StyleSheet.create({
   skyActiveContainer: { alignItems: 'center', paddingVertical: 12 },
   skyActiveText: { fontSize: 14, color: '#87CEEB', fontWeight: '600' },
 
-  // 하단 안내
   bottomNote: { marginTop: 8, padding: 16 },
   bottomNoteText: { fontSize: 12, color: '#999', lineHeight: 22 },
 });

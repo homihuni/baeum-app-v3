@@ -813,7 +813,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F5F5',
     paddingHorizontal: 20,
     paddingTop: 12,
-    paddingBottom: 20,
+    paddingBottom: 12,
     marginBottom: 0,
     borderTopWidth: 1,
     borderTopColor: '#E0E0E0',
@@ -855,7 +855,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666666',
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 160,
     marginBottom: 20,
   },
   modalButton: {

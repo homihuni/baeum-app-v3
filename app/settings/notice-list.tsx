@@ -1,8 +1,8 @@
 import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import SafeLayout from '../../components/SafeLayout';
 import BottomTabBar from '../../components/BottomTabBar';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
 
@@ -69,7 +69,7 @@ export default function NoticeListScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeLayout showHeader headerTitle="공지사항">
       <ScrollView showsVerticalScrollIndicator={false}>
         {loading ? (
           <View style={styles.loadingContainer}>
@@ -105,7 +105,7 @@ export default function NoticeListScreen() {
         )}
       </ScrollView>
       <BottomTabBar />
-    </SafeAreaView>
+    </SafeLayout>
   );
 }
 
@@ -125,10 +125,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingTop: 100,
-  },
-  emptyText: {
-    fontSize: 14,
-    color: '#999999',
   },
   noticeItem: {
     paddingHorizontal: 20,

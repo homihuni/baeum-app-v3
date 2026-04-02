@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image, ImageSourcePropType } from 'react-native';
 import SafeLayout from '../../components/SafeLayout';
+import BottomTabBar from '../../components/BottomTabBar';
 import { useRouter, useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { doc, getDoc } from 'firebase/firestore';
@@ -38,14 +39,10 @@ export default function StudyScreen() {
 
   const loadData = async () => {
     try {
-      console.log('=== 스터디 화면 데이터 로드 시작 ===');
       const parentId = await AsyncStorage.getItem('parentId');
       const childId = await AsyncStorage.getItem('childId');
       const grade = await AsyncStorage.getItem('childGrade');
       const tier = await AsyncStorage.getItem('childTier');
-
-      console.log('parentId:', parentId);
-      console.log('childId:', childId);
 
       const g = grade ? parseInt(grade) : 1;
       const t = tier || 'free';
@@ -59,17 +56,12 @@ export default function StudyScreen() {
         const childDoc = await getDoc(doc(db, 'Parents', parentId, 'Children', childId));
         if (childDoc.exists()) {
           const data = childDoc.data();
-          console.log('study avatar:', data.avatar);
-          console.log('study name:', data.name);
-          console.log('study tier from Firebase:', data.tier);
           setChildAvatar(resolveAvatar(data.avatar));
           setChildName(data.name || '학생');
 
-          // Firebase에서 최신 tier 읽기
           if (data.tier) {
             setChildTier(data.tier);
             setQuestionsPerSubject(getQuestionsPerSubject(data.tier));
-            console.log("스터디 tier:", data.tier, "문제수:", getQuestionsPerSubject(data.tier));
             await AsyncStorage.setItem('childTier', data.tier || 'free');
             await AsyncStorage.setItem('childGrade', String(data.grade || 1));
           }
@@ -81,10 +73,8 @@ export default function StudyScreen() {
   };
 
   return (
-    <SafeLayout backgroundColor="#F5F5F5">
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>과목 선택</Text>
-        <Text style={styles.subtitle}>학습할 과목을 선택하세요</Text>
+    <SafeLayout showHeader headerTitle="학습플랜">
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
         <View style={styles.profileCard}>
           <View style={styles.profileRow}>
@@ -96,47 +86,113 @@ export default function StudyScreen() {
               <Text style={styles.gradeText}>{childGrade}학년</Text>
             </View>
           </View>
-          <Text style={styles.profileTier}>{TIER_LABELS[childTier] || '무료회원'} · 과목당 {questionsPerSubject}문제</Text>
+          <Text style={styles.profileTier}>
+            {TIER_LABELS[childTier] || '무료회원'} · 과목당 {questionsPerSubject}문제
+          </Text>
         </View>
 
-        {subjects.map((subjectKey) => {
-          return (
-            <TouchableOpacity
-              key={subjectKey}
-              style={styles.subjectCard}
-              onPress={() => router.push({ pathname: '/study/questions', params: { subject: subjectKey, grade: String(childGrade), tier: childTier } })}
-            >
-              <View style={styles.subjectLeft}>
-                <Image source={SUBJECT_ICONS[subjectKey]} style={styles.subjectIcon} />
-                <Text style={styles.subjectName}>{SUBJECT_LABELS[subjectKey]}</Text>
-                <Text style={styles.subjectRemaining}>남은 {questionsPerSubject}문제</Text>
-              </View>
-              <Text style={styles.subjectArrow}>{'>'}</Text>
-            </TouchableOpacity>
-          );
-        })}
+        {subjects.map((subjectKey) => (
+          <TouchableOpacity
+            key={subjectKey}
+            style={styles.subjectCard}
+            onPress={() => router.push({
+              pathname: '/study/questions',
+              params: { subject: subjectKey, grade: String(childGrade), tier: childTier }
+            })}
+          >
+            <View style={styles.subjectLeft}>
+              <Image source={SUBJECT_ICONS[subjectKey]} style={styles.subjectIcon} />
+              <Text style={styles.subjectName}>{SUBJECT_LABELS[subjectKey]}</Text>
+              <Text style={styles.subjectRemaining}>남은 {questionsPerSubject}문제</Text>
+            </View>
+            <Text style={styles.subjectArrow}>{'>'}</Text>
+          </TouchableOpacity>
+        ))}
 
         <Text style={styles.bottomNote}>매일 꾸준히 학습해요! 💪</Text>
+
       </ScrollView>
+      <BottomTabBar />
     </SafeLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F5F5F5' },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#333', paddingHorizontal: 20, marginTop: 16 },
-  subtitle: { fontSize: 14, color: '#666', paddingHorizontal: 20, marginTop: 4 },
-  profileCard: { marginHorizontal: 20, marginTop: 16, backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16 },
-  profileRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  profileName: { fontSize: 16, fontWeight: 'bold', color: '#333' },
-  gradeBadge: { backgroundColor: '#F0F0F0', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
-  gradeText: { fontSize: 12, color: '#666' },
-  profileTier: { fontSize: 13, color: '#9E9E9E', marginTop: 4 },
-  subjectCard: { marginHorizontal: 20, marginTop: 12, backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  subjectLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  subjectIcon: { width: 28, height: 28, borderRadius: 6 },
-  subjectName: { fontSize: 16, fontWeight: 'bold', color: '#333' },
-  subjectRemaining: { fontSize: 13, color: '#7ED4C0', marginLeft: 4 },
-  subjectArrow: { fontSize: 20, color: '#9E9E9E' },
-  bottomNote: { fontSize: 13, color: '#9E9E9E', textAlign: 'center', marginTop: 20, marginBottom: 30 },
+  scrollContent: {
+    paddingHorizontal: 0,
+    paddingBottom: 20,
+  },
+  profileCard: {
+    marginHorizontal: 20,
+    marginTop: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+  },
+  profileRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  profileName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  gradeBadge: {
+    backgroundColor: '#F0F0F0',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  gradeText: {
+    fontSize: 12,
+    color: '#666',
+  },
+  profileTier: {
+    fontSize: 13,
+    color: '#9E9E9E',
+    marginTop: 4,
+  },
+  subjectCard: {
+    marginHorizontal: 20,
+    marginTop: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  subjectLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  subjectIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 6,
+  },
+  subjectName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  subjectRemaining: {
+    fontSize: 13,
+    color: '#7ED4C0',
+    marginLeft: 4,
+  },
+  subjectArrow: {
+    fontSize: 20,
+    color: '#9E9E9E',
+  },
+  bottomNote: {
+    fontSize: 13,
+    color: '#9E9E9E',
+    textAlign: 'center',
+    marginTop: 20,
+    marginBottom: 30,
+  },
 });

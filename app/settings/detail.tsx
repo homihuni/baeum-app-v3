@@ -102,7 +102,7 @@ export default function SettingsDetailScreen() {
   const renderDivider = () => <View style={styles.divider} />;
 
   return (
-    <SafeLayout>
+    <SafeLayout showHeader headerTitle="설정">
       <ScrollView>
         <Text style={styles.sectionHeader}>고객센터</Text>
         {renderMenuItem('자주 묻는 질문', () => console.log('FAQ 클릭'))}
