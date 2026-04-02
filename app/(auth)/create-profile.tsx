@@ -64,7 +64,6 @@ export default function CreateProfileScreen() {
         router.replace('/(auth)/login');
         return;
       }
-      console.log('Saving avatar:', avatar);
       const childId = await createChild(parentId, {
         name: name.trim(),
         birthDate: birthDate.trim(),
@@ -85,74 +84,224 @@ export default function CreateProfileScreen() {
   };
 
   return (
-    <SafeLayout>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.title}>자녀 프로필 만들기</Text>
+    <SafeLayout showHeader headerTitle="자녀 프로필 만들기">
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+
         <Text style={styles.subtitle}>학습할 자녀의 정보를 입력해주세요</Text>
 
+        {/* 아바타 선택 - 중앙 정렬 5열 그리드 */}
         <Text style={styles.sectionLabel}>프로필 아바타</Text>
-        <View style={styles.avatarRow}>
+        <View style={styles.avatarGrid}>
           {AVATARS.map((img, index) => (
-            <TouchableOpacity key={index} style={[styles.avatarBtn, avatar === img && styles.avatarSelected]} onPress={() => setAvatar(img)}>
+            <TouchableOpacity
+              key={index}
+              style={[styles.avatarBtn, avatar === img && styles.avatarSelected]}
+              onPress={() => setAvatar(img)}
+            >
               <Image source={img} style={styles.avatarGridImage} />
             </TouchableOpacity>
           ))}
         </View>
 
+        {/* 자녀 이름 */}
         <Text style={styles.sectionLabel}>자녀 이름</Text>
-        <TextInput style={styles.input} placeholder="이름을 입력하세요" value={name} onChangeText={setName} />
+        <TextInput
+          style={styles.input}
+          placeholder="이름을 입력하세요"
+          value={name}
+          onChangeText={setName}
+          maxLength={10}
+        />
+        <Text style={styles.charCount}>{name.length}/10</Text>
 
+        {/* 생년월일 */}
         <Text style={styles.sectionLabel}>생년월일</Text>
-        <TextInput style={styles.input} placeholder="2018-01-01" value={birthDate} onChangeText={setBirthDate} keyboardType="numbers-and-punctuation" />
+        <TextInput
+          style={styles.input}
+          placeholder="2018-01-01"
+          value={birthDate}
+          onChangeText={setBirthDate}
+          keyboardType="numbers-and-punctuation"
+        />
 
+        {/* 학년 */}
         <Text style={styles.sectionLabel}>학년</Text>
         <View style={styles.gradeRow}>
           {GRADES.map((g) => (
-            <TouchableOpacity key={g} style={[styles.gradeBtn, grade === g && styles.gradeSelected]} onPress={() => setGrade(g)}>
-              <Text style={[styles.gradeText, grade === g && styles.gradeTextSelected]}>{g}학년</Text>
+            <TouchableOpacity
+              key={g}
+              style={[styles.gradeBtn, grade === g && styles.gradeSelected]}
+              onPress={() => setGrade(g)}
+            >
+              <Text style={[styles.gradeText, grade === g && styles.gradeTextSelected]}>
+                {g}학년
+              </Text>
             </TouchableOpacity>
           ))}
         </View>
 
+        {/* 성별 */}
         <Text style={styles.sectionLabel}>성별</Text>
         <View style={styles.genderRow}>
-          <TouchableOpacity style={[styles.genderBtn, gender === 'male' && styles.genderSelected]} onPress={() => setGender('male')}>
+          <TouchableOpacity
+            style={[styles.genderBtn, gender === 'male' && styles.genderSelected]}
+            onPress={() => setGender('male')}
+          >
             <Text style={[styles.genderText, gender === 'male' && styles.genderTextSelected]}>남자</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.genderBtn, gender === 'female' && styles.genderSelected]} onPress={() => setGender('female')}>
+          <TouchableOpacity
+            style={[styles.genderBtn, gender === 'female' && styles.genderSelected]}
+            onPress={() => setGender('female')}
+          >
             <Text style={[styles.genderText, gender === 'female' && styles.genderTextSelected]}>여자</Text>
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.createBtn} onPress={handleCreate} disabled={loading}>
-          {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.createText}>프로필 만들기</Text>}
+        {/* 프로필 만들기 버튼 */}
+        <TouchableOpacity
+          style={styles.createBtn}
+          onPress={handleCreate}
+          disabled={loading}
+        >
+          {loading
+            ? <ActivityIndicator color="#FFF" />
+            : <Text style={styles.createText}>프로필 만들기</Text>
+          }
         </TouchableOpacity>
+
       </ScrollView>
     </SafeLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFFFF' },
-  scroll: { padding: 24 },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#7ED4C0', textAlign: 'center', marginTop: 20 },
-  subtitle: { fontSize: 14, color: '#666', textAlign: 'center', marginTop: 8, marginBottom: 24 },
-  sectionLabel: { fontSize: 15, fontWeight: 'bold', color: '#333', marginTop: 20, marginBottom: 8 },
-  avatarRow: { flexDirection: 'row', justifyContent: 'center', gap: 12 },
-  avatarBtn: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#F5F5F5', justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: 'transparent' },
-  avatarSelected: { borderColor: '#7ED4C0', backgroundColor: '#E8F8F5' },
-  avatarGridImage: { width: 36, height: 36, borderRadius: 18 },
-  input: { backgroundColor: '#F5F5F5', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, color: '#333' },
-  gradeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  gradeBtn: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, backgroundColor: '#F5F5F5', borderWidth: 1, borderColor: '#E0E0E0' },
-  gradeSelected: { backgroundColor: '#7ED4C0', borderColor: '#7ED4C0' },
-  gradeText: { fontSize: 14, color: '#666' },
-  gradeTextSelected: { color: '#FFFFFF', fontWeight: 'bold' },
-  genderRow: { flexDirection: 'row', gap: 12 },
-  genderBtn: { flex: 1, paddingVertical: 12, borderRadius: 12, backgroundColor: '#F5F5F5', alignItems: 'center', borderWidth: 1, borderColor: '#E0E0E0' },
-  genderSelected: { backgroundColor: '#7ED4C0', borderColor: '#7ED4C0' },
-  genderText: { fontSize: 15, color: '#666' },
-  genderTextSelected: { color: '#FFFFFF', fontWeight: 'bold' },
-  createBtn: { marginTop: 32, backgroundColor: '#7ED4C0', borderRadius: 16, paddingVertical: 16, alignItems: 'center' },
-  createText: { fontSize: 16, fontWeight: 'bold', color: '#FFFFFF' },
+  scroll: {
+    padding: 24,
+    paddingBottom: 40,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  sectionLabel: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#333',
+    marginTop: 20,
+    marginBottom: 12,
+  },
+
+  // 아바타 그리드 - 중앙 정렬
+  avatarGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 10,
+  },
+  avatarBtn: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#F5F5F5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  avatarSelected: {
+    borderColor: '#7ED4C0',
+    backgroundColor: '#E8F8F5',
+  },
+  avatarGridImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+
+  // 이름 입력
+  input: {
+    backgroundColor: '#F5F5F5',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
+    color: '#333',
+  },
+  charCount: {
+    fontSize: 12,
+    color: '#999',
+    textAlign: 'right',
+    marginTop: 4,
+  },
+
+  // 학년
+  gradeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  gradeBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: '#F5F5F5',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  gradeSelected: {
+    backgroundColor: '#7ED4C0',
+    borderColor: '#7ED4C0',
+  },
+  gradeText: {
+    fontSize: 14,
+    color: '#666',
+  },
+  gradeTextSelected: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+  },
+
+  // 성별
+  genderRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  genderBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: '#F5F5F5',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  genderSelected: {
+    backgroundColor: '#7ED4C0',
+    borderColor: '#7ED4C0',
+  },
+  genderText: {
+    fontSize: 15,
+    color: '#666',
+  },
+  genderTextSelected: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+  },
+
+  // 생성 버튼
+  createBtn: {
+    marginTop: 32,
+    backgroundColor: '#7ED4C0',
+    borderRadius: 16,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  createText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
 });

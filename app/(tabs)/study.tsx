@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image, ImageSourcePropType } from 'react-native';
 import SafeLayout from '../../components/SafeLayout';
-import BottomTabBar from '../../components/BottomTabBar';
 import { useRouter, useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { doc, getDoc } from 'firebase/firestore';
@@ -112,7 +111,6 @@ export default function StudyScreen() {
         <Text style={styles.bottomNote}>매일 꾸준히 학습해요! 💪</Text>
 
       </ScrollView>
-      <BottomTabBar />
     </SafeLayout>
   );
 }

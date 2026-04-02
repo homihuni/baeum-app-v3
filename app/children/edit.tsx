@@ -3,10 +3,9 @@ import SafeLayout from '../../components/SafeLayout';
 import BottomTabBar from '../../components/BottomTabBar';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useState, useEffect } from 'react';
-import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getChild, updateChild, getChildren } from '../../utils/firestore';
-import { Timestamp, db } from '../../utils/firebase';
+import { getChild, updateChild } from '../../utils/firestore';
+import { db } from '../../utils/firebase';
 import { collection, doc, getDocs, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { AVATAR_KEYS, AVATAR_MAP, resolveAvatarKey } from '../../utils/avatars';
 
@@ -55,15 +54,11 @@ export default function EditChildScreen() {
   };
 
   const handleSave = async () => {
-    if (!name.trim()) {
-      return;
-    }
-
+    if (!name.trim()) return;
     if (grade !== originalGrade) {
       setShowGradeChangeModal(true);
       return;
     }
-
     await saveData();
   };
 
@@ -74,11 +69,9 @@ export default function EditChildScreen() {
         name: name.trim(),
         grade,
       };
-
       if (grade !== originalGrade) {
         updateData.gradeChangeCount = gradeChangeCount + 1;
       }
-
       await updateChild(parentId, childId as string, updateData);
       setShowCompleteModal(true);
     } catch (error) {
@@ -138,22 +131,27 @@ export default function EditChildScreen() {
 
   if (loading) {
     return (
-      <SafeLayout>
+      <SafeLayout showHeader headerTitle="자녀 프로필 수정">
         <Text style={styles.loadingText}>로딩 중...</Text>
       </SafeLayout>
     );
   }
 
   return (
-    <SafeLayout>
-      <ScrollView style={styles.content}>
+    <SafeLayout showHeader headerTitle="자녀 프로필 수정">
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+
+        {/* 아바타 섹션 */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>아바타</Text>
           <View style={styles.avatarGrid}>
             {AVATAR_KEYS.map((key) => (
               <TouchableOpacity
                 key={key}
-                style={[styles.avatarOption, selectedAvatarKey === key && styles.avatarOptionSelected]}
+                style={[
+                  styles.avatarOption,
+                  selectedAvatarKey === key && styles.avatarOptionSelected
+                ]}
                 onPress={() => setSelectedAvatarKey(key)}
               >
                 <Image source={AVATAR_MAP[key]} style={styles.avatarGridImage} />
@@ -162,6 +160,7 @@ export default function EditChildScreen() {
           </View>
         </View>
 
+        {/* 이름 섹션 */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>이름</Text>
           <TextInput
@@ -175,6 +174,7 @@ export default function EditChildScreen() {
           <Text style={styles.charCount}>{name.length}/10</Text>
         </View>
 
+        {/* 학년 섹션 - 무료회원 */}
         {tier === 'free' && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>학년</Text>
@@ -185,34 +185,32 @@ export default function EditChildScreen() {
           </View>
         )}
 
+        {/* 학년 섹션 - 배움/스카이회원 */}
         {(tier === 'baeum' || tier === 'sky') && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>학년</Text>
             {gradeChangeCount >= 3 ? (
               <>
                 <View style={styles.gradeGrid}>
-                  {[1, 2, 3, 4, 5, 6].map((g) => {
-                    const isSelected = g === grade;
-                    return (
-                      <TouchableOpacity
-                        key={g}
-                        style={[
-                          styles.gradeButton,
-                          isSelected && styles.gradeButtonSelected,
-                          styles.gradeButtonDisabled,
-                        ]}
-                        disabled={true}
-                      >
-                        <Text style={[
-                          styles.gradeButtonText,
-                          isSelected && styles.gradeButtonTextSelected,
-                          styles.gradeButtonTextDisabled,
-                        ]}>
-                          {g}학년
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
+                  {[1, 2, 3, 4, 5, 6].map((g) => (
+                    <TouchableOpacity
+                      key={g}
+                      style={[
+                        styles.gradeButton,
+                        g === grade && styles.gradeButtonSelected,
+                        styles.gradeButtonDisabled,
+                      ]}
+                      disabled={true}
+                    >
+                      <Text style={[
+                        styles.gradeButtonText,
+                        g === grade && styles.gradeButtonTextSelected,
+                        styles.gradeButtonTextDisabled,
+                      ]}>
+                        {g}학년
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
                 </View>
                 <Text style={styles.gradeHintError}>학년 변경 횟수를 모두 사용했습니다. (3회/3회)</Text>
               </>
@@ -224,7 +222,6 @@ export default function EditChildScreen() {
                     const isNextGrade = g === originalGrade + 1 && originalGrade < 6;
                     const isSelectable = isCurrentGrade || isNextGrade;
                     const isSelected = g === grade;
-
                     return (
                       <TouchableOpacity
                         key={g}
@@ -233,9 +230,7 @@ export default function EditChildScreen() {
                           isSelected && styles.gradeButtonSelected,
                           !isSelectable && styles.gradeButtonDisabled,
                         ]}
-                        onPress={() => {
-                          if (isSelectable) setGrade(g);
-                        }}
+                        onPress={() => { if (isSelectable) setGrade(g); }}
                         disabled={!isSelectable}
                       >
                         <Text style={[
@@ -258,15 +253,19 @@ export default function EditChildScreen() {
           </View>
         )}
 
+        {/* 저장 버튼 */}
         <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
           <Text style={styles.saveButtonText}>저장</Text>
         </TouchableOpacity>
 
+        {/* 삭제 버튼 */}
         <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
           <Text style={styles.deleteButtonText}>삭제</Text>
         </TouchableOpacity>
+
       </ScrollView>
 
+      {/* 수정 완료 모달 */}
       <Modal visible={showCompleteModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>
@@ -274,10 +273,7 @@ export default function EditChildScreen() {
             <Text style={styles.modalMessage}>자녀 정보가 수정되었습니다</Text>
             <TouchableOpacity
               style={styles.modalConfirmBtn}
-              onPress={() => {
-                setShowCompleteModal(false);
-                router.back();
-              }}
+              onPress={() => { setShowCompleteModal(false); router.back(); }}
             >
               <Text style={styles.modalConfirmText}>확인</Text>
             </TouchableOpacity>
@@ -285,6 +281,7 @@ export default function EditChildScreen() {
         </View>
       </Modal>
 
+      {/* 삭제 확인 모달 */}
       <Modal visible={showDeleteModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>
@@ -310,6 +307,7 @@ export default function EditChildScreen() {
         </View>
       </Modal>
 
+      {/* 삭제 오류 모달 */}
       <Modal visible={showDeleteErrorModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>
@@ -325,6 +323,7 @@ export default function EditChildScreen() {
         </View>
       </Modal>
 
+      {/* 학년 변경 모달 */}
       <Modal visible={showGradeChangeModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>
@@ -336,19 +335,13 @@ export default function EditChildScreen() {
             <View style={styles.gradeModalButtons}>
               <TouchableOpacity
                 style={styles.gradeModalCancelBtn}
-                onPress={() => {
-                  setShowGradeChangeModal(false);
-                  setGrade(originalGrade);
-                }}
+                onPress={() => { setShowGradeChangeModal(false); setGrade(originalGrade); }}
               >
                 <Text style={styles.gradeModalCancelText}>취소</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.gradeModalConfirmBtn}
-                onPress={() => {
-                  setShowGradeChangeModal(false);
-                  saveData();
-                }}
+                onPress={() => { setShowGradeChangeModal(false); saveData(); }}
               >
                 <Text style={styles.gradeModalConfirmText}>변경</Text>
               </TouchableOpacity>
@@ -356,16 +349,13 @@ export default function EditChildScreen() {
           </View>
         </View>
       </Modal>
+
       <BottomTabBar />
     </SafeLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
   content: {
     flex: 1,
     padding: 16,
@@ -384,17 +374,21 @@ const styles = StyleSheet.create({
     color: '#333',
     marginBottom: 12,
   },
+
+  // 아바타 그리드 - 중앙 정렬
   avatarGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
-  },
-  avatarOption: {
-    width: 50,
-    height: 50,
+    gap: 10,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 25,
+  },
+  avatarOption: {
+    width: 52,
+    height: 52,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 26,
     backgroundColor: '#F5F5F5',
     borderWidth: 2,
     borderColor: 'transparent',
@@ -404,10 +398,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0F9F7',
   },
   avatarGridImage: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
   },
+
+  // 이름 입력
   input: {
     backgroundColor: '#F5F5F5',
     borderRadius: 8,
@@ -421,12 +417,14 @@ const styles = StyleSheet.create({
     color: '#999',
     marginTop: 4,
   },
+
+  // 저장/삭제 버튼
   saveButton: {
     backgroundColor: '#5BBFAA',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 12,
   },
   saveButtonText: {
     fontSize: 16,
@@ -434,85 +432,22 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   deleteButton: {
-    marginTop: 30,
+    marginTop: 8,
     backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: '#FF4444',
     borderRadius: 8,
     paddingVertical: 14,
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 40,
   },
   deleteButtonText: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#FF4444',
-    textAlign: 'center',
   },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  modalBox: {
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 24,
-    width: 300,
-    alignItems: 'center',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  modalMessage: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 20,
-  },
-  modalConfirmBtn: {
-    backgroundColor: '#5BBFAA',
-    paddingVertical: 10,
-    paddingHorizontal: 40,
-    borderRadius: 8,
-  },
-  modalConfirmText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  deleteModalButtons: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 12,
-    width: '100%',
-  },
-  deleteModalCancelBtn: {
-    flex: 1,
-    backgroundColor: '#E0E0E0',
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  deleteModalCancelText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#666',
-  },
-  deleteModalConfirmBtn: {
-    flex: 1,
-    backgroundColor: '#FF4444',
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  deleteModalConfirmText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-  },
+
+  // 학년
   gradeGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -570,6 +505,73 @@ const styles = StyleSheet.create({
     color: '#FF4444',
     marginTop: 8,
     fontWeight: 'bold',
+  },
+
+  // 모달
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalBox: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 24,
+    width: 300,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  modalMessage: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 20,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  modalConfirmBtn: {
+    backgroundColor: '#5BBFAA',
+    paddingVertical: 10,
+    paddingHorizontal: 40,
+    borderRadius: 8,
+  },
+  modalConfirmText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  deleteModalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  deleteModalCancelBtn: {
+    flex: 1,
+    backgroundColor: '#E0E0E0',
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  deleteModalCancelText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#666',
+  },
+  deleteModalConfirmBtn: {
+    flex: 1,
+    backgroundColor: '#FF4444',
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  deleteModalConfirmText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
   },
   gradeModalButtons: {
     flexDirection: 'row',

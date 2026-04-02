@@ -97,8 +97,6 @@ export default function HomeScreen() {
         const childDoc = await getDoc(doc(db, 'Parents', parentId, 'Children', childId));
         if (childDoc.exists()) {
           const childData = childDoc.data();
-          console.log('홈 화면 avatar:', childData.avatar);
-          console.log('홈 화면 name:', childData.name);
           if (childData.avatar) setChildAvatar(resolveAvatar(childData.avatar));
           if (childData.name) setChildName(childData.name);
         }
@@ -140,9 +138,7 @@ export default function HomeScreen() {
     if (bannerIntervalRef.current) {
       clearInterval(bannerIntervalRef.current);
     }
-
     if (totalBanners <= 1) return;
-
     bannerIntervalRef.current = setInterval(() => {
       setCurrentBannerIndex(prevIndex => {
         const nextIndex = (prevIndex + 1) % totalBanners;
@@ -212,10 +208,8 @@ export default function HomeScreen() {
         setShowExpiryModal(true);
       }
 
-      // 현재 선택된 자녀가 만료되었으면 무료 자녀로 자동 전환
       const currentChildId = await AsyncStorage.getItem('childId');
       if (result.expiredList && result.expiredList.some(c => c.id === currentChildId)) {
-        // 무료 활성 자녀 찾기
         const childrenRef = collection(db, 'Parents', parentId, 'Children');
         const snap = await getDocs(childrenRef);
         let freeChild: { id: string; name: string } | null = null;
@@ -246,9 +240,6 @@ export default function HomeScreen() {
         const childDoc = await getDoc(doc(db, 'Parents', parentId, 'Children', childId));
         if (childDoc.exists()) {
           const childData = childDoc.data();
-          console.log('홈 화면 avatar:', childData.avatar);
-          console.log('홈 화면 name:', childData.name);
-          console.log('홈 화면 tier:', childData.tier);
           if (childData.avatar) setChildAvatar(resolveAvatar(childData.avatar));
           if (childData.name) setChildName(childData.name);
           if (childData.tier) setChildTier(childData.tier);
@@ -292,14 +283,14 @@ export default function HomeScreen() {
       setTotalProblems(problems);
       setCorrectCount(correct);
       setMonthlyAverage(scoreCount > 0 ? Math.round(totalScore / scoreCount) : 0);
-    } catch (error) { console.log('Load error:', error); }
+    } catch (error) {
+      console.log('Load error:', error);
+    }
   };
 
   const weekDays = ['일', '월', '화', '수', '목', '금', '토'];
-
   const firstDay = new Date(currentYear, currentMonth - 1, 1).getDay();
   const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
-
   const todayYear = new Date().getFullYear();
   const todayMonth = new Date().getMonth() + 1;
   const isCurrentMonth = currentYear === todayYear && currentMonth === todayMonth;
@@ -359,10 +350,7 @@ export default function HomeScreen() {
           onPress={() => setSelectedDate(day)}
         >
           <View style={isToday ? styles.todayCircle : isSelected ? styles.selectedCircle : null}>
-            <Text style={[
-              styles.dayText,
-              { color: isToday ? '#FFFFFF' : textColor }
-            ]}>
+            <Text style={[styles.dayText, { color: isToday ? '#FFFFFF' : textColor }]}>
               {day}
             </Text>
           </View>
@@ -386,14 +374,20 @@ export default function HomeScreen() {
 
   return (
     <SafeLayout backgroundColor="#F5F5F5">
-      <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView} contentContainerStyle={{ paddingBottom: 0 }}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        style={styles.scrollView}
+        contentContainerStyle={{ paddingBottom: 16 }}
+      >
         {/* 1. PROFILE HEADER BAR */}
         <View style={styles.profileHeader}>
           <View style={styles.profileLeft}>
             <Image source={childAvatar} style={styles.avatarImage} />
             <Text style={styles.profileName}>{displayName || '김배움'}</Text>
             <View style={[styles.badge, { backgroundColor: TIER_COLORS[childTier] || '#E0E0E0' }]}>
-              <Text style={[styles.badgeText, { color: TIER_TEXT_COLORS[childTier] || '#666666' }]}>{TIER_LABELS[childTier] || '무료회원'}</Text>
+              <Text style={[styles.badgeText, { color: TIER_TEXT_COLORS[childTier] || '#666666' }]}>
+                {TIER_LABELS[childTier] || '무료회원'}
+              </Text>
             </View>
           </View>
           <Text style={styles.bellIcon}>🔔</Text>
@@ -410,7 +404,7 @@ export default function HomeScreen() {
               onMomentumScrollEnd={handleBannerScroll}
               scrollEventThrottle={16}
             >
-              {banners.map((banner, index) => (
+              {banners.map((banner) => (
                 <TouchableOpacity
                   key={banner.id}
                   activeOpacity={0.9}
@@ -429,10 +423,7 @@ export default function HomeScreen() {
                 {banners.map((_, index) => (
                   <View
                     key={index}
-                    style={[
-                      styles.indicator,
-                      currentBannerIndex === index && styles.indicatorActive
-                    ]}
+                    style={[styles.indicator, currentBannerIndex === index && styles.indicatorActive]}
                   />
                 ))}
               </View>
@@ -515,7 +506,6 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        <View style={styles.scrollViewBottomPadding} />
       </ScrollView>
 
       {/* 5. LEARN BUTTON - FIXED AT BOTTOM */}
@@ -560,19 +550,8 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  rootContainer: {
-    flex: 1,
-    backgroundColor: '#F5F5F5',
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#F5F5F5',
-  },
   scrollView: {
     flex: 1,
-  },
-  scrollViewBottomPadding: {
-    height: 20,
   },
   // 1. Profile Header
   profileHeader: {
@@ -703,8 +682,9 @@ const styles = StyleSheet.create({
   calendarCard: {
     marginHorizontal: 20,
     marginTop: 10,
+    marginBottom: 0,
     borderRadius: 12,
-    padding: 10,
+    padding: 16,
     backgroundColor: '#FFFFFF',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -716,7 +696,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 12,
   },
   arrowText: {
     fontSize: 18,
@@ -742,20 +722,20 @@ const styles = StyleSheet.create({
   },
   weekRow: {
     flexDirection: 'row',
-    marginBottom: 2,
+    marginBottom: 4,
   },
   weekDayText: {
     fontSize: 12,
     fontWeight: '600',
   },
+  // ✅ height 고정값 제거 — 자동 높이
   daysGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    height: 192,
   },
   dayCell: {
     width: '14.28%',
-    height: 32,
+    height: 36,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -764,7 +744,7 @@ const styles = StyleSheet.create({
   },
   todayCircle: {
     backgroundColor: '#7ED4C0',
-    borderRadius: 16,
+    borderRadius: 18,
     width: 32,
     height: 32,
     justifyContent: 'center',
@@ -772,7 +752,7 @@ const styles = StyleSheet.create({
   },
   selectedCircle: {
     backgroundColor: '#E8F8F5',
-    borderRadius: 16,
+    borderRadius: 18,
     width: 32,
     height: 32,
     justifyContent: 'center',
@@ -787,7 +767,8 @@ const styles = StyleSheet.create({
   legendRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 2,
+    marginTop: 12,
+    marginBottom: 4,
     gap: 16,
   },
   legendItem: {
@@ -795,26 +776,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   legendDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   legendText: {
     fontSize: 11,
     color: '#9E9E9E',
     marginLeft: 4,
   },
-  // 5. Learn Button (Fixed at bottom)
+  // 5. Learn Button
   learnButtonContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
     backgroundColor: '#F5F5F5',
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 12,
-    marginBottom: 0,
     borderTopWidth: 1,
     borderTopColor: '#E0E0E0',
   },
@@ -831,7 +807,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     textAlign: 'center',
   },
-  // Modal Styles
+  // Modal
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -855,7 +831,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666666',
     textAlign: 'center',
-    lineHeight: 160,
+    lineHeight: 22,
     marginBottom: 20,
   },
   modalButton: {

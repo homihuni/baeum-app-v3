@@ -5,7 +5,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { useState, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getChildren, getParent } from '../../utils/firestore';
+import { getChildren } from '../../utils/firestore';
 import { resolveAvatar } from '../../utils/avatars';
 
 interface Child {
@@ -61,24 +61,19 @@ export default function ManageChildrenScreen() {
         const childrenData = await getChildren(parentId) as Child[];
         const activeChildren = childrenData.filter(c => !c.isDeleted);
         setChildren(activeChildren);
-
-        const tier = getHighestTier(activeChildren);
-        setHighestTier(tier);
+        setHighestTier(getHighestTier(activeChildren));
 
         const deletedChildren = childrenData.filter(c => c.isDeleted && c.deletedAt);
         if (deletedChildren.length > 0) {
-          const latest = deletedChildren.reduce((prev, curr) => {
-            return (curr.deletedAt?.toMillis?.() || 0) > (prev.deletedAt?.toMillis?.() || 0) ? curr : prev;
-          });
+          const latest = deletedChildren.reduce((prev, curr) =>
+            (curr.deletedAt?.toMillis?.() || 0) > (prev.deletedAt?.toMillis?.() || 0) ? curr : prev
+          );
           setLatestDeletedAt(latest.deletedAt);
         } else {
           setLatestDeletedAt(null);
         }
       }
-
-      if (childId) {
-        setCurrentChildId(childId);
-      }
+      if (childId) setCurrentChildId(childId);
     } catch (error) {
       console.log('Load data error:', error);
     } finally {
@@ -92,18 +87,13 @@ export default function ManageChildrenScreen() {
       setShowLockedModal(true);
       return;
     }
-
-    if (child.id === currentChildId) {
-      return;
-    }
-
+    if (child.id === currentChildId) return;
     setPendingChild(child);
     setShowChangeModal(true);
   };
 
   const confirmChangeChild = async () => {
     if (!pendingChild) return;
-
     try {
       await AsyncStorage.setItem('childId', pendingChild.id);
       await AsyncStorage.setItem('childName', pendingChild.name);
@@ -117,18 +107,13 @@ export default function ManageChildrenScreen() {
   };
 
   const handleAddChild = () => {
-    // 1. 최대 3명 체크
-    if (children.length >= 3) {
-      return;
-    }
+    if (children.length >= 3) return;
 
-    // 2. 24시간 쿨다운 체크
     if (latestDeletedAt) {
       const now = Date.now();
       const deletedTime = latestDeletedAt.toMillis?.() || 0;
       const diff = now - deletedTime;
       const hours24 = 24 * 60 * 60 * 1000;
-
       if (diff < hours24) {
         const remainHours = Math.ceil((hours24 - diff) / (60 * 60 * 1000));
         setCooldownHours(remainHours);
@@ -137,14 +122,12 @@ export default function ManageChildrenScreen() {
       }
     }
 
-    // 3. 무료 자녀 1명 제한 체크
     const freeChildrenCount = children.filter(c => c.tier === 'free').length;
     if (freeChildrenCount >= 1) {
       setShowFreeChildModal(true);
       return;
     }
 
-    // 4. 모든 조건 통과 → 자녀 추가 화면으로 이동
     router.push('/children/add');
   };
 
@@ -152,64 +135,74 @@ export default function ManageChildrenScreen() {
     router.push(`/children/edit?childId=${childId}`);
   };
 
-
   return (
-    <SafeLayout>
-      <ScrollView style={styles.content}>
+    <SafeLayout showHeader headerTitle="자녀관리">
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         {loading ? (
           <Text style={styles.loadingText}>로딩 중...</Text>
         ) : (
-          <>
-            {children.map((child) => (
-              <View key={child.id} style={[styles.childCard, child.isLocked && styles.childCardLocked]}>
-                <TouchableOpacity
-                  style={styles.childInfo}
-                  onPress={() => handleSelectChild(child)}
-                >
-                  <Image source={resolveAvatar(child.avatar)} style={styles.childEmoji} />
-                  <View style={styles.childDetails}>
-                    <View style={styles.childNameRow}>
-                      <Text style={styles.childName}>{child.name}</Text>
-                      {child.isLocked && (
-                        <View style={styles.badgeLocked}>
-                          <Text style={styles.badgeLockedText}>잠금</Text>
-                        </View>
-                      )}
-                      {!child.isLocked && child.tier === 'free' && (
-                        <View style={styles.tierBadgeFree}>
-                          <Text style={styles.tierBadgeTextFree}>무료</Text>
-                        </View>
-                      )}
-                      {!child.isLocked && child.tier === 'baeum' && (
-                        <View style={styles.tierBadgeBaeum}>
-                          <Text style={styles.tierBadgeTextBaeum}>배움</Text>
-                        </View>
-                      )}
-                      {!child.isLocked && child.tier === 'sky' && (
-                        <View style={styles.tierBadgeSky}>
-                          <Text style={styles.tierBadgeTextSky}>스카이</Text>
-                        </View>
-                      )}
-                    </View>
-                    <View style={styles.childGradeRow}>
-                      <Text style={styles.childGrade}>{child.grade}학년</Text>
-                      {currentChildId === child.id && (
-                        <View style={styles.badgeSelected}>
-                          <Text style={styles.badgeSelectedText}>현재 선택됨</Text>
-                        </View>
-                      )}
-                    </View>
-                  </View>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.editButton}
-                  onPress={() => handleEditChild(child.id)}
-                >
-                  <Ionicons name="create-outline" size={20} color="#5BBFAA" />
-                </TouchableOpacity>
-              </View>
-            ))}
+          <View style={styles.centerContainer}>
 
+            {/* 자녀 카드 목록 */}
+            <View style={styles.childList}>
+              {children.map((child) => (
+                <View
+                  key={child.id}
+                  style={[styles.childCard, child.isLocked && styles.childCardLocked]}
+                >
+                  <TouchableOpacity
+                    style={styles.childInfo}
+                    onPress={() => handleSelectChild(child)}
+                  >
+                    <Image source={resolveAvatar(child.avatar)} style={styles.childEmoji} />
+                    <View style={styles.childDetails}>
+                      <View style={styles.childNameRow}>
+                        <Text style={styles.childName}>{child.name}</Text>
+                        {child.isLocked && (
+                          <View style={styles.badgeLocked}>
+                            <Text style={styles.badgeLockedText}>잠금</Text>
+                          </View>
+                        )}
+                        {!child.isLocked && child.tier === 'free' && (
+                          <View style={styles.tierBadgeFree}>
+                            <Text style={styles.tierBadgeTextFree}>무료</Text>
+                          </View>
+                        )}
+                        {!child.isLocked && child.tier === 'baeum' && (
+                          <View style={styles.tierBadgeBaeum}>
+                            <Text style={styles.tierBadgeTextBaeum}>배움</Text>
+                          </View>
+                        )}
+                        {!child.isLocked && child.tier === 'sky' && (
+                          <View style={styles.tierBadgeSky}>
+                            <Text style={styles.tierBadgeTextSky}>스카이</Text>
+                          </View>
+                        )}
+                      </View>
+                      <View style={styles.childGradeRow}>
+                        <Text style={styles.childGrade}>{child.grade}학년</Text>
+                        {currentChildId === child.id && (
+                          <View style={styles.badgeSelected}>
+                            <Text style={styles.badgeSelectedText}>현재 선택됨</Text>
+                          </View>
+                        )}
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.editButton}
+                    onPress={() => handleEditChild(child.id)}
+                  >
+                    <Ionicons name="create-outline" size={20} color="#5BBFAA" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+
+            {/* 자녀 추가 버튼 */}
             {children.length < 3 && (
               <TouchableOpacity style={styles.addButton} onPress={handleAddChild}>
                 <Ionicons name="add-circle-outline" size={24} color="#5BBFAA" />
@@ -217,12 +210,14 @@ export default function ManageChildrenScreen() {
               </TouchableOpacity>
             )}
 
+            {/* 최대 인원 안내 */}
             {children.length >= 3 && (
               <View style={styles.maxReachedContainer}>
                 <Text style={styles.maxReachedText}>최대 자녀 수(3명)에 도달했습니다.</Text>
               </View>
             )}
-          </>
+
+          </View>
         )}
       </ScrollView>
 
@@ -234,10 +229,7 @@ export default function ManageChildrenScreen() {
             <Text style={styles.modalMessage}>
               자녀 삭제 후 24시간이 지나야 새 자녀를 등록할 수 있습니다.{'\n'}약 {cooldownHours}시간 후에 등록 가능합니다.
             </Text>
-            <TouchableOpacity
-              style={styles.modalConfirmBtn}
-              onPress={() => setShowCooldownModal(false)}
-            >
+            <TouchableOpacity style={styles.modalConfirmBtn} onPress={() => setShowCooldownModal(false)}>
               <Text style={styles.modalConfirmText}>확인</Text>
             </TouchableOpacity>
           </View>
@@ -253,18 +245,12 @@ export default function ManageChildrenScreen() {
               무료회원 자녀는 1명만 등록할 수 있습니다.{'\n'}기존 자녀를 배움 또는 스카이회원으로 업그레이드한 후 새 자녀를 추가할 수 있습니다.
             </Text>
             <View style={styles.modalButtonRow}>
-              <TouchableOpacity
-                style={styles.modalCancelBtn}
-                onPress={() => setShowFreeChildModal(false)}
-              >
+              <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setShowFreeChildModal(false)}>
                 <Text style={styles.modalCancelText}>취소</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.modalUpgradeBtn}
-                onPress={() => {
-                  setShowFreeChildModal(false);
-                  router.push('/settings/grade');
-                }}
+                onPress={() => { setShowFreeChildModal(false); router.push('/settings/grade'); }}
               >
                 <Text style={styles.modalUpgradeText}>학습 플랜 보기</Text>
               </TouchableOpacity>
@@ -284,10 +270,7 @@ export default function ManageChildrenScreen() {
             <View style={styles.modalButtonRow}>
               <TouchableOpacity
                 style={styles.modalCancelBtn}
-                onPress={() => {
-                  setShowLockedModal(false);
-                  setSelectedLockedChild(null);
-                }}
+                onPress={() => { setShowLockedModal(false); setSelectedLockedChild(null); }}
               >
                 <Text style={styles.modalCancelText}>닫기</Text>
               </TouchableOpacity>
@@ -298,10 +281,7 @@ export default function ManageChildrenScreen() {
                   if (selectedLockedChild) {
                     router.push({
                       pathname: '/serial/enter',
-                      params: {
-                        childId: selectedLockedChild.id,
-                        childName: selectedLockedChild.name
-                      }
+                      params: { childId: selectedLockedChild.id, childName: selectedLockedChild.name }
                     });
                   }
                   setSelectedLockedChild(null);
@@ -325,42 +305,45 @@ export default function ManageChildrenScreen() {
             <View style={styles.modalButtonRow}>
               <TouchableOpacity
                 style={styles.modalCancelBtn}
-                onPress={() => {
-                  setShowChangeModal(false);
-                  setPendingChild(null);
-                }}
+                onPress={() => { setShowChangeModal(false); setPendingChild(null); }}
               >
                 <Text style={styles.modalCancelText}>취소</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.modalChangeConfirmBtn}
-                onPress={confirmChangeChild}
-              >
+              <TouchableOpacity style={styles.modalChangeConfirmBtn} onPress={confirmChangeChild}>
                 <Text style={styles.modalChangeConfirmText}>변경</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
+
       <BottomTabBar />
     </SafeLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
+  // 스크롤 중앙 정렬
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 24,
   },
-  content: {
-    flex: 1,
-    padding: 16,
+  centerContainer: {
+    width: '100%',
+  },
+  childList: {
+    width: '100%',
+    marginBottom: 8,
   },
   loadingText: {
     textAlign: 'center',
     color: '#999',
     marginTop: 20,
   },
+
+  // 자녀 카드
   childCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -402,6 +385,15 @@ const styles = StyleSheet.create({
     gap: 6,
     marginTop: 4,
   },
+  childGrade: {
+    fontSize: 14,
+    color: '#666',
+  },
+  editButton: {
+    padding: 8,
+  },
+
+  // 배지
   badgeSelected: {
     backgroundColor: '#FF6B6B',
     paddingHorizontal: 8,
@@ -424,13 +416,41 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#FFFFFF',
   },
-  childGrade: {
-    fontSize: 14,
-    color: '#666',
+  tierBadgeFree: {
+    backgroundColor: '#E0E0E0',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
   },
-  editButton: {
-    padding: 8,
+  tierBadgeTextFree: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#666666',
   },
+  tierBadgeBaeum: {
+    backgroundColor: '#4ECDC4',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  tierBadgeTextBaeum: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  tierBadgeSky: {
+    backgroundColor: '#87CEEB',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  tierBadgeTextSky: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#333333',
+  },
+
+  // 자녀 추가 버튼
   addButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -438,7 +458,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0F9F7',
     borderRadius: 12,
     padding: 20,
-    marginTop: 8,
+    marginTop: 4,
   },
   addButtonText: {
     fontSize: 16,
@@ -458,6 +478,8 @@ const styles = StyleSheet.create({
     color: '#856404',
     textAlign: 'center',
   },
+
+  // 모달
   modalOverlay: {
     flex: 1,
     justifyContent: 'center',
@@ -535,41 +557,5 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: 'bold',
     color: '#FFFFFF',
-  },
-  tierBadgeFree: {
-    backgroundColor: '#E0E0E0',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-    marginLeft: 4,
-  },
-  tierBadgeTextFree: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    color: '#666666',
-  },
-  tierBadgeBaeum: {
-    backgroundColor: '#4ECDC4',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-    marginLeft: 4,
-  },
-  tierBadgeTextBaeum: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-  },
-  tierBadgeSky: {
-    backgroundColor: '#87CEEB',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-    marginLeft: 4,
-  },
-  tierBadgeTextSky: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    color: '#333333',
   },
 });

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Image, ScrollView, Alert } from 'react-native';
 import SafeLayout from '../../components/SafeLayout';
 import { useRouter } from 'expo-router';
 import { getChildren } from '../../utils/firestore';
@@ -49,7 +49,6 @@ export default function SelectChildScreen() {
     router.replace('/(tabs)/home');
   };
 
-
   if (loading) {
     return (
       <SafeLayout backgroundColor="#F5F5F5">
@@ -58,146 +57,138 @@ export default function SelectChildScreen() {
     );
   }
 
-  const renderChildCards = () => {
-    const activeChildren = children.filter((c: any) => !c.isDeleted);
+  const activeChildren = children.filter((c: any) => !c.isDeleted);
 
-    if (activeChildren.length === 3) {
-      return (
-        <>
-          <View style={styles.topRow}>
-            {activeChildren.slice(0, 2).map((child) => (
-              <TouchableOpacity
-                key={child.id}
-                style={[
-                  styles.childCard,
-                  (child.isLocked || child.tier === 'expired') && {
-                    opacity: 0.5,
-                    backgroundColor: '#E0E0E0',
-                  },
-                ]}
-                onPress={() => selectChild(child)}
-              >
-                <Image source={resolveAvatar(child.avatar)} style={styles.avatar} />
-                <Text style={styles.childName}>{child.name}</Text>
-                {(child.isLocked || child.tier === 'expired') && (
-                  <View style={{
-                    backgroundColor: '#FF6B6B',
-                    borderRadius: 8,
-                    paddingHorizontal: 8,
-                    paddingVertical: 2,
-                    marginTop: 4,
-                  }}>
-                    <Text style={{ color: '#FFF', fontSize: 11, fontWeight: 'bold' }}>
-                      Expired
-                    </Text>
-                  </View>
-                )}
-                <Text style={styles.childGrade}>{child.grade}학년</Text>
-                <View style={[styles.tierBadge, { backgroundColor: TIER_COLORS[child.tier] || '#E0E0E0' }]}>
-                  <Text style={[styles.tierText, { color: TIER_TEXT_COLORS[child.tier] || '#666666' }]}>{TIER_LABELS[child.tier] || '무료회원'}</Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-          <View style={styles.bottomRow}>
-            <TouchableOpacity
-              key={activeChildren[2].id}
-              style={[
-                styles.childCard,
-                (activeChildren[2].isLocked || activeChildren[2].tier === 'expired') && {
-                  opacity: 0.5,
-                  backgroundColor: '#E0E0E0',
-                },
-              ]}
-              onPress={() => selectChild(activeChildren[2])}
-            >
-              <Image source={resolveAvatar(activeChildren[2].avatar)} style={styles.avatar} />
-              <Text style={styles.childName}>{activeChildren[2].name}</Text>
-              {(activeChildren[2].isLocked || activeChildren[2].tier === 'expired') && (
-                <View style={{
-                  backgroundColor: '#FF6B6B',
-                  borderRadius: 8,
-                  paddingHorizontal: 8,
-                  paddingVertical: 2,
-                  marginTop: 4,
-                }}>
-                  <Text style={{ color: '#FFF', fontSize: 11, fontWeight: 'bold' }}>
-                    만료 — 시리얼 등록 필요
-                  </Text>
-                </View>
-              )}
-              <Text style={styles.childGrade}>{activeChildren[2].grade}학년</Text>
-              <View style={[styles.tierBadge, { backgroundColor: TIER_COLORS[activeChildren[2].tier] || '#E0E0E0' }]}>
-                <Text style={[styles.tierText, { color: TIER_TEXT_COLORS[activeChildren[2].tier] || '#666666' }]}>{TIER_LABELS[activeChildren[2].tier] || '무료회원'}</Text>
-              </View>
-            </TouchableOpacity>
-          </View>
-        </>
-      );
-    }
-
-    return (
-      <>
-        {activeChildren.map((child) => (
-          <TouchableOpacity
-            key={child.id}
-            style={[
-              styles.childCard,
-              (child.isLocked || child.tier === 'expired') && {
-                opacity: 0.5,
-                backgroundColor: '#E0E0E0',
-              },
-            ]}
-            onPress={() => selectChild(child)}
-          >
-            <Image source={resolveAvatar(child.avatar)} style={styles.avatar} />
-            <Text style={styles.childName}>{child.name}</Text>
-            {(child.isLocked || child.tier === 'expired') && (
-              <View style={{
-                backgroundColor: '#FF6B6B',
-                borderRadius: 8,
-                paddingHorizontal: 8,
-                paddingVertical: 2,
-                marginTop: 4,
-              }}>
-                <Text style={{ color: '#FFF', fontSize: 11, fontWeight: 'bold' }}>
-                  만료 — 시리얼 등록 필요
-                </Text>
-              </View>
-            )}
-            <Text style={styles.childGrade}>{child.grade}학년</Text>
-            <View style={[styles.tierBadge, { backgroundColor: TIER_COLORS[child.tier] || '#E0E0E0' }]}>
-              <Text style={[styles.tierText, { color: TIER_TEXT_COLORS[child.tier] || '#666666' }]}>{TIER_LABELS[child.tier] || '무료회원'}</Text>
-            </View>
-          </TouchableOpacity>
-        ))}
-      </>
-    );
-  };
+  const renderChildCard = (child: any) => (
+    <TouchableOpacity
+      key={child.id}
+      style={[
+        styles.childCard,
+        (child.isLocked || child.tier === 'expired') && styles.childCardLocked,
+      ]}
+      onPress={() => selectChild(child)}
+    >
+      <Image source={resolveAvatar(child.avatar)} style={styles.avatar} />
+      <Text style={styles.childName}>{child.name}</Text>
+      {(child.isLocked || child.tier === 'expired') && (
+        <View style={styles.expiredBadge}>
+          <Text style={styles.expiredText}>만료 — 시리얼 등록 필요</Text>
+        </View>
+      )}
+      <Text style={styles.childGrade}>{child.grade}학년</Text>
+      <View style={[styles.tierBadge, { backgroundColor: TIER_COLORS[child.tier] || '#E0E0E0' }]}>
+        <Text style={[styles.tierText, { color: TIER_TEXT_COLORS[child.tier] || '#666666' }]}>
+          {TIER_LABELS[child.tier] || '무료회원'}
+        </Text>
+      </View>
+    </TouchableOpacity>
+  );
 
   return (
     <SafeLayout backgroundColor="#F5F5F5">
-      <Text style={styles.title}>누가 공부할까요?</Text>
-      <Text style={styles.subtitle}>학습할 자녀를 선택하세요</Text>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* 타이틀 - 중앙 정렬 */}
+        <View style={styles.titleContainer}>
+          <Text style={styles.title}>누가 공부할까요?</Text>
+          <Text style={styles.subtitle}>학습할 자녀를 선택하세요</Text>
+        </View>
 
-      <View style={styles.cardContainer}>
-        {renderChildCards()}
-      </View>
+        {/* 카드 그리드 - 2열 반응형 */}
+        <View style={styles.cardGrid}>
+          {activeChildren.map((child) => renderChildCard(child))}
+        </View>
+      </ScrollView>
     </SafeLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F5F5F5', alignItems: 'center', paddingTop: 60 },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#333' },
-  subtitle: { fontSize: 14, color: '#7ED4C0', marginTop: 8 },
-  cardContainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', marginTop: 40, gap: 16, paddingHorizontal: 20 },
-  topRow: { flexDirection: 'row', gap: 16, justifyContent: 'center', width: '100%' },
-  bottomRow: { flexDirection: 'row', justifyContent: 'center', width: '100%', marginTop: 16 },
-  childCard: { width: 140, backgroundColor: '#FFFFFF', borderRadius: 16, padding: 20, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
-  avatar: { width: 50, height: 50, borderRadius: 25, marginBottom: 8 },
-  childName: { fontSize: 16, fontWeight: 'bold', color: '#333' },
-  childGrade: { fontSize: 13, color: '#666', marginTop: 4 },
-  tierBadge: { marginTop: 8, paddingHorizontal: 10, paddingVertical: 3, borderRadius: 10 },
-  tierText: { fontSize: 11, fontWeight: 'bold' },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+    paddingHorizontal: 20,
+  },
+  titleContainer: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#7ED4C0',
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  cardGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 16,
+    width: '100%',
+  },
+  childCard: {
+    width: 140,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  childCardLocked: {
+    opacity: 0.5,
+    backgroundColor: '#E0E0E0',
+  },
+  avatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginBottom: 10,
+  },
+  childName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
+  },
+  childGrade: {
+    fontSize: 13,
+    color: '#666',
+    marginTop: 4,
+  },
+  tierBadge: {
+    marginTop: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 10,
+  },
+  tierText: {
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
+  expiredBadge: {
+    backgroundColor: '#FF6B6B',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    marginTop: 4,
+  },
+  expiredText: {
+    color: '#FFF',
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
 });
