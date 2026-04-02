@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, doc, setDoc, getDoc, getDocs, query, where, orderBy, limit, updateDoc, deleteDoc, addDoc, Timestamp } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithCredential, OAuthCredential } from 'firebase/auth';
 import { getFunctions } from 'firebase/functions';
 
 const firebaseConfig = {
@@ -17,5 +17,11 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 const functions = getFunctions(app);
 
-export { db, auth, functions, collection, doc, setDoc, getDoc, getDocs, query, where, orderBy, limit, updateDoc, deleteDoc, addDoc, Timestamp };
+export { 
+  db, auth, functions,
+  collection, doc, setDoc, getDoc, getDocs,
+  query, where, orderBy, limit, updateDoc,
+  deleteDoc, addDoc, Timestamp,
+  GoogleAuthProvider, signInWithCredential
+};
 export default app;
