@@ -1,8 +1,8 @@
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, TextInput, Modal, ScrollView, Image, ImageSourcePropType } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Modal, ScrollView, Image, ImageSourcePropType } from 'react-native';
+import SafeLayout from '../../components/SafeLayout';
 import BottomTabBar from '../../components/BottomTabBar';
 import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
-import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getSerialCode, useSerialCode, upgradeChildTier, getChild } from '../../utils/firestore';
 import { DEFAULT_AVATAR, resolveAvatar } from '../../utils/avatars';
@@ -39,11 +39,7 @@ export default function EnterSerialScreen() {
     try {
       const pId = await AsyncStorage.getItem('parentId');
       const cId = await AsyncStorage.getItem('childId');
-
-      if (!pId || !cId) {
-        console.log('No parentId or childId');
-        return;
-      }
+      if (!pId || !cId) return;
 
       setParentId(pId);
       setChildId(cId);
@@ -61,7 +57,6 @@ export default function EnterSerialScreen() {
             setSerialRaw(childData.serialNumber);
             setSerialDisplay(formatSerial(childData.serialNumber));
           }
-          console.log("이미 인증된 회원:", childData.tier);
         }
       }
     } catch (error) {
@@ -86,9 +81,6 @@ export default function EnterSerialScreen() {
   };
 
   const handleVerify = async () => {
-    console.log('=== 인증 버튼 클릭 ===');
-    console.log('입력값:', serialRaw);
-
     const trimmedCode = serialRaw.trim();
 
     if (!trimmedCode) {
@@ -103,36 +95,23 @@ export default function EnterSerialScreen() {
     }
 
     try {
-      console.log('=== Firestore 조회 ===');
       const serialData = await getSerialCode(trimmedCode);
-      console.log('조회 결과:', serialData);
-
       if (!serialData) {
         showErrorModal('인증 실패', '유효하지 않은 시리얼번호입니다');
         return;
       }
-
       if (serialData.isUsed === true) {
         showErrorModal('인증 실패', '이미 사용된 시리얼번호입니다');
         return;
       }
 
-      console.log('=== 시리얼 사용 처리 시작 ===');
       await useSerialCode(trimmedCode, childId);
-      console.log('=== 시리얼 사용 처리 완료 ===');
-
-      console.log('=== 등급 업그레이드 시작 ===');
       await upgradeChildTier(parentId, childId, 'baeum', trimmedCode, serialData.expiry, serialData.calendarYear);
-      console.log('=== 등급 업그레이드 성공 ===');
-
       await AsyncStorage.setItem('childTier', 'baeum');
-      console.log("AsyncStorage childTier 저장: baeum");
 
       setIsVerified(true);
-      console.log('인증 완료, isVerified:', true);
       showSuccessModal('등록 완료', '배움회원으로 업그레이드되었습니다 🎉');
     } catch (error) {
-      console.log('=== 인증 에러 ===', error);
       showErrorModal('오류', '인증 처리 중 오류가 발생했습니다');
     }
   };
@@ -143,17 +122,19 @@ export default function EnterSerialScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeLayout showHeader headerTitle="시리얼번호 등록">
         <Text style={styles.loadingText}>로딩 중...</Text>
-      </SafeAreaView>
+      </SafeLayout>
     );
   }
 
-  console.log("현재 isVerified:", isVerified);
-
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.content}>
+    <SafeLayout showHeader headerTitle="시리얼번호 등록">
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.content}
+      >
+        {/* 자녀 정보 카드 */}
         <View style={styles.childInfoCard}>
           <Image source={childAvatar} style={styles.avatarImage} />
           <View style={styles.childInfoText}>
@@ -164,6 +145,7 @@ export default function EnterSerialScreen() {
 
         <Text style={styles.infoText}>이 자녀에게 시리얼번호를 등록합니다</Text>
 
+        {/* 시리얼번호 입력 */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>시리얼번호</Text>
           <TextInput
@@ -185,11 +167,13 @@ export default function EnterSerialScreen() {
           <Text style={styles.charCount}>{serialRaw.length}/10</Text>
         </View>
 
+        {/* 안내 박스 */}
         <View style={styles.guideBox}>
           <Text style={styles.guideText}>📖 배움달력 뒷면의 시리얼번호 10자리를 입력해주세요</Text>
           <Text style={styles.guideWarning}>⚠️ 시리얼 유효기간은 다음 해 2월 28일까지입니다.</Text>
         </View>
 
+        {/* 등록 버튼 */}
         <TouchableOpacity
           style={[styles.verifyButton, isVerified && styles.verifyButtonDisabled]}
           onPress={handleVerify}
@@ -199,8 +183,10 @@ export default function EnterSerialScreen() {
             {isVerified ? '✅ 인증완료' : '등록하기'}
           </Text>
         </TouchableOpacity>
+
       </ScrollView>
 
+      {/* 모달 */}
       <Modal visible={showModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>
@@ -212,19 +198,16 @@ export default function EnterSerialScreen() {
           </View>
         </View>
       </Modal>
+
       <BottomTabBar />
-    </SafeAreaView>
+    </SafeLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
   content: {
-    flex: 1,
     padding: 16,
+    paddingBottom: 24,
   },
   loadingText: {
     textAlign: 'center',
@@ -287,33 +270,6 @@ const styles = StyleSheet.create({
   inputDisabled: {
     backgroundColor: '#E0E0E0',
     color: '#999',
-  },
-  serialInputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  serialInput: {
-    backgroundColor: '#F5F5F5',
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-    fontSize: 16,
-    color: '#333',
-    fontWeight: 'bold',
-    letterSpacing: 1,
-    textAlign: 'center',
-  },
-  serialInput4: {
-    flex: 4,
-  },
-  serialInput2: {
-    flex: 2,
-  },
-  serialDash: {
-    fontSize: 16,
-    color: '#999',
-    fontWeight: 'bold',
   },
   charCount: {
     textAlign: 'right',
