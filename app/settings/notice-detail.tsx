@@ -1,8 +1,7 @@
 import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
-import BottomTabBar from '../../components/BottomTabBar';
-import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import SafeLayout from '../../components/SafeLayout';
+import { useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
 
@@ -14,7 +13,6 @@ interface Notice {
 }
 
 export default function NoticeDetailScreen() {
-  const router = useRouter();
   const { noticeId } = useLocalSearchParams<{ noticeId: string }>();
   const [notice, setNotice] = useState<Notice | null>(null);
   const [loading, setLoading] = useState(true);
@@ -27,11 +25,9 @@ export default function NoticeDetailScreen() {
 
   const loadNotice = async () => {
     if (!noticeId) return;
-
     try {
       setLoading(true);
       const noticeDoc = await getDoc(doc(db, 'Notices', noticeId));
-
       if (noticeDoc.exists()) {
         setNotice(noticeDoc.data() as Notice);
       }
@@ -52,8 +48,11 @@ export default function NoticeDetailScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+    <SafeLayout showHeader headerTitle="공지사항">
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#7ED4C0" />
@@ -76,18 +75,14 @@ export default function NoticeDetailScreen() {
           </View>
         )}
       </ScrollView>
-      <BottomTabBar />
-    </SafeAreaView>
+    </SafeLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
   scrollContent: {
     padding: 20,
+    paddingBottom: 40,
   },
   loadingContainer: {
     flex: 1,

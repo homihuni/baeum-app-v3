@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import SafeLayout from '../../components/SafeLayout';
+import BottomTabBar from '../../components/BottomTabBar';
 import { useRouter, useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { doc, getDoc } from 'firebase/firestore';
@@ -183,12 +184,13 @@ export default function LearningPlanScreen() {
         </View>
 
       </ScrollView>
+      <BottomTabBar />
     </SafeLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollContent: { padding: 20, paddingBottom: 100 },
+  scrollContent: { padding: 20, paddingBottom: 20 },
 
   currentCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 20, borderWidth: 2, marginBottom: 24 },
   currentCardTop: { flexDirection: 'row', alignItems: 'center' },

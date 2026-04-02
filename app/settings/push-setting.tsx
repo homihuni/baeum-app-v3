@@ -1,7 +1,5 @@
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Switch } from 'react-native';
-import BottomTabBar from '../../components/BottomTabBar';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text, StyleSheet, ScrollView, Switch } from 'react-native';
+import SafeLayout from '../../components/SafeLayout';
 import { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
@@ -17,7 +15,6 @@ interface NotificationSettings {
 }
 
 export default function PushSettingScreen() {
-  const router = useRouter();
   const [settings, setSettings] = useState<NotificationSettings>({
     sound: '소리',
     payment: true,
@@ -78,7 +75,7 @@ export default function PushSettingScreen() {
       <Switch
         value={value}
         onValueChange={(val) => updateSetting(key, val)}
-        trackColor={{ false: '#DDDDDD', true: '#4CAF50' }}
+        trackColor={{ false: '#DDDDDD', true: '#7ED4C0' }}
         thumbColor="#FFFFFF"
       />
     </View>
@@ -96,8 +93,9 @@ export default function PushSettingScreen() {
   const renderDivider = () => <View style={styles.divider} />;
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView>
+    <SafeLayout showHeader headerTitle="알림 설정">
+      <ScrollView showsVerticalScrollIndicator={false}>
+
         {/* 섹션 1: 배움학습 알림 */}
         <Text style={styles.sectionHeader}>배움학습 알림</Text>
         {renderSoundItem()}
@@ -127,20 +125,16 @@ export default function PushSettingScreen() {
         {/* 하단 안내 문구 */}
         <View style={styles.noticeContainer}>
           <Text style={styles.noticeText}>
-            기기 설정에서 알림이 꺼져 있으면 앱 내 설정과 관계없이 알림이 수신되지 않습니다.
+            기기 설정에서 알림이 꺼져 있으면 앱 내 설정과 관계없이{'\n'}알림이 수신되지 않습니다.
           </Text>
         </View>
+
       </ScrollView>
-      <BottomTabBar />
-    </SafeAreaView>
+    </SafeLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
   sectionHeader: {
     fontSize: 13,
     color: '#999999',
@@ -154,6 +148,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
+    backgroundColor: '#FFFFFF',
   },
   toggleTextContainer: {
     flex: 1,
@@ -185,6 +180,6 @@ const styles = StyleSheet.create({
   noticeText: {
     fontSize: 13,
     color: '#999999',
-    lineHeight: 18,
+    lineHeight: 20,
   },
 });
