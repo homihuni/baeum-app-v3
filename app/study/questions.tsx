@@ -65,7 +65,7 @@ export default function QuestionsScreen() {
         console.log('grade:', grade, 'subject:', subject, 'tier:', tier);
 
         const q = query(
-          collection(db, 'Problems'),
+          collection(db, 'questions'),
           where('grade', '==', grade),
           where('subject', '==', subject),
           where('isActive', '==', true)
