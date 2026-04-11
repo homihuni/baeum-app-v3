@@ -7,6 +7,7 @@ import { db } from '../../utils/firebase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { resolveAvatar } from '../../utils/avatars';
+import { wp } from '../../utils/responsive';
 
 export default function MenuScreen() {
   const router = useRouter();
@@ -130,13 +131,14 @@ export default function MenuScreen() {
 }
 
 const styles = StyleSheet.create({
-  // 프로필
+  // 프로필 — marginHorizontal: wp(4) 반응형 (16px→31px on tablet)
   profileSection: {
     backgroundColor: '#E8F8F5',
     borderRadius: 16,
     padding: 16,
-    margin: 16,
+    marginTop: 16,
     marginBottom: 8,
+    marginHorizontal: wp(4),
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -177,9 +179,9 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  // 섹션
+  // 섹션 — marginHorizontal: wp(4) 반응형
   section: {
-    marginHorizontal: 16,
+    marginHorizontal: wp(4),
     marginTop: 16,
   },
   sectionTitle: {

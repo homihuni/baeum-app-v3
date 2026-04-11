@@ -5,10 +5,23 @@ import { useRouter } from 'expo-router';
 import { getChildren } from '../../utils/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { resolveAvatar } from '../../utils/avatars';
+import { wp, SCREEN_WIDTH } from '../../utils/responsive';
 
 const TIER_LABELS: Record<string, string> = { free: '무료회원', baeum: '배움회원', sky: '스카이회원' };
 const TIER_COLORS: Record<string, string> = { free: '#E0E0E0', baeum: '#4ECDC4', sky: '#87CEEB' };
 const TIER_TEXT_COLORS: Record<string, string> = { free: '#666666', baeum: '#FFFFFF', sky: '#333333' };
+
+// 자녀 카드 폭: 화면 폭 기준 2열 계산, 최대 200px (태블릿 대응)
+// - 375px 폰: (375 - 38 - 16) / 2 = 160px
+// - 768px 태블릿: min((768 - 76 - 16) / 2, 200) = 200px
+const CHILD_CARD_WIDTH = Math.min(
+  Math.round((SCREEN_WIDTH - 2 * wp(5) - 16) / 2),
+  200
+);
+
+// 아바타 크기: 화면 폭 16% 기준, 최대 80px
+// - 375px: 60px (기존과 동일), 768px: 80px (태블릿에서 확대)
+const CHILD_AVATAR_SIZE = Math.min(wp(16), 80);
 
 export default function SelectChildScreen() {
   const router = useRouter();
@@ -106,12 +119,13 @@ export default function SelectChildScreen() {
 }
 
 const styles = StyleSheet.create({
+  // 스크롤 패딩 — paddingHorizontal: wp(5) 반응형
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 40,
-    paddingHorizontal: 20,
+    paddingHorizontal: wp(5),
   },
   titleContainer: {
     alignItems: 'center',
@@ -136,8 +150,10 @@ const styles = StyleSheet.create({
     gap: 16,
     width: '100%',
   },
+  // 자녀 카드 — width: CHILD_CARD_WIDTH (화면 비율 기반 반응형)
+  // 375px 폰: 160px / 768px 태블릿: 200px
   childCard: {
-    width: 140,
+    width: CHILD_CARD_WIDTH,
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 20,
@@ -152,10 +168,11 @@ const styles = StyleSheet.create({
     opacity: 0.5,
     backgroundColor: '#E0E0E0',
   },
+  // 아바타 — CHILD_AVATAR_SIZE 반응형 (375px: 60px, 태블릿: 80px)
   avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: CHILD_AVATAR_SIZE,
+    height: CHILD_AVATAR_SIZE,
+    borderRadius: CHILD_AVATAR_SIZE / 2,
     marginBottom: 10,
   },
   childName: {

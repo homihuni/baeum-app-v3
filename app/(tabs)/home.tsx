@@ -8,6 +8,10 @@ import { db } from '../../utils/firebase';
 import { checkSerialExpiry } from '../../utils/firestore';
 import { useFocusEffect } from '@react-navigation/native';
 import { resolveAvatar } from '../../utils/avatars';
+import { wp, SCREEN_WIDTH } from '../../utils/responsive';
+
+// 배너/카드 좌우 여백: 화면 폭의 5% (375px 기준 약 19px, 태블릿에서 비례 확대)
+const BANNER_MARGIN = wp(5);
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -143,7 +147,8 @@ export default function HomeScreen() {
       setCurrentBannerIndex(prevIndex => {
         const nextIndex = (prevIndex + 1) % totalBanners;
         const screenWidth = Dimensions.get('window').width;
-        const bannerWidth = screenWidth - 40;
+        // 스타일의 BANNER_MARGIN과 동일한 값으로 배너 폭 계산
+        const bannerWidth = screenWidth - 2 * BANNER_MARGIN;
         scrollViewRef.current?.scrollTo({ x: nextIndex * bannerWidth, animated: true });
         return nextIndex;
       });
@@ -168,7 +173,8 @@ export default function HomeScreen() {
 
   const handleBannerScroll = (event: any) => {
     const screenWidth = Dimensions.get('window').width;
-    const bannerWidth = screenWidth - 40;
+    // 스타일의 BANNER_MARGIN과 동일한 값으로 배너 폭 계산
+    const bannerWidth = screenWidth - 2 * BANNER_MARGIN;
     const contentOffsetX = event.nativeEvent.contentOffset.x;
     const index = Math.round(contentOffsetX / bannerWidth);
     setCurrentBannerIndex(index);
@@ -553,12 +559,12 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
-  // 1. Profile Header
+  // 1. Profile Header — paddingHorizontal: BANNER_MARGIN (반응형)
   profileHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: BANNER_MARGIN,
     paddingVertical: 12,
     paddingTop: 8,
     backgroundColor: '#FFFFFF',
@@ -592,10 +598,10 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: '#9E9E9E',
   },
-  // 2. Banner
+  // 2. Banner — marginHorizontal: BANNER_MARGIN (반응형)
   banner: {
     height: 90,
-    marginHorizontal: 20,
+    marginHorizontal: BANNER_MARGIN,
     marginTop: 16,
     borderRadius: 12,
     backgroundColor: '#E8F5E9',
@@ -613,15 +619,16 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   bannerContainer: {
-    marginHorizontal: 20,
+    marginHorizontal: BANNER_MARGIN,
     marginTop: 16,
     borderRadius: 12,
     overflow: 'hidden',
     backgroundColor: '#F0F0F0',
   },
+  // 배너 이미지 폭: BANNER_MARGIN 기준으로 동적 계산
   bannerImage: {
-    width: Dimensions.get('window').width - 40,
-    height: ((Dimensions.get('window').width - 40) * 280) / 720,
+    width: SCREEN_WIDTH - 2 * BANNER_MARGIN,
+    height: ((SCREEN_WIDTH - 2 * BANNER_MARGIN) * 280) / 720,
     borderRadius: 12,
   },
   indicatorContainer: {
@@ -646,10 +653,10 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
   },
-  // 3. Stats Card
+  // 3. Stats Card — marginHorizontal: BANNER_MARGIN (반응형)
   statsCard: {
     flexDirection: 'row',
-    marginHorizontal: 20,
+    marginHorizontal: BANNER_MARGIN,
     marginTop: 16,
     borderRadius: 12,
     padding: 16,
@@ -678,9 +685,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#E0E0E0',
     marginHorizontal: 8,
   },
-  // 4. Calendar Card
+  // 4. Calendar Card — marginHorizontal: BANNER_MARGIN (반응형)
   calendarCard: {
-    marginHorizontal: 20,
+    marginHorizontal: BANNER_MARGIN,
     marginTop: 10,
     marginBottom: 0,
     borderRadius: 12,
@@ -728,7 +735,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  // ✅ height 고정값 제거 — 자동 높이
   daysGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -785,10 +791,10 @@ const styles = StyleSheet.create({
     color: '#9E9E9E',
     marginLeft: 4,
   },
-  // 5. Learn Button
+  // 5. Learn Button — paddingHorizontal: BANNER_MARGIN (반응형)
   learnButtonContainer: {
     backgroundColor: '#F5F5F5',
-    paddingHorizontal: 20,
+    paddingHorizontal: BANNER_MARGIN,
     paddingTop: 12,
     paddingBottom: 12,
     borderTopWidth: 1,
@@ -816,6 +822,7 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     width: '85%',
+    maxWidth: 400,
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 24,

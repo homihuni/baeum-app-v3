@@ -311,17 +311,20 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#FFFFFF',
   },
+  // 모달 오버레이
   modalOverlay: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.5)',
   },
+  // 태블릿 대응: 고정 280px → 화면 폭의 90%, 최대 400px
   modalBox: {
     backgroundColor: 'white',
     borderRadius: 16,
     padding: 24,
-    width: 280,
+    width: '90%',
+    maxWidth: 400,
     alignItems: 'center',
   },
   modalTitle: {

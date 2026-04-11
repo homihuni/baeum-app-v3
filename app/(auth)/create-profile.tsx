@@ -4,6 +4,7 @@ import SafeLayout from '../../components/SafeLayout';
 import { useRouter } from 'expo-router';
 import { createChild } from '../../utils/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { wp } from '../../utils/responsive';
 
 const AVATARS = [
   require('../../assets/images/avatar_01.png'),
@@ -37,6 +38,12 @@ const AVATARS = [
   require('../../assets/images/avatar_29.png'),
 ];
 const GRADES = [1, 2, 3, 4, 5, 6];
+
+// 아바타 버튼 크기: 화면 폭 15% 기준, 최대 72px (태블릿 대응)
+// - 375px 폰: 56px (기존과 동일), 768px 태블릿: 72px (터치 영역 확대)
+const AVATAR_BTN_SIZE = Math.min(wp(15), 72);
+// 아바타 이미지 크기: 버튼 크기의 71% (버튼 내부 여백 확보)
+const AVATAR_IMG_SIZE = Math.round(AVATAR_BTN_SIZE * 0.71);
 
 export default function CreateProfileScreen() {
   const router = useRouter();
@@ -175,8 +182,10 @@ export default function CreateProfileScreen() {
 }
 
 const styles = StyleSheet.create({
+  // 스크롤 — paddingHorizontal: wp(6) 반응형 (375px: 22px, 768px: 약 46px)
   scroll: {
-    padding: 24,
+    paddingHorizontal: wp(6),
+    paddingVertical: 24,
     paddingBottom: 40,
   },
   subtitle: {
@@ -201,10 +210,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
+  // 아바타 버튼 — AVATAR_BTN_SIZE 반응형 (375px: 56px, 768px: 72px)
   avatarBtn: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: AVATAR_BTN_SIZE,
+    height: AVATAR_BTN_SIZE,
+    borderRadius: AVATAR_BTN_SIZE / 2,
     backgroundColor: '#F5F5F5',
     justifyContent: 'center',
     alignItems: 'center',
@@ -215,10 +225,11 @@ const styles = StyleSheet.create({
     borderColor: '#7ED4C0',
     backgroundColor: '#E8F8F5',
   },
+  // 아바타 이미지 — AVATAR_IMG_SIZE (버튼 크기의 71%)
   avatarGridImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: AVATAR_IMG_SIZE,
+    height: AVATAR_IMG_SIZE,
+    borderRadius: AVATAR_IMG_SIZE / 2,
   },
 
   // 이름 입력

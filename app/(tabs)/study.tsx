@@ -7,6 +7,8 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
 import { resolveAvatar } from '../../utils/avatars';
 import { SUBJECT_ICONS, SUBJECT_LABELS } from '../../utils/subjects';
+import { Ionicons } from '@expo/vector-icons';
+import { wp } from '../../utils/responsive';
 
 const TIER_LABELS: Record<string, string> = { free: '무료회원', baeum: '배움회원', sky: '스카이회원' };
 
@@ -29,6 +31,8 @@ export default function StudyScreen() {
   const [childTier, setChildTier] = useState('free');
   const [subjects, setSubjects] = useState<string[]>([]);
   const [questionsPerSubject, setQuestionsPerSubject] = useState(3);
+  // 잠금 상태 (isLocked: true 또는 tier: "expired" 인 경우)
+  const [isLocked, setIsLocked] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -36,6 +40,7 @@ export default function StudyScreen() {
     }, [])
   );
 
+  // 자녀 데이터 로드 및 잠금 상태 체크
   const loadData = async () => {
     try {
       const parentId = await AsyncStorage.getItem('parentId');
@@ -58,6 +63,14 @@ export default function StudyScreen() {
           setChildAvatar(resolveAvatar(data.avatar));
           setChildName(data.name || '학생');
 
+          // 잠금 상태 체크: isLocked가 true이거나 tier가 expired이면 화면 차단
+          if (data.isLocked === true || data.tier === 'expired') {
+            setIsLocked(true);
+            return;
+          } else {
+            setIsLocked(false);
+          }
+
           if (data.tier) {
             setChildTier(data.tier);
             setQuestionsPerSubject(getQuestionsPerSubject(data.tier));
@@ -70,6 +83,25 @@ export default function StudyScreen() {
       console.log('Study data load error:', error);
     }
   };
+
+  // 잠긴 자녀 안내 화면
+  if (isLocked) {
+    return (
+      <SafeLayout showHeader headerTitle="학습플랜">
+        <View style={styles.lockedContainer}>
+          <Ionicons name="lock-closed" size={56} color="#9E9E9E" style={styles.lockedIcon} />
+          <Text style={styles.lockedTitle}>학습이 제한된 계정입니다</Text>
+          <Text style={styles.lockedSubtitle}>시리얼 번호를 등록하거나{'\n'}업그레이드하세요</Text>
+          <TouchableOpacity
+            style={styles.lockedButton}
+            onPress={() => router.push('/children/manage')}
+          >
+            <Text style={styles.lockedButtonText}>자녀관리로 이동</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeLayout>
+    );
+  }
 
   return (
     <SafeLayout showHeader headerTitle="학습플랜">
@@ -120,8 +152,46 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
     paddingBottom: 20,
   },
+  // 잠금 화면 — paddingHorizontal: wp(8) 반응형
+  lockedContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: wp(8),
+  },
+  lockedIcon: {
+    marginBottom: 20,
+  },
+  lockedTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333333',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  lockedSubtitle: {
+    fontSize: 14,
+    color: '#9E9E9E',
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 32,
+  },
+  lockedButton: {
+    backgroundColor: '#7ED4C0',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 40,
+    minWidth: 180,
+    alignItems: 'center',
+  },
+  lockedButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  // 일반 화면 — marginHorizontal: wp(5) 반응형
   profileCard: {
-    marginHorizontal: 20,
+    marginHorizontal: wp(5),
     marginTop: 16,
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
@@ -152,8 +222,9 @@ const styles = StyleSheet.create({
     color: '#9E9E9E',
     marginTop: 4,
   },
+  // 과목 카드 — marginHorizontal: wp(5) 반응형
   subjectCard: {
-    marginHorizontal: 20,
+    marginHorizontal: wp(5),
     marginTop: 12,
     backgroundColor: '#FFFFFF',
     borderRadius: 12,

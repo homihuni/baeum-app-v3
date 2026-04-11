@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { wp } from '../../utils/responsive';
 
 const SUBJECT_LABELS: Record<string,string> = {
   korean:'국어', math:'수학', integrated:'통합교과',
@@ -17,6 +18,8 @@ export default function GrowthScreen() {
   const [childName, setChildName] = useState('');
   const [tier, setTier] = useState('free');
   const [loading, setLoading] = useState(true);
+  // 잠금 상태 (isLocked: true 또는 tier: "expired" 인 경우)
+  const [isLocked, setIsLocked] = useState(false);
   const [todayStats, setTodayStats] = useState<Record<string,{correct:number,wrong:number}>>({});
   const [monthlyStats, setMonthlyStats] = useState({accessDays:0,totalProblems:0,correctCount:0,average:0});
   const [streakDays, setStreakDays] = useState(0);
@@ -32,6 +35,7 @@ export default function GrowthScreen() {
     }, [])
   );
 
+  // 자녀 데이터 로드 및 잠금 상태 체크
   const loadData = async () => {
     try {
       const parentId = await AsyncStorage.getItem('parentId');
@@ -44,6 +48,15 @@ export default function GrowthScreen() {
       if (childDoc.exists()) {
         const childData = childDoc.data();
         if (childData.name) setChildName(childData.name);
+
+        // 잠금 상태 체크: isLocked가 true이거나 tier가 expired이면 화면 차단
+        if (childData.isLocked === true || childData.tier === 'expired') {
+          setIsLocked(true);
+          return;
+        } else {
+          setIsLocked(false);
+        }
+
         if (childData.tier) {
           currentTier = childData.tier;
           setTier(childData.tier);
@@ -314,10 +327,30 @@ export default function GrowthScreen() {
     }
   };
 
+  // 로딩 화면
   if (loading) {
     return (
       <SafeLayout showHeader headerTitle="성장 리포트">
         <ActivityIndicator size="large" color="#7ED4C0" style={{marginTop: 100}} />
+      </SafeLayout>
+    );
+  }
+
+  // 잠긴 자녀 안내 화면
+  if (isLocked) {
+    return (
+      <SafeLayout showHeader headerTitle="성장 리포트">
+        <View style={styles.lockedContainer}>
+          <Ionicons name="lock-closed" size={56} color="#9E9E9E" style={styles.lockedIcon} />
+          <Text style={styles.lockedTitle}>학습이 제한된 계정입니다</Text>
+          <Text style={styles.lockedSubtitle}>시리얼 번호를 등록하거나{'\n'}업그레이드하세요</Text>
+          <TouchableOpacity
+            style={styles.lockedButton}
+            onPress={() => router.push('/children/manage')}
+          >
+            <Text style={styles.lockedButtonText}>자녀관리로 이동</Text>
+          </TouchableOpacity>
+        </View>
       </SafeLayout>
     );
   }
@@ -393,7 +426,7 @@ export default function GrowthScreen() {
           </Text>
         </View>
 
-        {/* 버튼들 */}
+        {/* 버튼들 — marginHorizontal: wp(4) 반응형 */}
         <TouchableOpacity style={styles.reportBtn} onPress={handleReportPress}>
           <Text style={styles.reportText}>상세 리포트 보기</Text>
         </TouchableOpacity>
@@ -434,8 +467,47 @@ export default function GrowthScreen() {
 }
 
 const styles = StyleSheet.create({
-  scroll: { padding: 20, paddingBottom: 100 },
+  // 스크롤 — paddingHorizontal: wp(5) 반응형
+  scroll: { paddingHorizontal: wp(5), paddingTop: 20, paddingBottom: 100 },
   subtitle: { fontSize: 14, color: '#666', marginBottom: 16 },
+
+  // 잠금 화면 — paddingHorizontal: wp(8) 반응형
+  lockedContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: wp(8),
+  },
+  lockedIcon: {
+    marginBottom: 20,
+  },
+  lockedTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333333',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  lockedSubtitle: {
+    fontSize: 14,
+    color: '#9E9E9E',
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 32,
+  },
+  lockedButton: {
+    backgroundColor: '#7ED4C0',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 40,
+    minWidth: 180,
+    alignItems: 'center',
+  },
+  lockedButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
 
   // AI 카드
   aiCard: { backgroundColor: '#F8F9FA', borderRadius: 12, padding: 16, marginBottom: 12 },
@@ -485,15 +557,15 @@ const styles = StyleSheet.create({
   streakValueSmall: { fontSize: 18, fontWeight: 'bold', color: '#FF9800', textAlign: 'center', marginTop: 4 },
   streakSubSmall: { fontSize: 12, color: '#666', textAlign: 'center', marginTop: 6 },
 
-  // 버튼
-  reportBtn: { backgroundColor: '#7ED4C0', borderRadius: 12, paddingVertical: 14, marginHorizontal: 16, alignItems: 'center', marginBottom: 10, marginTop: 8 },
+  // 버튼 — marginHorizontal: wp(4) 반응형
+  reportBtn: { backgroundColor: '#7ED4C0', borderRadius: 12, paddingVertical: 14, marginHorizontal: wp(4), alignItems: 'center', marginBottom: 10, marginTop: 8 },
   reportText: { fontSize: 16, fontWeight: 'bold', color: '#FFFFFF' },
-  membershipBtn: { backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: '#7ED4C0', borderRadius: 12, paddingVertical: 14, marginHorizontal: 16, alignItems: 'center', marginBottom: 20 },
+  membershipBtn: { backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: '#7ED4C0', borderRadius: 12, paddingVertical: 14, marginHorizontal: wp(4), alignItems: 'center', marginBottom: 20 },
   membershipText: { fontSize: 16, fontWeight: 'bold', color: '#7ED4C0' },
 
   // 모달
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-  modalContent: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 32, width: '80%', alignItems: 'center' },
+  modalContent: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 32, width: '90%', maxWidth: 400, alignItems: 'center' },
   modalMessage: { fontSize: 15, color: '#333', textAlign: 'center', lineHeight: 24, marginBottom: 24 },
   modalButton: { backgroundColor: '#7ED4C0', borderRadius: 12, paddingVertical: 14, paddingHorizontal: 40 },
   modalButtonText: { fontSize: 16, fontWeight: 'bold', color: '#FFFFFF' },

@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { db } from '@/utils/firebase';
 import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
+import { hp, wp } from '@/utils/responsive';
 
 interface RecordData {
   date: string;
@@ -49,6 +50,16 @@ const subjectNames: Record<string, string> = {
   social: '사회',
   english: '영어',
 };
+
+// 차트 높이: 화면 높이 비율 기반, 최대 300px (태블릿 대응)
+// - 812px iPhone: 220px (기존과 동일), 1024px iPad: 275px
+const CHART_CONTAINER_HEIGHT = Math.min(hp(220), 300);
+// 막대 컨테이너 높이: 차트에서 상단 여백(20px) 제외
+const BARS_CONTAINER_HEIGHT = CHART_CONTAINER_HEIGHT - 20;
+// 막대 최대 높이: 컨테이너에서 paddingTop(20px) 제외
+const BAR_MAX_HEIGHT = BARS_CONTAINER_HEIGHT - 20;
+// 눈금선 간격: 막대 최대 높이를 4등분 (25% 단위)
+const GRID_STEP = Math.round(BAR_MAX_HEIGHT / 4);
 
 export default function ReportScreen() {
   const [loading, setLoading] = useState(true);
@@ -212,7 +223,8 @@ export default function ReportScreen() {
             <View style={styles.gridLine0} />
             <View style={styles.barsContainer}>
               {monthlyData.map((data, index) => {
-                const height = (data.rate / 100) * 180;
+                // 막대 높이: 정답률 × BAR_MAX_HEIGHT (화면 비율 기반 반응형)
+                const height = (data.rate / 100) * BAR_MAX_HEIGHT;
                 return (
                   <View key={index} style={styles.barWrapper}>
                     {data.rate > 0 ? (
@@ -463,17 +475,19 @@ const styles = StyleSheet.create({
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   scrollView: { flex: 1 },
   scrollContent: { paddingBottom: 20 },
+  // 카드 — marginHorizontal: wp(4) 반응형 (375px: 15px, 768px: 31px)
   card: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 16,
-    marginHorizontal: 16,
+    marginHorizontal: wp(4),
     marginTop: 16,
     marginBottom: 0,
   },
   sectionTitle: { fontSize: 16, fontWeight: 'bold', color: '#333', marginBottom: 16 },
   subtitle: { fontSize: 12, color: '#999', marginBottom: 16, marginTop: -12 },
-  chartContainer: { flexDirection: 'row', height: 220 },
+  // 차트 컨테이너 — CHART_CONTAINER_HEIGHT 반응형 (812px: 220px, 1024px iPad: 275px)
+  chartContainer: { flexDirection: 'row', height: CHART_CONTAINER_HEIGHT },
   yAxisLabels: {
     width: 40,
     justifyContent: 'space-between',
@@ -482,6 +496,7 @@ const styles = StyleSheet.create({
   },
   yAxisLabel: { fontSize: 10, color: '#999', textAlign: 'right' },
   chartContent: { flex: 1, position: 'relative' },
+  // 눈금선 — top 값은 GRID_STEP 기반 동적 계산
   gridLine100: {
     position: 'absolute',
     top: 10,
@@ -493,7 +508,7 @@ const styles = StyleSheet.create({
   },
   gridLine75: {
     position: 'absolute',
-    top: 55,
+    top: 10 + GRID_STEP,
     left: 0,
     right: 0,
     borderTopWidth: 1,
@@ -502,7 +517,7 @@ const styles = StyleSheet.create({
   },
   gridLine50: {
     position: 'absolute',
-    top: 100,
+    top: 10 + 2 * GRID_STEP,
     left: 0,
     right: 0,
     borderTopWidth: 1,
@@ -511,7 +526,7 @@ const styles = StyleSheet.create({
   },
   gridLine25: {
     position: 'absolute',
-    top: 145,
+    top: 10 + 3 * GRID_STEP,
     left: 0,
     right: 0,
     borderTopWidth: 1,
@@ -520,17 +535,18 @@ const styles = StyleSheet.create({
   },
   gridLine0: {
     position: 'absolute',
-    top: 190,
+    top: 10 + 4 * GRID_STEP,
     left: 0,
     right: 0,
     borderTopWidth: 1,
     borderTopColor: '#E8E8E8',
   },
+  // 막대 컨테이너 — BARS_CONTAINER_HEIGHT 반응형
   barsContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'space-around',
-    height: 200,
+    height: BARS_CONTAINER_HEIGHT,
     paddingTop: 20,
   },
   barWrapper: { alignItems: 'center', flex: 1 },
@@ -569,11 +585,12 @@ const styles = StyleSheet.create({
   summaryValue: { fontSize: 24, fontWeight: 'bold', color: '#333', marginBottom: 4 },
   summaryLabel: { fontSize: 11, color: '#999' },
   aiText: { fontSize: 14, lineHeight: 22, color: '#444' },
+  // 팁 카드 — marginHorizontal: wp(4) 반응형
   tipsCard: {
     backgroundColor: '#F0F8FF',
     borderRadius: 12,
     padding: 16,
-    marginHorizontal: 16,
+    marginHorizontal: wp(4),
     marginTop: 16,
     marginBottom: 20,
     borderWidth: 1,
@@ -590,11 +607,12 @@ const styles = StyleSheet.create({
   },
   tipsBadgeText: { fontSize: 11, color: '#1976D2' },
   tipsText: { fontSize: 14, lineHeight: 24, color: '#333' },
+  // 잠금 카드 — marginHorizontal: wp(4) 반응형
   lockCard: {
     backgroundColor: '#F8F8F8',
     borderRadius: 12,
     padding: 20,
-    marginHorizontal: 16,
+    marginHorizontal: wp(4),
     marginTop: 16,
     marginBottom: 20,
     alignItems: 'center',
