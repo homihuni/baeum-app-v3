@@ -30,7 +30,6 @@ const getTodaySeed = (subject: string) => {
   const kstTime = now.getTime() + (9 * 60 * 60 * 1000);
   const kstDate = new Date(kstTime);
   const dateStr = kstDate.getUTCFullYear() + '' + String(kstDate.getUTCMonth() + 1).padStart(2, '0') + String(kstDate.getUTCDate()).padStart(2, '0');
-  // 날짜 + 과목을 조합하여 시드 생성 (같은 날이라도 과목별로 다른 문제 세트)
   let hash = 0;
   const seedStr = dateStr + subject;
   for (let i = 0; i < seedStr.length; i++) {
@@ -80,7 +79,6 @@ export default function QuestionsScreen() {
           return;
         }
 
-        // Firestore 문서를 앱에서 사용하는 형태로 변환
         const allProblems = snap.docs.map(doc => {
           const data = doc.data();
           return {
@@ -92,19 +90,19 @@ export default function QuestionsScreen() {
             questionType: data.type === 'multiple_choice' ? 'mcq' : data.type === 'ox' ? 'ox' : data.type === 'short_answer' ? 'short_answer' : 'subjective',
             difficulty: data.difficulty || 'medium',
             unit: data.unit || '',
+            visualType: data.visual_type || null,
+            visualData: typeof data.visual_data === 'string' ? JSON.parse(data.visual_data) : (data.visual_data || null),
+
           };
         });
 
-        // short_answer 포함, subjective만 제외
         const filtered = allProblems.filter(p => p.questionType !== 'subjective');
         console.log('필터 후 문제 수:', filtered.length);
 
-        // 날짜 기반 시드 셔플 (같은 날 = 같은 순서, 다른 날 = 다른 순서)
         const todaySeed = getTodaySeed(subject);
         console.log('오늘 시드:', todaySeed, '과목:', subject);
         const shuffled = seededShuffle(filtered, todaySeed);
 
-        // 티어별 문제 수 제한
         const maxQuestions = tier === 'sky' ? 10 : tier === 'baeum' ? 5 : 3;
         console.log('tier:', tier, 'maxQuestions:', maxQuestions);
 
@@ -161,7 +159,6 @@ export default function QuestionsScreen() {
       const parentId = await AsyncStorage.getItem('parentId');
       const childId = await AsyncStorage.getItem('childId');
       if (parentId && childId) {
-        // 한국 시간(KST, UTC+9) 기준 날짜 생성
         const now = new Date();
         const kstTime = now.getTime() + (9 * 60 * 60 * 1000);
         const kstDate = new Date(kstTime);
@@ -229,6 +226,110 @@ export default function QuestionsScreen() {
     setShowExitModal(false);
   };
 
+  // ★ 비주얼 힌트 렌더링 함수
+  const renderVisualHint = () => {
+    if (!currentProblem.visualData) return null;
+    const vd = currentProblem.visualData;
+
+    return (
+      <View style={styles.visualBox}>
+        {/* 캐릭터 (인사 장면 등) */}
+        {vd.characters && Array.isArray(vd.characters) && (
+          <View style={styles.visualCharRow}>
+            {vd.characters.map((c: any, i: number) => (
+              <View key={i} style={styles.visualCharItem}>
+                <Text style={styles.visualCharEmoji}>{c.emoji || '👤'}</Text>
+                <Text style={styles.visualCharName}>{c.name || ''}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* 단일 이모지 (비, 날씨 등) */}
+        {vd.emoji && !vd.characters && (
+          <Text style={styles.visualSingleEmoji}>{vd.emoji}</Text>
+        )}
+
+        {/* 이미지 매칭 카드 (그림-낱말) */}
+        {vd.items && Array.isArray(vd.items) && (
+          <View style={styles.visualCardRow}>
+            {vd.items.map((item: any, i: number) => (
+              <View key={i} style={styles.visualCard}>
+                <Text style={styles.visualCardEmoji}>{item.emoji || ''}</Text>
+                <View style={styles.visualCardLabelBox}>
+                  <Text style={styles.visualCardLabel}>{item.label || ''}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* 글자 비교 (달 vs 딸) */}
+        {vd.word_left && vd.word_right && (
+          <View style={styles.visualCompareRow}>
+            <View style={styles.visualCompareBox}>
+              <Text style={styles.visualCompareBigText}>{vd.word_left}</Text>
+            </View>
+            <Text style={styles.visualCompareVs}>VS</Text>
+            <View style={styles.visualCompareBox}>
+              <Text style={styles.visualCompareBigText}>{vd.word_right}</Text>
+            </View>
+          </View>
+        )}
+
+        {/* 문장 말풍선 (또박또박 읽기) */}
+        {vd.sentence && (
+          <View style={styles.visualBubble}>
+            <Text style={styles.visualBubbleText}>{vd.sentence}</Text>
+          </View>
+        )}
+
+        {/* 모음자 원형 (ㅛ 등) */}
+        {vd.vowel && (
+          <View style={styles.visualVowelCircle}>
+            <Text style={styles.visualVowelText}>{vd.vowel}</Text>
+          </View>
+        )}
+
+        {/* 낱말 카드 하이라이트 (나무 → '나' 강조) */}
+        {vd.word && !vd.word_left && (
+          <View style={styles.visualWordRow}>
+            {vd.word.split('').map((char: string, i: number) => {
+              const isHL = char === vd.highlight_syllable;
+              return (
+                <View key={i} style={[styles.visualWordBox, isHL && styles.visualWordBoxHL]}>
+                  <Text style={[styles.visualWordChar, isHL && styles.visualWordCharHL]}>{char}</Text>
+                </View>
+              );
+            })}
+          </View>
+        )}
+
+        {/* 문장 템플릿 (빈칸 채우기) */}
+        {vd.sentence_template && !vd.word_left && !vd.sentence && (
+          <View style={styles.visualTemplateBox}>
+            {vd.example_sentence && (
+              <View style={styles.visualExampleRow}>
+                <Text style={styles.visualExampleLabel}>보기</Text>
+                <Text style={styles.visualExampleText}>
+                  {vd.example_emoji || ''} {vd.example_sentence}
+                </Text>
+              </View>
+            )}
+            <Text style={styles.visualTemplateText}>
+              {vd.target_emoji || ''} {vd.sentence_template}
+            </Text>
+          </View>
+        )}
+
+        {/* 장면 설명 */}
+        {vd.scene_description && (
+          <Text style={styles.visualDesc}>{vd.scene_description}</Text>
+        )}
+      </View>
+    );
+  };
+
   if (problems.length === 0) {
     return (
       <SafeAreaView style={styles.container}>
@@ -258,6 +359,9 @@ export default function QuestionsScreen() {
       <ScrollView style={styles.scrollArea} contentContainerStyle={styles.scrollContent}>
         <Text style={styles.questionLabel}>Q{currentIndex + 1}</Text>
         <Text style={styles.questionText}>{String(currentProblem.question)}</Text>
+
+        {/* ★ 비주얼 힌트 영역 */}
+        {renderVisualHint()}
 
         {currentProblem.questionType === 'short_answer' ? (
           <View style={styles.shortAnswerContainer}>
@@ -420,4 +524,36 @@ const styles = StyleSheet.create({
   shortAnswerLabel: { fontSize: 14, color: '#7ED4C0', fontWeight: 'bold', marginBottom: 12 },
   shortAnswerInput: { borderWidth: 2, borderColor: '#7ED4C0', borderRadius: 12, padding: 16, fontSize: 18, color: '#333', backgroundColor: '#FFFFFF' },
   shortAnswerInputDisabled: { backgroundColor: '#F5F5F5', borderColor: '#E0E0E0', color: '#999' },
+
+  // ★ 비주얼 힌트 스타일
+  visualBox: { backgroundColor: '#F8FFFE', borderRadius: 16, padding: 16, marginBottom: 20, alignItems: 'center', borderWidth: 1, borderColor: '#E0F2F1' },
+  visualCharRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 40 },
+  visualCharItem: { alignItems: 'center' },
+  visualCharEmoji: { fontSize: 40 },
+  visualCharName: { fontSize: 13, fontWeight: 'bold', color: '#555', marginTop: 4 },
+  visualSingleEmoji: { fontSize: 48, textAlign: 'center' },
+  visualCardRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 12 },
+  visualCard: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 10, alignItems: 'center', borderWidth: 1, borderColor: '#E0E0E0', minWidth: 75 },
+  visualCardEmoji: { fontSize: 30 },
+  visualCardLabelBox: { backgroundColor: '#7ED4C0', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 3, marginTop: 6 },
+  visualCardLabel: { fontSize: 11, fontWeight: 'bold', color: '#FFFFFF' },
+  visualCompareRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 16 },
+  visualCompareBox: { backgroundColor: '#FFFFFF', borderRadius: 12, width: 72, height: 72, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#B39DDB' },
+  visualCompareBigText: { fontSize: 34, fontWeight: 'bold', color: '#333' },
+  visualCompareVs: { fontSize: 16, fontWeight: 'bold', color: '#9E9E9E' },
+  visualBubble: { backgroundColor: '#FFFFFF', borderRadius: 16, paddingHorizontal: 20, paddingVertical: 12, borderWidth: 1.5, borderColor: '#FFD54F' },
+  visualBubbleText: { fontSize: 16, fontWeight: 'bold', color: '#333', textAlign: 'center' },
+  visualVowelCircle: { backgroundColor: '#FFFFFF', borderRadius: 40, width: 80, height: 80, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#B39DDB' },
+  visualVowelText: { fontSize: 36, fontWeight: 'bold', color: '#7C4DFF' },
+  visualWordRow: { flexDirection: 'row', justifyContent: 'center', gap: 10 },
+  visualWordBox: { backgroundColor: '#FFFFFF', borderRadius: 10, width: 52, height: 58, justifyContent: 'center', alignItems: 'center', borderWidth: 1.5, borderColor: '#B0BEC5' },
+  visualWordBoxHL: { backgroundColor: '#FF8A65', borderColor: '#FF5722' },
+  visualWordChar: { fontSize: 26, fontWeight: 'bold', color: '#333' },
+  visualWordCharHL: { color: '#FFFFFF' },
+  visualTemplateBox: { width: '100%' },
+  visualExampleRow: { backgroundColor: '#FFFFFF', borderRadius: 10, padding: 10, marginBottom: 8, borderWidth: 1, borderColor: '#81C784' },
+  visualExampleLabel: { fontSize: 11, fontWeight: 'bold', color: '#81C784', marginBottom: 2 },
+  visualExampleText: { fontSize: 14, color: '#333' },
+  visualTemplateText: { fontSize: 15, fontWeight: 'bold', color: '#333', textAlign: 'center', marginTop: 4 },
+  visualDesc: { fontSize: 12, color: '#999', textAlign: 'center', marginTop: 8 },
 });
