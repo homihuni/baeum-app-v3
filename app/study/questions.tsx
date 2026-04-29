@@ -233,22 +233,57 @@ export default function QuestionsScreen() {
 
     return (
       <View style={styles.visualBox}>
-        {/* 캐릭터 (인사 장면 등) */}
-        {vd.characters && Array.isArray(vd.characters) && (
-          <View style={styles.visualCharRow}>
-            {vd.characters.map((c: any, i: number) => (
-              <View key={i} style={styles.visualCharItem}>
-                <Text style={styles.visualCharEmoji}>{c.emoji || '👤'}</Text>
-                <Text style={styles.visualCharName}>{c.name || ''}</Text>
-              </View>
-            ))}
+        {/* 캐릭터 (인사 장면 등) + 확장 렌더링 */}
+{vd.characters && Array.isArray(vd.characters) && (
+  <View style={{ alignItems: 'center', width: '100%' }}>
+    {/* 칠판/강조 텍스트 (핵심 글자) */}
+    {(vd.board_text || vd.highlight_text) && (
+      <View style={{
+        backgroundColor: '#2E4A3E', borderRadius: 12, paddingHorizontal: 24,
+        paddingVertical: 14, marginBottom: 12, borderWidth: 2, borderColor: '#8B6914'
+      }}>
+        <Text style={{ fontSize: 36, fontWeight: 'bold', color: '#FFFFFF', textAlign: 'center' }}>
+          {vd.board_text || vd.highlight_text}
+        </Text>
+      </View>
+    )}
+
+    {/* 캐릭터 이모지 + 이름 */}
+    <View style={styles.visualCharRow}>
+      {vd.characters.map((c: any, i: number) => (
+        <View key={i} style={styles.visualCharItem}>
+          <Text style={styles.visualCharEmoji}>{c.emoji || '👤'}</Text>
+          <Text style={styles.visualCharName}>{c.name || ''}</Text>
+        </View>
+      ))}
+    </View>
+
+    {/* 말풍선 */}
+    {(vd.speech_bubble || vd.dialogue) && (
+      <View style={{
+        backgroundColor: '#FFFFFF', borderRadius: 16, paddingHorizontal: 16,
+        paddingVertical: 10, marginTop: 10, borderWidth: 1.5, borderColor: '#7ED4C0',
+        maxWidth: '90%'
+      }}>
+        <Text style={{ fontSize: 13, color: '#333', textAlign: 'center', lineHeight: 20 }}>
+          💬 {vd.speech_bubble || vd.dialogue}
+        </Text>
+      </View>
+    )}
+  </View>
+)}
+
+
+                {/* 단일/복수 이모지 (비, 날씨 등) */}
+        {(vd.emoji || vd.emojis) && !vd.characters && !vd.items && (
+          <View style={{ alignItems: 'center' }}>
+            <Text style={styles.visualSingleEmoji}>{vd.emoji || vd.emojis}</Text>
+            {vd.description && (
+              <Text style={{ fontSize: 12, color: '#666', marginTop: 4 }}>{vd.description}</Text>
+            )}
           </View>
         )}
 
-        {/* 단일 이모지 (비, 날씨 등) */}
-        {vd.emoji && !vd.characters && (
-          <Text style={styles.visualSingleEmoji}>{vd.emoji}</Text>
-        )}
 
         {/* 이미지 매칭 카드 (그림-낱말) */}
         {vd.items && Array.isArray(vd.items) && (
@@ -319,6 +354,72 @@ export default function QuestionsScreen() {
             <Text style={styles.visualTemplateText}>
               {vd.target_emoji || ''} {vd.sentence_template}
             </Text>
+          </View>
+        )}
+        {/* 화살표 변환 (바 → 밥, 7 → 3과4) */}
+        {vd.before && vd.after && !vd.word_left && (
+          <View style={styles.visualCompareRow}>
+            <View style={styles.visualCompareBox}>
+              <Text style={styles.visualCompareBigText}>{vd.before}</Text>
+            </View>
+            <View style={{ alignItems: 'center' }}>
+              <Text style={{ fontSize: 20 }}>→</Text>
+              {vd.arrow_label && (
+                <Text style={{ fontSize: 10, color: '#999', marginTop: 2 }}>{vd.arrow_label}</Text>
+              )}
+            </View>
+            <View style={styles.visualCompareBox}>
+              <Text style={styles.visualCompareBigText}>{vd.after}</Text>
+            </View>
+          </View>
+        )}
+
+        {/* 자음 조합 박스 (ㄱ+ㅏ+ㄹ = 갈) */}
+        {vd.letters && Array.isArray(vd.letters) && (
+          <View style={{ alignItems: 'center' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              {vd.letters.map((letter: string, i: number) => (
+                <View key={i} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <View style={[styles.visualCompareBox, { width: 52, height: 52 }]}>
+                    <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#333' }}>{letter}</Text>
+                  </View>
+                  {i < vd.letters.length - 1 && (
+                    <Text style={{ fontSize: 16, color: '#999', marginHorizontal: 2 }}>+</Text>
+                  )}
+                </View>
+              ))}
+              {vd.result && (
+                <>
+                  <Text style={{ fontSize: 18, color: '#999', marginHorizontal: 6 }}>=</Text>
+                  <View style={[styles.visualCompareBox, { width: 56, height: 56, borderColor: '#4CAF50', borderWidth: 2 }]}>
+                    <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#4CAF50' }}>{vd.result}</Text>
+                  </View>
+                </>
+              )}
+            </View>
+          </View>
+        )}
+
+        {/* 선 잇기 (match_line) */}
+        {vd.left_items && vd.right_items && (
+          <View style={{ flexDirection: 'row', justifyContent: 'space-around', width: '100%', paddingHorizontal: 10 }}>
+            <View style={{ gap: 10 }}>
+              {vd.left_items.map((item: string, i: number) => (
+                <View key={i} style={[styles.visualCard, { minWidth: 80 }]}>
+                  <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#333', textAlign: 'center' }}>{item}</Text>
+                </View>
+              ))}
+            </View>
+            <View style={{ justifyContent: 'center' }}>
+              <Text style={{ fontSize: 24, color: '#BDBDBD' }}>⟷</Text>
+            </View>
+            <View style={{ gap: 10 }}>
+              {vd.right_items.map((item: string, i: number) => (
+                <View key={i} style={[styles.visualCard, { minWidth: 80 }]}>
+                  <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#333', textAlign: 'center' }}>{item}</Text>
+                </View>
+              ))}
+            </View>
           </View>
         )}
 
