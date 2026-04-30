@@ -1,41 +1,55 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, Image,
-  Animated, Dimensions, ActivityIndicator
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Image,
+  TextInput,
+  ImageBackground,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  ActivityIndicator,
+  Dimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
 import {
-  GoogleAuthProvider, signInWithCredential, auth,
-  doc, getDoc, setDoc, db
+  GoogleAuthProvider,
+  signInWithCredential,
+  auth,
+  doc,
+  getDoc,
+  setDoc,
+  db,
 } from '../../utils/firebase';
 
 WebBrowser.maybeCompleteAuthSession();
 
-const { width, height } = Dimensions.get('window');
-const LINE1 = ['제', '철'];
-const LINE2 = ['배', '움', '초', '등'];
-const ALL_CHARS = [...LINE1, ...LINE2];
+const { height } = Dimensions.get('window');
 
 export default function LoginScreen() {
+  // 입력값 상태
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const charAnims = useRef(ALL_CHARS.map(() => new Animated.Value(0))).current;
-  const charScales = useRef(ALL_CHARS.map(() => new Animated.Value(0))).current;
-
-  // ✅ redirectUri 정확히 설정
+  // 구글 로그인 설정
   const [request, response, promptAsync] = Google.useAuthRequest({
-  webClientId: '184542935339-u5fljb9lmisij3vs31favhpqag6u4r15.apps.googleusercontent.com',
-  androidClientId: '184542935339-u5fljb9lmisij3vs31favhpqag6u4r15.apps.googleusercontent.com',
-  iosClientId: '184542935339-u5fljb9lmisij3vs31favhpqag6u4r15.apps.googleusercontent.com',
-  redirectUri: 'https://auth.expo.io/@dknp/bolt-expo-nativewind',
-});
+    webClientId: '184542935339-u5fljb9lmisij3vs31favhpqag6u4r15.apps.googleusercontent.com',
+    androidClientId: '184542935339-u5fljb9lmisij3vs31favhpqag6u4r15.apps.googleusercontent.com',
+    iosClientId: '184542935339-u5fljb9lmisij3vs31favhpqag6u4r15.apps.googleusercontent.com',
+    redirectUri: 'https://auth.expo.io/@dknp/bolt-expo-nativewind',
+  });
 
-
-  // 구글 로그인 응답 처리
+  // 구글 응답 처리
   useEffect(() => {
     if (response?.type === 'success') {
       const { id_token } = response.params;
@@ -88,54 +102,7 @@ export default function LoginScreen() {
     }
   };
 
-  // 텍스트 애니메이션
-  useEffect(() => {
-    const animations = ALL_CHARS.map((_, index) =>
-      Animated.sequence([
-        Animated.delay(index * 120),
-        Animated.parallel([
-          Animated.spring(charScales[index], {
-            toValue: 1,
-            friction: 4,
-            tension: 80,
-            useNativeDriver: true,
-          }),
-          Animated.timing(charAnims[index], {
-            toValue: 1,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-        ]),
-      ])
-    );
-
-    Animated.sequence([
-      Animated.delay(300),
-      Animated.parallel(animations),
-    ]).start(() => {
-      Animated.loop(
-        Animated.sequence([
-          Animated.delay(2000),
-          ...ALL_CHARS.map((_, i) =>
-            Animated.sequence([
-              Animated.timing(charScales[i], {
-                toValue: 1.08,
-                duration: 150,
-                useNativeDriver: true,
-              }),
-              Animated.spring(charScales[i], {
-                toValue: 1,
-                friction: 4,
-                tension: 80,
-                useNativeDriver: true,
-              }),
-            ])
-          ),
-        ])
-      ).start();
-    });
-  }, []);
-
+  // 구글 로그인 버튼
   const handleGoogleLogin = async () => {
     if (loading) return;
     try {
@@ -152,6 +119,27 @@ export default function LoginScreen() {
     }
   };
 
+  // 이메일 로그인 (임시)
+  const handleEmailLogin = async () => {
+    if (loading) return;
+    if (!email || !password) {
+      setError('이메일과 비밀번호를 입력해주세요.');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      await AsyncStorage.setItem('parentId', 'test-parent-001');
+      await AsyncStorage.setItem('loginType', 'email');
+      await AsyncStorage.setItem('parentEmail', email);
+      router.replace('/(auth)/select-child');
+    } catch (e) {
+      setError('로그인 중 오류가 발생했습니다');
+      setLoading(false);
+    }
+  };
+
+  // 소셜/테스트 로그인
   const handleTestLogin = async (loginType: string) => {
     if (loading) return;
     setLoading(true);
@@ -166,105 +154,182 @@ export default function LoginScreen() {
     }
   };
 
-  const renderChar = (char: string, index: number) => (
-    <Animated.Text
-      key={index}
-      style={[
-        styles.titleChar,
-        {
-          opacity: charAnims[index],
-          transform: [
-            { scale: charScales[index] },
-            {
-              translateY: charAnims[index].interpolate({
-                inputRange: [0, 1],
-                outputRange: [40, 0],
-              }),
-            },
-          ],
-        },
-      ]}
-    >
-      {char}
-    </Animated.Text>
-  );
-
   return (
     <View style={styles.container}>
-
-      {/* 배경 이미지 */}
-      <Image
-        source={require('../../assets/images/login_bg.png')}
-        style={styles.bgImage}
+      {/* 상단: 캐릭터 배경 이미지 */}
+      <ImageBackground
+        source={require('../../assets/images/Mobile_app_login_bg.png')}
+        style={styles.heroSection}
         resizeMode="cover"
-      />
+      >
+        <SafeAreaView edges={['top']} style={styles.heroSafe} />
+      </ImageBackground>
 
-      {/* 애니메이션 타이틀 */}
-      <View style={styles.titleArea}>
-        <View style={styles.titleRow}>
-          {LINE1.map((char, index) => renderChar(char, index))}
-        </View>
-        <View style={styles.titleRow}>
-          {LINE2.map((char, index) => renderChar(char, LINE1.length + index))}
-        </View>
-      </View>
+      {/* 하단: 로그인 폼 카드 */}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.formWrapper}
+      >
+        <ScrollView
+          contentContainerStyle={styles.formCard}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* 환영 메시지 (한 줄) */}
+          <Text style={styles.welcomeText}>
+            <Text style={styles.welcomeBrand}>제철배움학습</Text>
+            <Text>에 오신 것을 환영합니다!</Text>
+          </Text>
 
-      {/* ✅ 소셜 버튼 — 투명 오버레이 (이미지 파일 불필요) */}
-      <View style={styles.buttonArea}>
-        {/* 구글 */}
-        <TouchableOpacity
-          style={styles.socialTouch}
-          onPress={handleGoogleLogin}
-          disabled={loading}
-          activeOpacity={0.7}
-        />
-        {/* 애플 */}
-        <TouchableOpacity
-          style={styles.socialTouch}
-          onPress={() => handleTestLogin('apple')}
-          disabled={loading}
-          activeOpacity={0.7}
-        />
-        {/* 카카오 */}
-        <TouchableOpacity
-          style={styles.socialTouch}
-          onPress={() => handleTestLogin('kakao')}
-          disabled={loading}
-          activeOpacity={0.7}
-        />
-        {/* 네이버 */}
-        <TouchableOpacity
-          style={styles.socialTouch}
-          onPress={() => handleTestLogin('naver')}
-          disabled={loading}
-          activeOpacity={0.7}
-        />
-      </View>
+          {/* 이메일 입력 */}
+          <View style={styles.inputBox}>
+            <Ionicons name="mail-outline" size={18} color="#999" />
+            <TextInput
+              style={styles.input}
+              placeholder="이메일을 입력하세요"
+              placeholderTextColor="#BBB"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              editable={!loading}
+            />
+          </View>
 
-      {/* ✅ 로딩 오버레이 — pointerEvents="none" 으로 터치 차단 없음 */}
+          {/* 비밀번호 입력 */}
+          <View style={styles.inputBox}>
+            <Ionicons name="lock-closed-outline" size={18} color="#999" />
+            <TextInput
+              style={styles.input}
+              placeholder="비밀번호를 입력하세요"
+              placeholderTextColor="#BBB"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              editable={!loading}
+            />
+            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+              <Ionicons
+                name={showPassword ? 'eye-outline' : 'eye-off-outline'}
+                size={18}
+                color="#999"
+              />
+            </TouchableOpacity>
+          </View>
+
+          {/* 로그인 버튼 */}
+          <TouchableOpacity
+            style={[styles.loginButton, loading && { opacity: 0.6 }]}
+            onPress={handleEmailLogin}
+            disabled={loading}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.loginButtonText}>로그인</Text>
+          </TouchableOpacity>
+
+          {/* 에러 메시지 */}
+          {error !== '' && (
+            <TouchableOpacity
+              style={styles.errorBox}
+              onPress={() => setError('')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.errorText}>{error}</Text>
+            </TouchableOpacity>
+          )}
+
+          {/* 간편 로그인 구분선 */}
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>간편 로그인</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          {/* 소셜 로그인 4개: 카카오 / 네이버 / 구글 / 애플 */}
+          <View style={styles.socialRow}>
+            {/* 카카오 */}
+            <TouchableOpacity
+              style={styles.socialItem}
+              onPress={() => handleTestLogin('kakao')}
+              disabled={loading}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.socialButton, { backgroundColor: '#FEE500' }]}>
+                <Ionicons name="chatbubble" size={24} color="#000" />
+              </View>
+              <Text style={styles.socialLabel}>카카오</Text>
+            </TouchableOpacity>
+
+            {/* 네이버 */}
+            <TouchableOpacity
+              style={styles.socialItem}
+              onPress={() => handleTestLogin('naver')}
+              disabled={loading}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.socialButton, { backgroundColor: '#03C75A' }]}>
+                <Text style={styles.naverN}>N</Text>
+              </View>
+              <Text style={styles.socialLabel}>네이버</Text>
+            </TouchableOpacity>
+
+            {/* 구글 */}
+            <TouchableOpacity
+              style={styles.socialItem}
+              onPress={handleGoogleLogin}
+              disabled={loading}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.socialButton, styles.googleBtn]}>
+                <Text style={styles.googleG}>G</Text>
+              </View>
+              <Text style={styles.socialLabel}>구글</Text>
+            </TouchableOpacity>
+
+            {/* 애플 */}
+            <TouchableOpacity
+              style={styles.socialItem}
+              onPress={() => handleTestLogin('apple')}
+              disabled={loading}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.socialButton, { backgroundColor: '#000' }]}>
+                <Ionicons name="logo-apple" size={26} color="#FFF" />
+              </View>
+              <Text style={styles.socialLabel}>애플</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* 회원가입 링크 */}
+          <TouchableOpacity
+            style={styles.signupRow}
+            onPress={() => router.push('/(auth)/signup')}
+            disabled={loading}
+          >
+            <Text style={styles.signupText}>아직 계정이 없으신가요? </Text>
+            <Text style={styles.signupLink}>회원가입 ›</Text>
+          </TouchableOpacity>
+
+          {/* 개발 모드 (개발 환경에서만) */}
+          {__DEV__ && (
+            <TouchableOpacity
+              style={styles.devNotice}
+              onPress={() => handleTestLogin('test')}
+              disabled={loading}
+            >
+              <Text style={styles.devNoticeText}>🛠 개발 모드: 테스트 자동 로그인</Text>
+            </TouchableOpacity>
+          )}
+        </ScrollView>
+      </KeyboardAvoidingView>
+
+      {/* 로딩 오버레이 */}
       {loading && (
-        <View style={styles.loadingOverlay} pointerEvents="none">
-          <ActivityIndicator size="large" color="#7ED4C0" />
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#7ED957" />
           <Text style={styles.loadingText}>로그인 중...</Text>
         </View>
       )}
-
-      {/* 에러 메시지 — 탭하면 닫힘 */}
-      {error !== '' && (
-        <TouchableOpacity
-          style={styles.errorBox}
-          onPress={() => setError('')}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.errorText}>{error}  (탭하여 닫기)</Text>
-        </TouchableOpacity>
-      )}
-
-      {/* 개발 모드 안내 */}
-      <View style={styles.devNotice}>
-        <Text style={styles.devNoticeText}>개발 모드: 테스트 자동 로그인</Text>
-      </View>
-
     </View>
   );
 }
@@ -272,85 +337,172 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FFF8E7',
   },
-  bgImage: {
-    position: 'absolute',
+  // 상단 캐릭터 영역
+  heroSection: {
+    height: height * 0.55,
     width: '100%',
-    height: '100%',
-    top: 0,
-    left: 0,
   },
-  titleArea: {
-    position: 'absolute',
-    top: height * 0.08,
-    alignSelf: 'center',
-    alignItems: 'center',
+  heroSafe: {
+    flex: 1,
   },
-  titleRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+  // 하단 폼 카드
+  formWrapper: {
+    flex: 1,
+    marginTop: -32,
   },
-  titleChar: {
-    fontSize: width * 0.22,
-    fontWeight: '900',
-    color: '#7ED4C0',
-    textShadowColor: 'rgba(0,0,0,0.12)',
-    textShadowOffset: { width: 2, height: 4 },
-    textShadowRadius: 6,
-    marginHorizontal: 2,
-    letterSpacing: -2,
+  formCard: {
+    backgroundColor: '#FFF',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingHorizontal: 28,
+    paddingTop: 28,
+    paddingBottom: 40,
+    flexGrow: 1,
   },
-  buttonArea: {
-    position: 'absolute',
-    bottom: height * 0.16,
-    width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 12,
+  welcomeText: {
+    fontSize: 15,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 22,
   },
-  // ✅ 투명 오버레이 버튼 — 배경 이미지의 버튼 위치에 맞게 조정
-  socialTouch: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-  },
-  loadingOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(255,255,255,0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 10,
-  },
-  loadingText: {
-    marginTop: 12,
+  welcomeBrand: {
+    color: '#7ED957',
+    fontWeight: '700',
     fontSize: 16,
-    color: '#7ED4C0',
-    fontWeight: '600',
+  },
+  inputBox: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  backgroundColor: '#F7F7F7',
+  borderRadius: 12,
+  paddingHorizontal: 16,
+  marginBottom: 12,
+  gap: 10,
+  height: 52,
+},
+input: {
+  flex: 1,
+  fontSize: 15,
+  color: '#333',
+  ...Platform.select({
+    web: {
+      outlineStyle: 'none',
+      paddingVertical: 0,
+    },
+    default: {
+      paddingVertical: 0,
+    },
+  }),
+},
+
+
+  loginButton: {
+    backgroundColor: '#7ED957',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: 8,
+    shadowColor: '#7ED957',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  loginButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '700',
   },
   errorBox: {
-    position: 'absolute',
-    bottom: height * 0.28,
-    left: 20,
-    right: 20,
+    marginTop: 12,
     backgroundColor: '#FDECEA',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
     borderRadius: 8,
   },
   errorText: {
     color: '#D32F2F',
-    fontSize: 14,
+    fontSize: 13,
     textAlign: 'center',
   },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 20,
+    gap: 12,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E5E5E5',
+  },
+  dividerText: {
+    fontSize: 12,
+    color: '#999',
+  },
+  // 소셜 로그인 (4개 + 라벨)
+  socialRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  socialItem: {
+    alignItems: 'center',
+    gap: 6,
+  },
+  socialButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  socialLabel: {
+    fontSize: 12,
+    color: '#666',
+    fontWeight: '500',
+  },
+  googleBtn: {
+    backgroundColor: '#FFF',
+    borderColor: '#EEE',
+    borderWidth: 1,
+  },
+  googleG: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#4285F4',
+    fontStyle: 'italic',
+  },
+  naverN: {
+    fontSize: 26,
+    fontWeight: '900',
+    color: '#FFF',
+  },
+  signupRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  signupText: {
+    fontSize: 13,
+    color: '#999',
+  },
+  signupLink: {
+    fontSize: 13,
+    color: '#7ED957',
+    fontWeight: '600',
+  },
   devNotice: {
-    position: 'absolute',
-    bottom: 40,
+    marginTop: 20,
     alignSelf: 'center',
     backgroundColor: '#FFF3CD',
     paddingVertical: 8,
@@ -360,5 +512,22 @@ const styles = StyleSheet.create({
   devNoticeText: {
     fontSize: 12,
     color: '#856404',
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255,255,255,0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 100,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#7ED957',
+    fontWeight: '600',
   },
 });
