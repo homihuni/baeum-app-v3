@@ -12,7 +12,6 @@ const SUBJECT_LABELS: Record<string, string> = {
   science: '과학', social: '사회', english: '영어',
 };
 
-// 날짜 기반 시드 셔플 함수
 const seededShuffle = (array: any[], seed: number) => {
   const arr = [...array];
   let s = seed;
@@ -24,7 +23,6 @@ const seededShuffle = (array: any[], seed: number) => {
   return arr;
 };
 
-// KST 기준 오늘 날짜로 시드 생성
 const getTodaySeed = (subject: string) => {
   const now = new Date();
   const kstTime = now.getTime() + (9 * 60 * 60 * 1000);
@@ -92,7 +90,6 @@ export default function QuestionsScreen() {
             unit: data.unit || '',
             visualType: data.visual_type || null,
             visualData: typeof data.visual_data === 'string' ? JSON.parse(data.visual_data) : (data.visual_data || null),
-
           };
         });
 
@@ -135,7 +132,6 @@ export default function QuestionsScreen() {
       }
       const userAnswer = textAnswer.trim().replace(/\s/g, '').toLowerCase();
       const correctAnswerClean = currentProblem.correctAnswer.trim().replace(/\s/g, '').toLowerCase();
-      console.log('주관식 비교:', userAnswer, '===', correctAnswerClean);
       const correct = userAnswer === correctAnswerClean;
       setIsCorrect(correct);
       setIsAnswered(true);
@@ -166,11 +162,6 @@ export default function QuestionsScreen() {
         const month = String(kstDate.getUTCMonth() + 1).padStart(2, '0');
         const day = String(kstDate.getUTCDate()).padStart(2, '0');
         const dateStr = year + '-' + month + '-' + day;
-
-        console.log("=== KST 날짜 계산 ===");
-        console.log("UTC now:", now.toISOString());
-        console.log("KST time:", kstDate.toISOString());
-        console.log("저장할 dateStr:", dateStr);
 
         const score = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
         await createRecord(parentId, childId, {
@@ -234,58 +225,94 @@ export default function QuestionsScreen() {
     return (
       <View style={styles.visualBox}>
         {/* 캐릭터 (인사 장면 등) + 확장 렌더링 */}
-{vd.characters && Array.isArray(vd.characters) && (
-  <View style={{ alignItems: 'center', width: '100%' }}>
-    {/* 칠판/강조 텍스트 (핵심 글자) */}
-    {(vd.board_text || vd.highlight_text) && (
-      <View style={{
-        backgroundColor: '#2E4A3E', borderRadius: 12, paddingHorizontal: 24,
-        paddingVertical: 14, marginBottom: 12, borderWidth: 2, borderColor: '#8B6914'
-      }}>
-        <Text style={{ fontSize: 36, fontWeight: 'bold', color: '#FFFFFF', textAlign: 'center' }}>
-          {vd.board_text || vd.highlight_text}
-        </Text>
-      </View>
-    )}
+        {vd.characters && Array.isArray(vd.characters) && (
+          <View style={{ alignItems: 'center', width: '100%' }}>
+            {(vd.board_text || vd.highlight_text) && (
+              <View style={{
+                backgroundColor: '#2E4A3E', borderRadius: 12, paddingHorizontal: 24,
+                paddingVertical: 14, marginBottom: 12, borderWidth: 2, borderColor: '#8B6914'
+              }}>
+                <Text style={{ fontSize: 36, fontWeight: 'bold', color: '#FFFFFF', textAlign: 'center' }}>
+                  {vd.board_text || vd.highlight_text}
+                </Text>
+              </View>
+            )}
 
-    {/* 캐릭터 이모지 + 이름 */}
-    <View style={styles.visualCharRow}>
-      {vd.characters.map((c: any, i: number) => (
-        <View key={i} style={styles.visualCharItem}>
-          <Text style={styles.visualCharEmoji}>{c.emoji || '👤'}</Text>
-          <Text style={styles.visualCharName}>{c.name || ''}</Text>
-        </View>
-      ))}
-    </View>
+            <View style={styles.visualCharRow}>
+              {vd.characters.map((c: any, i: number) => (
+                <View key={i} style={styles.visualCharItem}>
+                  <Text style={styles.visualCharEmoji}>{c.emoji || '👤'}</Text>
+                  <Text style={styles.visualCharName}>{c.name || ''}</Text>
+                </View>
+              ))}
+            </View>
 
-    {/* 말풍선 */}
-    {(vd.speech_bubble || vd.dialogue) && (
-      <View style={{
-        backgroundColor: '#FFFFFF', borderRadius: 16, paddingHorizontal: 16,
-        paddingVertical: 10, marginTop: 10, borderWidth: 1.5, borderColor: '#7ED4C0',
-        maxWidth: '90%'
-      }}>
-        <Text style={{ fontSize: 13, color: '#333', textAlign: 'center', lineHeight: 20 }}>
-          💬 {vd.speech_bubble || vd.dialogue}
-        </Text>
-      </View>
-    )}
-  </View>
-)}
-
-
-                {/* 단일/복수 이모지 (비, 날씨 등) */}
-        {(vd.emoji || vd.emojis) && !vd.characters && !vd.items && (
-          <View style={{ alignItems: 'center' }}>
-            <Text style={styles.visualSingleEmoji}>{vd.emoji || vd.emojis}</Text>
-            {vd.description && (
-              <Text style={{ fontSize: 12, color: '#666', marginTop: 4 }}>{vd.description}</Text>
+            {(vd.speech_bubble || vd.dialogue) && (
+              <View style={{
+                backgroundColor: '#FFFFFF', borderRadius: 16, paddingHorizontal: 16,
+                paddingVertical: 10, marginTop: 10, borderWidth: 1.5, borderColor: '#7ED4C0',
+                maxWidth: '90%'
+              }}>
+                <Text style={{ fontSize: 13, color: '#333', textAlign: 'center', lineHeight: 20 }}>
+                  💬 {vd.speech_bubble || vd.dialogue}
+                </Text>
+              </View>
             )}
           </View>
         )}
 
+        {/* ★ 이모지 씬 (묶음/낱개 지원 + 기존 호환) */}
+        {(vd.emoji || vd.emojis) && !vd.characters && !vd.items && (
+          <View style={{ alignItems: 'center', width: '100%' }}>
+            {vd.groups ? (
+              <View style={{ width: '100%', alignItems: 'center' }}>
+                {vd.groups.map((g: any, gi: number) => (
+                  <View key={gi} style={{
+                    flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center',
+                    backgroundColor: '#FFF8E1', borderRadius: 10, padding: 8,
+                    marginBottom: 6, borderWidth: 1, borderColor: '#FFE082', width: '90%'
+                  }}>
+                    {Array.from({ length: g.count || 0 }).map((_, ei) => (
+                      <Text key={ei} style={{ fontSize: 18, margin: 1 }}>{g.emoji || '🍎'}</Text>
+                    ))}
+                    {g.label && (
+                      <Text style={{ fontSize: 10, color: '#F57F17', width: '100%', textAlign: 'center', marginTop: 2 }}>
+                        {g.label}
+                      </Text>
+                    )}
+                  </View>
+                ))}
+                {vd.singles && (
+                  <View style={{
+                    flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center',
+                    backgroundColor: '#E8F5E9', borderRadius: 10, padding: 8,
+                    marginTop: 4, borderWidth: 1, borderColor: '#A5D6A7', width: '90%'
+                  }}>
+                    {Array.from({ length: vd.singles.count || 0 }).map((_, ei) => (
+                      <Text key={ei} style={{ fontSize: 18, margin: 1 }}>{vd.singles.emoji || '🍎'}</Text>
+                    ))}
+                    {vd.singles.label && (
+                      <Text style={{ fontSize: 10, color: '#2E7D32', width: '100%', textAlign: 'center', marginTop: 2 }}>
+                        {vd.singles.label}
+                      </Text>
+                    )}
+                  </View>
+                )}
+              </View>
+            ) : (
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', width: '90%' }}>
+                {[...String(vd.emoji || vd.emojis)].filter((c: string) => c.trim()).map((emoji: string, i: number) => (
+                  <Text key={i} style={{ fontSize: 20, margin: 2 }}>{emoji}</Text>
+                ))}
+              </View>
+            )}
+            {vd.description && (
+              <Text style={{ fontSize: 12, color: '#666', marginTop: 8, textAlign: 'center' }}>{vd.description}</Text>
+            )}
+          </View>
+        )}
 
-        {/* 이미지 매칭 카드 (그림-낱말) */}
+        {/* 이미지 매칭 카드 */}
         {vd.items && Array.isArray(vd.items) && (
           <View style={styles.visualCardRow}>
             {vd.items.map((item: any, i: number) => (
@@ -299,7 +326,7 @@ export default function QuestionsScreen() {
           </View>
         )}
 
-        {/* 글자 비교 (달 vs 딸) */}
+        {/* 글자 비교 */}
         {vd.word_left && vd.word_right && (
           <View style={styles.visualCompareRow}>
             <View style={styles.visualCompareBox}>
@@ -312,21 +339,21 @@ export default function QuestionsScreen() {
           </View>
         )}
 
-        {/* 문장 말풍선 (또박또박 읽기) */}
+        {/* 문장 말풍선 */}
         {vd.sentence && (
           <View style={styles.visualBubble}>
             <Text style={styles.visualBubbleText}>{vd.sentence}</Text>
           </View>
         )}
 
-        {/* 모음자 원형 (ㅛ 등) */}
+        {/* 모음자 원형 */}
         {vd.vowel && (
           <View style={styles.visualVowelCircle}>
             <Text style={styles.visualVowelText}>{vd.vowel}</Text>
           </View>
         )}
 
-        {/* 낱말 카드 하이라이트 (나무 → '나' 강조) */}
+        {/* 낱말 카드 하이라이트 */}
         {vd.word && !vd.word_left && (
           <View style={styles.visualWordRow}>
             {vd.word.split('').map((char: string, i: number) => {
@@ -356,7 +383,8 @@ export default function QuestionsScreen() {
             </Text>
           </View>
         )}
-        {/* 화살표 변환 (바 → 밥, 7 → 3과4) */}
+
+        {/* 화살표 변환 */}
         {vd.before && vd.after && !vd.word_left && (
           <View style={styles.visualCompareRow}>
             <View style={styles.visualCompareBox}>
@@ -374,7 +402,7 @@ export default function QuestionsScreen() {
           </View>
         )}
 
-        {/* 자음 조합 박스 (ㄱ+ㅏ+ㄹ = 갈) */}
+        {/* 자음 조합 박스 */}
         {vd.letters && Array.isArray(vd.letters) && (
           <View style={{ alignItems: 'center' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -400,7 +428,7 @@ export default function QuestionsScreen() {
           </View>
         )}
 
-        {/* 선 잇기 (match_line) */}
+        {/* 선 잇기 */}
         {vd.left_items && vd.right_items && (
           <View style={{ flexDirection: 'row', justifyContent: 'space-around', width: '100%', paddingHorizontal: 10 }}>
             <View style={{ gap: 10 }}>
@@ -461,7 +489,6 @@ export default function QuestionsScreen() {
         <Text style={styles.questionLabel}>Q{currentIndex + 1}</Text>
         <Text style={styles.questionText}>{String(currentProblem.question)}</Text>
 
-        {/* ★ 비주얼 힌트 영역 */}
         {renderVisualHint()}
 
         {currentProblem.questionType === 'short_answer' ? (
@@ -625,8 +652,6 @@ const styles = StyleSheet.create({
   shortAnswerLabel: { fontSize: 14, color: '#7ED4C0', fontWeight: 'bold', marginBottom: 12 },
   shortAnswerInput: { borderWidth: 2, borderColor: '#7ED4C0', borderRadius: 12, padding: 16, fontSize: 18, color: '#333', backgroundColor: '#FFFFFF' },
   shortAnswerInputDisabled: { backgroundColor: '#F5F5F5', borderColor: '#E0E0E0', color: '#999' },
-
-  // ★ 비주얼 힌트 스타일
   visualBox: { backgroundColor: '#F8FFFE', borderRadius: 16, padding: 16, marginBottom: 20, alignItems: 'center', borderWidth: 1, borderColor: '#E0F2F1' },
   visualCharRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 40 },
   visualCharItem: { alignItems: 'center' },
