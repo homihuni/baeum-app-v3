@@ -58,25 +58,17 @@ export default function QuestionsScreen() {
   useEffect(() => {
     const loadProblems = async () => {
       try {
-        console.log('=== Firestore 문제 로드 시작 ===');
-        console.log('grade:', grade, 'subject:', subject, 'tier:', tier);
-
         const q = query(
           collection(db, 'questions'),
           where('grade', '==', grade),
           where('subject', '==', subject),
           where('isActive', '==', true)
         );
-
         const snap = await getDocs(q);
-        console.log('Firestore 문제 수:', snap.size);
-
         if (snap.empty) {
-          console.log('=== 문제가 없습니다! grade:', grade, 'subject:', subject);
           setProblems([]);
           return;
         }
-
         const allProblems = snap.docs.map(doc => {
           const data = doc.data();
           return {
@@ -92,28 +84,17 @@ export default function QuestionsScreen() {
             visualData: typeof data.visual_data === 'string' ? JSON.parse(data.visual_data) : (data.visual_data || null),
           };
         });
-
         const filtered = allProblems.filter(p => p.questionType !== 'subjective');
-        console.log('필터 후 문제 수:', filtered.length);
-
         const todaySeed = getTodaySeed(subject);
-        console.log('오늘 시드:', todaySeed, '과목:', subject);
         const shuffled = seededShuffle(filtered, todaySeed);
-
         const maxQuestions = tier === 'sky' ? 10 : tier === 'baeum' ? 5 : 3;
-        console.log('tier:', tier, 'maxQuestions:', maxQuestions);
-
         const selected = shuffled.slice(0, maxQuestions);
-        console.log('선택된 문제 수:', selected.length);
-        console.log('첫 번째 문제:', JSON.stringify(selected[0]));
-
         setProblems(selected);
       } catch (error) {
-        console.log('=== Firestore 문제 로드 에러 ===', error);
+        console.log('Firestore 로드 에러:', error);
         setProblems([]);
       }
     };
-
     loadProblems();
   }, []);
 
@@ -162,7 +143,6 @@ export default function QuestionsScreen() {
         const month = String(kstDate.getUTCMonth() + 1).padStart(2, '0');
         const day = String(kstDate.getUTCDate()).padStart(2, '0');
         const dateStr = year + '-' + month + '-' + day;
-
         const score = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
         await createRecord(parentId, childId, {
           subject: subject as string,
@@ -174,7 +154,6 @@ export default function QuestionsScreen() {
           completedAt: now.toISOString(),
           grade: grade
         } as any);
-        console.log("=== 기록 저장 완료 === date:", dateStr, "score:", score);
       }
     } catch (error) {
       console.log('결과 저장 실패:', error);
@@ -189,10 +168,8 @@ export default function QuestionsScreen() {
         params: {
           subject,
           total: String(problems.length),
-          correct: String(correctCount + (isCorrect ? 0 : 0)),
-          wrong: String(wrongCount + (isCorrect ? 0 : 0)),
-          correctFinal: String(correctCount),
-          wrongFinal: String(wrongCount),
+          correct: String(correctCount),
+          wrong: String(wrongCount),
         },
       });
       return;
@@ -204,259 +181,108 @@ export default function QuestionsScreen() {
     setIsCorrect(false);
   };
 
-  const handleClose = () => {
-    setShowExitModal(true);
-  };
-
+  const handleClose = () => setShowExitModal(true);
   const handleExitConfirm = () => {
     setShowExitModal(false);
     router.replace('/(tabs)/study');
   };
+  const handleExitCancel = () => setShowExitModal(false);
 
-  const handleExitCancel = () => {
-    setShowExitModal(false);
-  };
-
-  // ★ 비주얼 힌트 렌더링 함수
+  // ========== 시각자료 렌더링 (완전 구현) ==========
   const renderVisualHint = () => {
-    if (!currentProblem.visualData) return null;
-    const vd = currentProblem.visualData;
+    const vd = currentProblem?.visualData;
+    const vType = currentProblem?.visualType;
+    if (!vd) return null;
 
-    return (
-      <View style={styles.visualBox}>
-        {/* 캐릭터 (인사 장면 등) + 확장 렌더링 */}
-        {vd.characters && Array.isArray(vd.characters) && (
-          <View style={{ alignItems: 'center', width: '100%' }}>
-            {(vd.board_text || vd.highlight_text) && (
-              <View style={{
-                backgroundColor: '#2E4A3E', borderRadius: 12, paddingHorizontal: 24,
-                paddingVertical: 14, marginBottom: 12, borderWidth: 2, borderColor: '#8B6914'
-              }}>
-                <Text style={{ fontSize: 36, fontWeight: 'bold', color: '#FFFFFF', textAlign: 'center' }}>
-                  {vd.board_text || vd.highlight_text}
-                </Text>
-              </View>
-            )}
-
-            <View style={styles.visualCharRow}>
-              {vd.characters.map((c: any, i: number) => (
-                <View key={i} style={styles.visualCharItem}>
-                  <Text style={styles.visualCharEmoji}>{c.emoji || '👤'}</Text>
-                  <Text style={styles.visualCharName}>{c.name || ''}</Text>
-                </View>
-              ))}
+    // 1. scene_illustration (선생님/대화 장면)
+    if (vType === 'scene_illustration') {
+      return (
+        <View style={styles.visualBox}>
+          {vd.board_text && (
+            <View style={styles.boardBox}>
+              <Text style={styles.boardText}>{vd.board_text}</Text>
             </View>
-
-            {(vd.speech_bubble || vd.dialogue) && (
-              <View style={{
-                backgroundColor: '#FFFFFF', borderRadius: 16, paddingHorizontal: 16,
-                paddingVertical: 10, marginTop: 10, borderWidth: 1.5, borderColor: '#7ED4C0',
-                maxWidth: '90%'
-              }}>
-                <Text style={{ fontSize: 13, color: '#333', textAlign: 'center', lineHeight: 20 }}>
-                  💬 {vd.speech_bubble || vd.dialogue}
-                </Text>
-              </View>
-            )}
-          </View>
-        )}
-
-        {/* ★ 이모지 씬 (묶음/낱개 지원 + 기존 호환) */}
-        {(vd.emoji || vd.emojis) && !vd.characters && !vd.items && (
-          <View style={{ alignItems: 'center', width: '100%' }}>
-            {vd.groups ? (
-              <View style={{ width: '100%', alignItems: 'center' }}>
-                {vd.groups.map((g: any, gi: number) => (
-                  <View key={gi} style={{
-                    flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center',
-                    backgroundColor: '#FFF8E1', borderRadius: 10, padding: 8,
-                    marginBottom: 6, borderWidth: 1, borderColor: '#FFE082', width: '90%'
-                  }}>
-                    {Array.from({ length: g.count || 0 }).map((_, ei) => (
-                      <Text key={ei} style={{ fontSize: 18, margin: 1 }}>{g.emoji || '🍎'}</Text>
-                    ))}
-                    {g.label && (
-                      <Text style={{ fontSize: 10, color: '#F57F17', width: '100%', textAlign: 'center', marginTop: 2 }}>
-                        {g.label}
-                      </Text>
-                    )}
-                  </View>
-                ))}
-                {vd.singles && (
-                  <View style={{
-                    flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center',
-                    backgroundColor: '#E8F5E9', borderRadius: 10, padding: 8,
-                    marginTop: 4, borderWidth: 1, borderColor: '#A5D6A7', width: '90%'
-                  }}>
-                    {Array.from({ length: vd.singles.count || 0 }).map((_, ei) => (
-                      <Text key={ei} style={{ fontSize: 18, margin: 1 }}>{vd.singles.emoji || '🍎'}</Text>
-                    ))}
-                    {vd.singles.label && (
-                      <Text style={{ fontSize: 10, color: '#2E7D32', width: '100%', textAlign: 'center', marginTop: 2 }}>
-                        {vd.singles.label}
-                      </Text>
-                    )}
-                  </View>
-                )}
-              </View>
-            ) : (
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', width: '90%' }}>
-                {[...String(vd.emoji || vd.emojis)].filter((c: string) => c.trim()).map((emoji: string, i: number) => (
-                  <Text key={i} style={{ fontSize: 20, margin: 2 }}>{emoji}</Text>
-                ))}
-              </View>
-            )}
-            {vd.description && (
-              <Text style={{ fontSize: 12, color: '#666', marginTop: 8, textAlign: 'center' }}>{vd.description}</Text>
-            )}
-          </View>
-        )}
-
-        {/* 이미지 매칭 카드 */}
-        {vd.items && Array.isArray(vd.items) && (
-          <View style={styles.visualCardRow}>
-            {vd.items.map((item: any, i: number) => (
-              <View key={i} style={styles.visualCard}>
-                <Text style={styles.visualCardEmoji}>{item.emoji || ''}</Text>
-                <View style={styles.visualCardLabelBox}>
-                  <Text style={styles.visualCardLabel}>{item.label || ''}</Text>
-                </View>
+          )}
+          <View style={styles.charactersRow}>
+            {(vd.characters || []).map((c: any, idx: number) => (
+              <View key={idx} style={styles.characterItem}>
+                <Text style={styles.characterEmoji}>{c.emoji || '🧑'}</Text>
+                {c.name && <Text style={styles.characterName}>{c.name}</Text>}
               </View>
             ))}
           </View>
-        )}
-
-        {/* 글자 비교 */}
-        {vd.word_left && vd.word_right && (
-          <View style={styles.visualCompareRow}>
-            <View style={styles.visualCompareBox}>
-              <Text style={styles.visualCompareBigText}>{vd.word_left}</Text>
+          {vd.speech_bubble && (
+            <View style={styles.speechBubble}>
+              <Text style={styles.speechText}>💬 {vd.speech_bubble}</Text>
             </View>
-            <Text style={styles.visualCompareVs}>VS</Text>
-            <View style={styles.visualCompareBox}>
-              <Text style={styles.visualCompareBigText}>{vd.word_right}</Text>
-            </View>
-          </View>
-        )}
+          )}
+          {vd.scene_description && (
+            <Text style={styles.sceneDesc}>{vd.scene_description}</Text>
+          )}
+        </View>
+      );
+    }
 
-        {/* 문장 말풍선 */}
-        {vd.sentence && (
-          <View style={styles.visualBubble}>
-            <Text style={styles.visualBubbleText}>{vd.sentence}</Text>
-          </View>
-        )}
-
-        {/* 모음자 원형 */}
-        {vd.vowel && (
-          <View style={styles.visualVowelCircle}>
-            <Text style={styles.visualVowelText}>{vd.vowel}</Text>
-          </View>
-        )}
-
-        {/* 낱말 카드 하이라이트 */}
-        {vd.word && !vd.word_left && (
-          <View style={styles.visualWordRow}>
-            {vd.word.split('').map((char: string, i: number) => {
-              const isHL = char === vd.highlight_syllable;
-              return (
-                <View key={i} style={[styles.visualWordBox, isHL && styles.visualWordBoxHL]}>
-                  <Text style={[styles.visualWordChar, isHL && styles.visualWordCharHL]}>{char}</Text>
-                </View>
-              );
-            })}
-          </View>
-        )}
-
-        {/* 문장 템플릿 (빈칸 채우기) */}
-        {vd.sentence_template && !vd.word_left && !vd.sentence && (
-          <View style={styles.visualTemplateBox}>
-            {vd.example_sentence && (
-              <View style={styles.visualExampleRow}>
-                <Text style={styles.visualExampleLabel}>보기</Text>
-                <Text style={styles.visualExampleText}>
-                  {vd.example_emoji || ''} {vd.example_sentence}
-                </Text>
+    // 2. emoji_scene (사물/개수 표현)
+    if (vType === 'emoji_scene' && vd.items) {
+      const totalCount = Array.isArray(vd.items)
+        ? vd.items.reduce((sum: number, item: any) => sum + (item.count || 0), 0)
+        : 0;
+      const isBundle = vd.layout === 'bundle' || totalCount > 50;
+      return (
+        <View style={styles.visualBox}>
+          <View style={styles.emojiGrid}>
+            {(vd.items || []).map((item: any, idx: number) => (
+              <View key={idx} style={styles.emojiItem}>
+                <Text style={styles.emojiLarge}>{item.emoji}</Text>
+                <Text style={styles.emojiLabel}>{item.label}</Text>
+                {isBundle && <Text style={styles.emojiCount}>×{item.count}</Text>}
               </View>
-            )}
-            <Text style={styles.visualTemplateText}>
-              {vd.target_emoji || ''} {vd.sentence_template}
-            </Text>
+            ))}
           </View>
-        )}
+          {vd.description && <Text style={styles.sceneDesc}>{vd.description}</Text>}
+        </View>
+      );
+    }
 
-        {/* 화살표 변환 */}
-        {vd.before && vd.after && !vd.word_left && (
-          <View style={styles.visualCompareRow}>
-            <View style={styles.visualCompareBox}>
-              <Text style={styles.visualCompareBigText}>{vd.before}</Text>
-            </View>
-            <View style={{ alignItems: 'center' }}>
-              <Text style={{ fontSize: 20 }}>→</Text>
-              {vd.arrow_label && (
-                <Text style={{ fontSize: 10, color: '#999', marginTop: 2 }}>{vd.arrow_label}</Text>
-              )}
-            </View>
-            <View style={styles.visualCompareBox}>
-              <Text style={styles.visualCompareBigText}>{vd.after}</Text>
-            </View>
+    // 3. image_match (카드 형식)
+    if (vType === 'image_match' && vd.items) {
+      return (
+        <View style={styles.visualBox}>
+          <View style={styles.imageMatchRow}>
+            {(vd.items || []).map((item: any, idx: number) => (
+              <View key={idx} style={styles.imageMatchCard}>
+                <Text style={styles.emojiLarge}>{item.emoji}</Text>
+                <Text style={styles.imageMatchLabel}>{item.name || item.label}</Text>
+              </View>
+            ))}
           </View>
-        )}
+        </View>
+      );
+    }
 
-        {/* 자음 조합 박스 */}
-        {vd.letters && Array.isArray(vd.letters) && (
-          <View style={{ alignItems: 'center' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              {vd.letters.map((letter: string, i: number) => (
-                <View key={i} style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <View style={[styles.visualCompareBox, { width: 52, height: 52 }]}>
-                    <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#333' }}>{letter}</Text>
-                  </View>
-                  {i < vd.letters.length - 1 && (
-                    <Text style={{ fontSize: 16, color: '#999', marginHorizontal: 2 }}>+</Text>
-                  )}
-                </View>
-              ))}
-              {vd.result && (
-                <>
-                  <Text style={{ fontSize: 18, color: '#999', marginHorizontal: 6 }}>=</Text>
-                  <View style={[styles.visualCompareBox, { width: 56, height: 56, borderColor: '#4CAF50', borderWidth: 2 }]}>
-                    <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#4CAF50' }}>{vd.result}</Text>
-                  </View>
-                </>
-              )}
-            </View>
+    // 4. word_card / word_compare (단어 카드)
+    if (vType === 'word_card' && vd.word) {
+      return (
+        <View style={styles.visualBox}>
+          <Text style={styles.bigWord}>{vd.word}</Text>
+        </View>
+      );
+    }
+    if (vType === 'word_compare' && vd.word_left && vd.word_right) {
+      return (
+        <View style={styles.visualBox}>
+          <View style={styles.compareRow}>
+            <Text style={styles.compareWord}>{vd.word_left}</Text>
+            <Text style={styles.compareVs}>VS</Text>
+            <Text style={styles.compareWord}>{vd.word_right}</Text>
           </View>
-        )}
+        </View>
+      );
+    }
 
-        {/* 선 잇기 */}
-        {vd.left_items && vd.right_items && (
-          <View style={{ flexDirection: 'row', justifyContent: 'space-around', width: '100%', paddingHorizontal: 10 }}>
-            <View style={{ gap: 10 }}>
-              {vd.left_items.map((item: string, i: number) => (
-                <View key={i} style={[styles.visualCard, { minWidth: 80 }]}>
-                  <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#333', textAlign: 'center' }}>{item}</Text>
-                </View>
-              ))}
-            </View>
-            <View style={{ justifyContent: 'center' }}>
-              <Text style={{ fontSize: 24, color: '#BDBDBD' }}>⟷</Text>
-            </View>
-            <View style={{ gap: 10 }}>
-              {vd.right_items.map((item: string, i: number) => (
-                <View key={i} style={[styles.visualCard, { minWidth: 80 }]}>
-                  <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#333', textAlign: 'center' }}>{item}</Text>
-                </View>
-              ))}
-            </View>
-          </View>
-        )}
-
-        {/* 장면 설명 */}
-        {vd.scene_description && (
-          <Text style={styles.visualDesc}>{vd.scene_description}</Text>
-        )}
-      </View>
-    );
+    // 5. 그 외 text_only는 아무것도 표시하지 않음
+    return null;
   };
 
   if (problems.length === 0) {
@@ -485,7 +311,7 @@ export default function QuestionsScreen() {
         <View style={[styles.progressBarFill, { width: `${progress * 100}%` }]} />
       </View>
 
-      <ScrollView style={styles.scrollArea} contentContainerStyle={styles.scrollContent}>
+      <ScrollView style={styles.scrollArea} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <Text style={styles.questionLabel}>Q{currentIndex + 1}</Text>
         <Text style={styles.questionText}>{String(currentProblem.question)}</Text>
 
@@ -570,11 +396,12 @@ export default function QuestionsScreen() {
         )}
       </View>
 
+      {/* 모달들 */}
       <Modal visible={showExitModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
             <Text style={styles.modalTitle}>학습 중단</Text>
-            <Text style={styles.modalMessage}>학습을 중단하시겠어요?{'\n'}진행한 문제는 저장됩니다.</Text>
+            <Text style={styles.modalMessage}>학습을 중단하시겠어요?\n진행한 문제는 저장됩니다.</Text>
             <View style={styles.modalButtons}>
               <TouchableOpacity style={styles.modalCancelBtn} onPress={handleExitCancel}>
                 <Text style={styles.modalCancelText}>계속하기</Text>
@@ -614,10 +441,24 @@ const styles = StyleSheet.create({
   progressBarFill: { height: 4, backgroundColor: '#7ED4C0', borderRadius: 2 },
   scrollArea: { flex: 1 },
   scrollContent: { padding: 20, paddingBottom: 40 },
-  questionLabel: { fontSize: 14, fontWeight: 'bold', color: '#7ED4C0', marginBottom: 8 },
-  questionText: { fontSize: 18, fontWeight: 'bold', color: '#333', lineHeight: 28, marginBottom: 24 },
-  choicesContainer: { gap: 12 },
-  choiceBtn: { padding: 16, borderRadius: 12, borderWidth: 1, borderColor: '#E0E0E0', backgroundColor: '#FFFFFF' },
+  questionLabel: { fontSize: 14, fontWeight: 'bold', color: '#7ED4C0', marginBottom: 8, textAlign: 'center' },
+  questionText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    lineHeight: 28,
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  choicesContainer: { gap: 10 },
+  choiceBtn: {
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    backgroundColor: '#FFFFFF',
+  },
   choiceText: { fontSize: 16, color: '#333' },
   choiceSelected: { borderColor: '#7ED4C0', backgroundColor: '#E8F8F5' },
   choiceTextSelected: { color: '#7ED4C0', fontWeight: 'bold' },
@@ -652,34 +493,27 @@ const styles = StyleSheet.create({
   shortAnswerLabel: { fontSize: 14, color: '#7ED4C0', fontWeight: 'bold', marginBottom: 12 },
   shortAnswerInput: { borderWidth: 2, borderColor: '#7ED4C0', borderRadius: 12, padding: 16, fontSize: 18, color: '#333', backgroundColor: '#FFFFFF' },
   shortAnswerInputDisabled: { backgroundColor: '#F5F5F5', borderColor: '#E0E0E0', color: '#999' },
+  // 시각자료 스타일
   visualBox: { backgroundColor: '#F8FFFE', borderRadius: 16, padding: 16, marginBottom: 20, alignItems: 'center', borderWidth: 1, borderColor: '#E0F2F1' },
-  visualCharRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 40 },
-  visualCharItem: { alignItems: 'center' },
-  visualCharEmoji: { fontSize: 40 },
-  visualCharName: { fontSize: 13, fontWeight: 'bold', color: '#555', marginTop: 4 },
-  visualSingleEmoji: { fontSize: 48, textAlign: 'center' },
-  visualCardRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 12 },
-  visualCard: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 10, alignItems: 'center', borderWidth: 1, borderColor: '#E0E0E0', minWidth: 75 },
-  visualCardEmoji: { fontSize: 30 },
-  visualCardLabelBox: { backgroundColor: '#7ED4C0', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 3, marginTop: 6 },
-  visualCardLabel: { fontSize: 11, fontWeight: 'bold', color: '#FFFFFF' },
-  visualCompareRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 16 },
-  visualCompareBox: { backgroundColor: '#FFFFFF', borderRadius: 12, width: 72, height: 72, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#B39DDB' },
-  visualCompareBigText: { fontSize: 34, fontWeight: 'bold', color: '#333' },
-  visualCompareVs: { fontSize: 16, fontWeight: 'bold', color: '#9E9E9E' },
-  visualBubble: { backgroundColor: '#FFFFFF', borderRadius: 16, paddingHorizontal: 20, paddingVertical: 12, borderWidth: 1.5, borderColor: '#FFD54F' },
-  visualBubbleText: { fontSize: 16, fontWeight: 'bold', color: '#333', textAlign: 'center' },
-  visualVowelCircle: { backgroundColor: '#FFFFFF', borderRadius: 40, width: 80, height: 80, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#B39DDB' },
-  visualVowelText: { fontSize: 36, fontWeight: 'bold', color: '#7C4DFF' },
-  visualWordRow: { flexDirection: 'row', justifyContent: 'center', gap: 10 },
-  visualWordBox: { backgroundColor: '#FFFFFF', borderRadius: 10, width: 52, height: 58, justifyContent: 'center', alignItems: 'center', borderWidth: 1.5, borderColor: '#B0BEC5' },
-  visualWordBoxHL: { backgroundColor: '#FF8A65', borderColor: '#FF5722' },
-  visualWordChar: { fontSize: 26, fontWeight: 'bold', color: '#333' },
-  visualWordCharHL: { color: '#FFFFFF' },
-  visualTemplateBox: { width: '100%' },
-  visualExampleRow: { backgroundColor: '#FFFFFF', borderRadius: 10, padding: 10, marginBottom: 8, borderWidth: 1, borderColor: '#81C784' },
-  visualExampleLabel: { fontSize: 11, fontWeight: 'bold', color: '#81C784', marginBottom: 2 },
-  visualExampleText: { fontSize: 14, color: '#333' },
-  visualTemplateText: { fontSize: 15, fontWeight: 'bold', color: '#333', textAlign: 'center', marginTop: 4 },
-  visualDesc: { fontSize: 12, color: '#999', textAlign: 'center', marginTop: 8 },
+  boardBox: { backgroundColor: '#2E4A3E', borderRadius: 12, paddingHorizontal: 24, paddingVertical: 12, marginBottom: 16, width: '100%', alignItems: 'center' },
+  boardText: { fontSize: 22, fontWeight: 'bold', color: '#FFFFFF', textAlign: 'center' },
+  charactersRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 40, marginBottom: 12 },
+  characterItem: { alignItems: 'center' },
+  characterEmoji: { fontSize: 48 },
+  characterName: { fontSize: 12, fontWeight: 'bold', color: '#555', marginTop: 4 },
+  speechBubble: { backgroundColor: '#FFFFFF', borderRadius: 16, paddingHorizontal: 20, paddingVertical: 12, borderWidth: 1.5, borderColor: '#FFD54F', marginBottom: 12 },
+  speechText: { fontSize: 14, fontWeight: 'bold', color: '#333', textAlign: 'center' },
+  sceneDesc: { fontSize: 12, color: '#999', textAlign: 'center' },
+  emojiGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 12 },
+  emojiItem: { alignItems: 'center', margin: 4 },
+  emojiLarge: { fontSize: 40 },
+  emojiLabel: { fontSize: 10, color: '#666' },
+  emojiCount: { fontSize: 12, fontWeight: 'bold', color: '#555', marginTop: 2 },
+  imageMatchRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 16 },
+  imageMatchCard: { alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#E0E0E0', minWidth: 80 },
+  imageMatchLabel: { fontSize: 12, fontWeight: 'bold', color: '#333', marginTop: 8 },
+  bigWord: { fontSize: 32, fontWeight: 'bold', color: '#333' },
+  compareRow: { flexDirection: 'row', alignItems: 'center', gap: 20 },
+  compareWord: { fontSize: 28, fontWeight: 'bold', color: '#333' },
+  compareVs: { fontSize: 18, fontWeight: 'bold', color: '#999' },
 });
