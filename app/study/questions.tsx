@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Modal, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Modal, TextInput, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -59,17 +59,30 @@ export default function QuestionsScreen() {
     const loadProblems = async () => {
       try {
         const q = query(
-          collection(db, 'Problems'),
-          where('grade', '==', grade),
-          where('subject', '==', subject),
-          where('isActive', '==', true)
+          collection(db, 'questions'),
+          where('subject', '==', subject) // 복합 인덱스 에러 우회
         );
         const snap = await getDocs(q);
+
         if (snap.empty) {
+          Alert.alert('디버그 안내', `questions 컬렉션에서 ${subject} 과목의 문제가 비어있습니다.`);
           setProblems([]);
           return;
         }
-        const allProblems = snap.docs.map(doc => {
+
+        // 로컬에서 필터링
+        const validDocs = snap.docs.filter((doc: any) => {
+          const d = doc.data();
+          return Number(d.grade) === Number(grade) && d.isActive === true;
+        });
+
+        if (validDocs.length === 0) {
+          Alert.alert('디버그 안내', `해당 과목은 있지만 학년(${grade})과 활성화(true) 조건을 만족하는 문제가 없습니다.`);
+          setProblems([]);
+          return;
+        }
+
+        const allProblems = validDocs.map((doc: any) => {
           const data = doc.data();
           return {
             id: doc.id,
@@ -102,8 +115,9 @@ export default function QuestionsScreen() {
         const maxQuestions = tier === 'sky' ? 10 : tier === 'baeum' ? 5 : 3;
         const selected = shuffled.slice(0, maxQuestions);
         setProblems(selected);
-      } catch (error) {
+      } catch (error: any) {
         console.log('Firestore 로드 에러:', error);
+        Alert.alert('Firestore 로드 에러', error.message || '알 수 없는 오류');
         setProblems([]);
       }
     };
@@ -309,8 +323,14 @@ export default function QuestionsScreen() {
   if (problems.length === 0) {
     return (
       <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <View />
+          <TouchableOpacity onPress={() => router.replace('/(tabs)/study')}>
+            <Text style={styles.closeBtn}>✕</Text>
+          </TouchableOpacity>
+        </View>
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>문제를 불러오는 중...</Text>
+          <Text style={styles.emptyText}>오늘의 문제가 없거나 불러오는 중입니다.</Text>
         </View>
       </SafeAreaView>
     );
