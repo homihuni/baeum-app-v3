@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Modal, TextInput, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Modal, TextInput, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
 import { createRecord } from '../../utils/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AVATAR_MAP, AVATAR_KEYS } from '../../utils/avatars';
 
 const SUBJECT_LABELS: Record<string, string> = {
   korean: '국어', math: '수학', integrated: '통합교과',
@@ -112,9 +113,9 @@ export default function QuestionsScreen() {
 
         const todaySeed = getTodaySeed(subject);
         const shuffled = seededShuffle(targetList, todaySeed);
-        const maxQuestions = tier === 'sky' ? 10 : tier === 'baeum' ? 5 : 3;
-        const selected = shuffled.slice(0, maxQuestions);
-        setProblems(selected);
+        
+        // [테스트용] 모든 회원 등급 제한 해제 (전체 문제 제공)
+        setProblems(shuffled);
       } catch (error: any) {
         console.log('Firestore 로드 에러:', error);
         Alert.alert('Firestore 로드 에러', error.message || '알 수 없는 오류');
@@ -230,12 +231,17 @@ export default function QuestionsScreen() {
             </View>
           )}
           <View style={styles.charactersRow}>
-            {(vd.characters || []).map((c: any, idx: number) => (
-              <View key={idx} style={styles.characterItem}>
-                <Text style={styles.characterEmoji}>{c.emoji || '🧑'}</Text>
-                {c.name && <Text style={styles.characterName}>{c.name}</Text>}
-              </View>
-            ))}
+            {(vd.characters || []).map((c: any, idx: number) => {
+              // 아바타 랜덤 배정 로직 (avatar_01 ~ avatar_29)
+              const keyIndex = (c.name ? c.name.length : idx) % AVATAR_KEYS.length;
+              const avatarSource = AVATAR_MAP[AVATAR_KEYS[keyIndex]];
+              return (
+                <View key={idx} style={styles.characterItem}>
+                  <Image source={avatarSource} style={styles.characterImage} resizeMode="contain" />
+                  {c.name && <Text style={styles.characterName}>{c.name}</Text>}
+                </View>
+              );
+            })}
           </View>
           {vd.speech_bubble && (
             <View style={styles.speechBubble}>
@@ -373,7 +379,10 @@ export default function QuestionsScreen() {
             />
           </View>
         ) : (
-          <View style={styles.choicesContainer}>
+          <View style={[
+            styles.choicesContainer,
+            (currentProblem.choices || []).every((c: string) => String(c).length <= 10) && styles.choicesGridContainer
+          ]}>
             {(currentProblem.choices || []).map((choice: string, index: number) => {
               const isSelected = selectedAnswer === choice;
               const isCorrectAnswer = choice === currentProblem.correctAnswer;
@@ -395,6 +404,11 @@ export default function QuestionsScreen() {
 
               const prefix = currentProblem.questionType === 'ox' ? '' : `${String.fromCharCode(9312 + index)} `;
 
+              const isGrid = (currentProblem.choices || []).every((c: string) => String(c).length <= 10);
+              if (isGrid) {
+                choiceStyle = { ...choiceStyle, ...styles.choiceGridItem };
+              }
+
               return (
                 <TouchableOpacity
                   key={index}
@@ -402,7 +416,7 @@ export default function QuestionsScreen() {
                   onPress={() => handleSelectAnswer(choice)}
                   disabled={isAnswered}
                 >
-                  <Text style={choiceTextStyle}>{prefix}{String(choice)}</Text>
+                  <Text style={choiceTextStyle} numberOfLines={2} adjustsFontSizeToFit>{prefix}{String(choice)}</Text>
                 </TouchableOpacity>
               );
             })}
@@ -481,24 +495,35 @@ const styles = StyleSheet.create({
   progressBarBg: { height: 4, backgroundColor: '#E0E0E0', marginHorizontal: 20 },
   progressBarFill: { height: 4, backgroundColor: '#7ED4C0', borderRadius: 2 },
   scrollArea: { flex: 1 },
-  scrollContent: { padding: 20, paddingBottom: 40 },
-  questionLabel: { fontSize: 14, fontWeight: 'bold', color: '#7ED4C0', marginBottom: 8, textAlign: 'center' },
+  scrollContent: { padding: 16, paddingBottom: 24 },
+  questionLabel: { fontSize: 13, fontWeight: 'bold', color: '#7ED4C0', marginBottom: 4, textAlign: 'center' },
   questionText: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: 'bold',
     color: '#333',
-    lineHeight: 28,
-    marginBottom: 24,
+    lineHeight: 24,
+    marginBottom: 16,
     textAlign: 'center',
   },
-  choicesContainer: { gap: 10 },
+  choicesContainer: { gap: 8 },
+  choicesGridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
   choiceBtn: {
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#E0E0E0',
     backgroundColor: '#FFFFFF',
+  },
+  choiceGridItem: {
+    width: '48%',
+    minHeight: 56,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   choiceText: { fontSize: 16, color: '#333' },
   choiceSelected: { borderColor: '#7ED4C0', backgroundColor: '#E8F8F5' },
@@ -535,13 +560,13 @@ const styles = StyleSheet.create({
   shortAnswerInput: { borderWidth: 2, borderColor: '#7ED4C0', borderRadius: 12, padding: 16, fontSize: 18, color: '#333', backgroundColor: '#FFFFFF' },
   shortAnswerInputDisabled: { backgroundColor: '#F5F5F5', borderColor: '#E0E0E0', color: '#999' },
   // 시각자료 스타일
-  visualBox: { backgroundColor: '#F8FFFE', borderRadius: 16, padding: 16, marginBottom: 20, alignItems: 'center', borderWidth: 1, borderColor: '#E0F2F1' },
-  boardBox: { backgroundColor: '#2E4A3E', borderRadius: 12, paddingHorizontal: 24, paddingVertical: 12, marginBottom: 16, width: '100%', alignItems: 'center' },
+  visualBox: { backgroundColor: '#F8FFFE', borderRadius: 12, padding: 12, marginBottom: 16, alignItems: 'center', borderWidth: 1, borderColor: '#E0F2F1' },
+  boardBox: { backgroundColor: '#2E4A3E', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 10, marginBottom: 12, width: '100%', alignItems: 'center' },
   boardText: { fontSize: 22, fontWeight: 'bold', color: '#FFFFFF', textAlign: 'center' },
   charactersRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 40, marginBottom: 12 },
   characterItem: { alignItems: 'center' },
-  characterEmoji: { fontSize: 48 },
-  characterName: { fontSize: 12, fontWeight: 'bold', color: '#555', marginTop: 4 },
+  characterImage: { width: 64, height: 64, marginBottom: 4 },
+  characterName: { fontSize: 12, fontWeight: 'bold', color: '#555', marginTop: 0 },
   speechBubble: { backgroundColor: '#FFFFFF', borderRadius: 16, paddingHorizontal: 20, paddingVertical: 12, borderWidth: 1.5, borderColor: '#FFD54F', marginBottom: 12 },
   speechText: { fontSize: 14, fontWeight: 'bold', color: '#333', textAlign: 'center' },
   sceneDesc: { fontSize: 12, color: '#999', textAlign: 'center' },
