@@ -59,7 +59,7 @@ export default function QuestionsScreen() {
     const loadProblems = async () => {
       try {
         const q = query(
-          collection(db, 'questions'),
+          collection(db, 'Problems'),
           where('grade', '==', grade),
           where('subject', '==', subject),
           where('isActive', '==', true)
@@ -82,11 +82,23 @@ export default function QuestionsScreen() {
             unit: data.unit || '',
             visualType: data.visual_type || null,
             visualData: typeof data.visual_data === 'string' ? JSON.parse(data.visual_data) : (data.visual_data || null),
+            createdAt: data.createdAt || '',
           };
         });
-        const filtered = allProblems.filter(p => p.questionType !== 'subjective');
+
+        const now = new Date();
+        const kstTime = now.getTime() + (9 * 60 * 60 * 1000);
+        const kstDate = new Date(kstTime);
+        const dateTokens = kstDate.toDateString().split(' '); // e.g. ["Thu", "Apr", "30", "2026"]
+        const targetDatePart = `${dateTokens[1]} ${dateTokens[2]} ${dateTokens[3]}`; // "Apr 30 2026"
+
+        const todayProblems = allProblems.filter(p => p.questionType !== 'subjective' && p.createdAt.includes(targetDatePart));
+        
+        // 오늘 날짜의 문제가 없으면 기존 활성 문제들로 대체 (안전망)
+        const targetList = todayProblems.length > 0 ? todayProblems : allProblems.filter(p => p.questionType !== 'subjective');
+
         const todaySeed = getTodaySeed(subject);
-        const shuffled = seededShuffle(filtered, todaySeed);
+        const shuffled = seededShuffle(targetList, todaySeed);
         const maxQuestions = tier === 'sky' ? 10 : tier === 'baeum' ? 5 : 3;
         const selected = shuffled.slice(0, maxQuestions);
         setProblems(selected);
@@ -281,7 +293,16 @@ export default function QuestionsScreen() {
       );
     }
 
-    // 5. 그 외 text_only는 아무것도 표시하지 않음
+    // 5. sentence_display (문장 표시)
+    if (vType === 'sentence_display' && vd.sentence) {
+      return (
+        <View style={styles.visualBox}>
+          <Text style={styles.sentenceText}>{vd.sentence}</Text>
+        </View>
+      );
+    }
+
+    // 6. 그 외 text_only는 아무것도 표시하지 않음
     return null;
   };
 
@@ -516,4 +537,5 @@ const styles = StyleSheet.create({
   compareRow: { flexDirection: 'row', alignItems: 'center', gap: 20 },
   compareWord: { fontSize: 28, fontWeight: 'bold', color: '#333' },
   compareVs: { fontSize: 18, fontWeight: 'bold', color: '#999' },
+  sentenceText: { fontSize: 22, fontWeight: 'bold', color: '#333', textAlign: 'center', lineHeight: 32 },
 });
