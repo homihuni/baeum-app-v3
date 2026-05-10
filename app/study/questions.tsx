@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Modal, TextInput, Alert, Image } from 'react-native';
+import { useState, useEffect, useRef } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Modal, TextInput, Alert, Image, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -7,6 +7,29 @@ import { db } from '../../utils/firebase';
 import { createRecord } from '../../utils/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AVATAR_MAP, AVATAR_KEYS } from '../../utils/avatars';
+import { Audio } from 'expo-av';
+import ConfettiCannon from 'react-native-confetti-cannon';
+
+const BouncyButton = ({ onPress, disabled, style, children }: any) => {
+  const scale = useRef(new Animated.Value(1)).current;
+  const handlePressIn = () => Animated.spring(scale, { toValue: 0.92, useNativeDriver: true }).start();
+  const handlePressOut = () => Animated.spring(scale, { toValue: 1, friction: 3, tension: 40, useNativeDriver: true }).start();
+
+  return (
+    <Animated.View style={[{ transform: [{ scale }] }, style?.width ? { width: style.width } : {}]}>
+      <TouchableOpacity
+        activeOpacity={0.8}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onPress={onPress}
+        disabled={disabled}
+        style={[style, { width: '100%' }]}
+      >
+        {children}
+      </TouchableOpacity>
+    </Animated.View>
+  );
+};
 
 const SUBJECT_LABELS: Record<string, string> = {
   korean: '국어', math: '수학', integrated: '통합교과',
@@ -132,6 +155,23 @@ export default function QuestionsScreen() {
     setSelectedAnswer(answer);
   };
 
+  const playSound = async (isCorrectAns: boolean) => {
+    try {
+      const url = isCorrectAns 
+        ? 'https://cdn.pixabay.com/download/audio/2021/08/04/audio_bb630cc098.mp3' 
+        : 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3';
+      const { sound } = await Audio.Sound.createAsync({ uri: url });
+      await sound.playAsync();
+      sound.setOnPlaybackStatusUpdate((status: any) => {
+        if (status.didJustFinish) {
+          sound.unloadAsync();
+        }
+      });
+    } catch (e) {
+      console.log('Sound play error:', e);
+    }
+  };
+
   const handleCheckAnswer = async () => {
     if (currentProblem.questionType === 'short_answer') {
       if (!textAnswer.trim()) {
@@ -143,6 +183,7 @@ export default function QuestionsScreen() {
       const correct = userAnswer === correctAnswerClean;
       setIsCorrect(correct);
       setIsAnswered(true);
+      playSound(correct);
       if (correct) setCorrectCount(prev => prev + 1);
       else setWrongCount(prev => prev + 1);
       return;
@@ -154,6 +195,7 @@ export default function QuestionsScreen() {
     const correct = selectedAnswer === currentProblem.correctAnswer;
     setIsCorrect(correct);
     setIsAnswered(true);
+    playSound(correct);
     if (correct) setCorrectCount(prev => prev + 1);
     else setWrongCount(prev => prev + 1);
   };
@@ -410,14 +452,14 @@ export default function QuestionsScreen() {
               }
 
               return (
-                <TouchableOpacity
+                <BouncyButton
                   key={index}
                   style={choiceStyle}
                   onPress={() => handleSelectAnswer(choice)}
                   disabled={isAnswered}
                 >
                   <Text style={choiceTextStyle} numberOfLines={2} adjustsFontSizeToFit>{prefix}{String(choice)}</Text>
-                </TouchableOpacity>
+                </BouncyButton>
               );
             })}
           </View>
@@ -482,6 +524,17 @@ export default function QuestionsScreen() {
           </View>
         </View>
       </Modal>
+
+      {isAnswered && isCorrect && (
+        <ConfettiCannon
+          count={100}
+          origin={{ x: -10, y: 0 }}
+          autoStart={true}
+          fadeOut={true}
+          explosionSpeed={350}
+          fallSpeed={3000}
+        />
+      )}
     </SafeAreaView>
   );
 }
