@@ -12,8 +12,8 @@ export default function CompleteScreen() {
   const params = useLocalSearchParams();
   const subject = (params.subject as string) || 'korean';
   const total = parseInt((params.total as string) || '3');
-  const correctFinal = parseInt((params.correctFinal as string) || '0');
-  const wrongFinal = parseInt((params.wrongFinal as string) || '0');
+  const correctFinal = parseInt((params.correct as string) || (params.correctFinal as string) || '0');
+  const wrongFinal = parseInt((params.wrong as string) || (params.wrongFinal as string) || '0');
   const rate = total > 0 ? Math.round((correctFinal / total) * 100) : 0;
 
   const getFeedbackMessage = () => {

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image, ImageSourcePropType } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image, ImageSourcePropType, ActivityIndicator } from 'react-native';
 import SafeLayout from '../../components/SafeLayout';
 import { useRouter, useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -31,8 +31,9 @@ export default function StudyScreen() {
   const [childTier, setChildTier] = useState('free');
   const [subjects, setSubjects] = useState<string[]>([]);
   const [questionsPerSubject, setQuestionsPerSubject] = useState(3);
-  // 잠금 상태 (isLocked: true 또는 tier: "expired" 인 경우)
   const [isLocked, setIsLocked] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -40,15 +41,17 @@ export default function StudyScreen() {
     }, [])
   );
 
-  // 자녀 데이터 로드 및 잠금 상태 체크
   const loadData = async () => {
     try {
+      setLoading(true);
+      setError(null);
+
       const parentId = await AsyncStorage.getItem('parentId');
       const childId = await AsyncStorage.getItem('childId');
       const grade = await AsyncStorage.getItem('childGrade');
       const tier = await AsyncStorage.getItem('childTier');
 
-      const g = grade ? parseInt(grade) : 1;
+      const g = grade ? parseInt(grade, 10) : 1;
       const t = tier || 'free';
 
       setChildGrade(g);
@@ -56,47 +59,83 @@ export default function StudyScreen() {
       setSubjects(getSubjectsForGrade(g));
       setQuestionsPerSubject(getQuestionsPerSubject(t));
 
-      if (parentId && childId) {
-        const childDoc = await getDoc(doc(db, 'Parents', parentId, 'Children', childId));
-        if (childDoc.exists()) {
-          const data = childDoc.data();
-          setChildAvatar(resolveAvatar(data.avatar));
-          setChildName(data.name || '학생');
-
-          // 잠금 상태 체크: isLocked가 true이거나 tier가 expired이면 화면 차단
-          if (data.isLocked === true || data.tier === 'expired') {
-            setIsLocked(true);
-            return;
-          } else {
-            setIsLocked(false);
-          }
-
-          if (data.tier) {
-            setChildTier(data.tier);
-            setQuestionsPerSubject(getQuestionsPerSubject(data.tier));
-            await AsyncStorage.setItem('childTier', data.tier || 'free');
-            await AsyncStorage.setItem('childGrade', String(data.grade || 1));
-          }
-        }
+      if (!parentId || !childId) {
+        setError('자녀 정보를 불러올 수 없습니다. 다시 선택해주세요.');
+        return;
       }
-    } catch (error) {
-      console.log('Study data load error:', error);
+
+      const childDoc = await getDoc(doc(db, 'Parents', parentId, 'Children', childId));
+      if (!childDoc.exists()) {
+        setError('자녀 정보를 찾을 수 없습니다. 다시 선택해주세요.');
+        return;
+      }
+
+      const data = childDoc.data();
+      setChildAvatar(resolveAvatar(data.avatar));
+      setChildName(data.name || '학생');
+
+      if (data.isLocked === true || data.tier === 'expired') {
+        setIsLocked(true);
+        return;
+      } else {
+        setIsLocked(false);
+      }
+
+      if (data.tier) {
+        setChildTier(data.tier);
+        setQuestionsPerSubject(getQuestionsPerSubject(data.tier));
+        await AsyncStorage.setItem('childTier', data.tier || 'free');
+        await AsyncStorage.setItem('childGrade', String(data.grade || 1));
+      }
+    } catch (loadError) {
+      console.log('Study data load error:', loadError);
+      setError('학습 정보를 불러올 수 없습니다. 다시 시도해주세요.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  // 잠긴 자녀 안내 화면
+  if (loading) {
+    return (
+      <SafeLayout showHeader headerTitle="학습플랜">
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#7ED4C0" />
+        </View>
+      </SafeLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeLayout showHeader headerTitle="학습플랜">
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={loadData}>
+            <Text style={styles.retryButtonText}>다시 시도</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeLayout>
+    );
+  }
+
   if (isLocked) {
     return (
       <SafeLayout showHeader headerTitle="학습플랜">
         <View style={styles.lockedContainer}>
           <Ionicons name="lock-closed" size={56} color="#9E9E9E" style={styles.lockedIcon} />
-          <Text style={styles.lockedTitle}>학습이 제한된 계정입니다</Text>
-          <Text style={styles.lockedSubtitle}>시리얼 번호를 등록하거나{'\n'}업그레이드하세요</Text>
+          <Text style={styles.lockedTitle}>학습이 제한된 계정입니다.</Text>
+          <Text style={styles.lockedSubtitle}>시리얼 번호를 등록하거나{'\n'}자녀관리에서 상태를 확인해주세요.</Text>
           <TouchableOpacity
             style={styles.lockedButton}
+            onPress={() => router.push('/serial/enter')}
+          >
+            <Text style={styles.lockedButtonText}>시리얼 등록</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.lockedSecondaryButton}
             onPress={() => router.push('/children/manage')}
           >
-            <Text style={styles.lockedButtonText}>자녀관리로 이동</Text>
+            <Text style={styles.lockedSecondaryButtonText}>자녀관리로 이동</Text>
           </TouchableOpacity>
         </View>
       </SafeLayout>
@@ -134,13 +173,13 @@ export default function StudyScreen() {
             <View style={styles.subjectLeft}>
               <Image source={SUBJECT_ICONS[subjectKey]} style={styles.subjectIcon} />
               <Text style={styles.subjectName}>{SUBJECT_LABELS[subjectKey]}</Text>
-              <Text style={styles.subjectRemaining}>남은 {questionsPerSubject}문제</Text>
+              <Text style={styles.subjectRemaining}>총 {questionsPerSubject}문제</Text>
             </View>
             <Text style={styles.subjectArrow}>{'>'}</Text>
           </TouchableOpacity>
         ))}
 
-        <Text style={styles.bottomNote}>매일 꾸준히 학습해요! 💪</Text>
+        <Text style={styles.bottomNote}>매일 꾸준히 학습해요!</Text>
 
       </ScrollView>
     </SafeLayout>
@@ -152,7 +191,35 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
     paddingBottom: 20,
   },
-  // 잠금 화면 — paddingHorizontal: wp(8) 반응형
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: wp(8),
+  },
+  errorText: {
+    fontSize: 14,
+    color: '#FF6B6B',
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  retryButton: {
+    marginTop: 14,
+    backgroundColor: '#7ED4C0',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+  },
+  retryButtonText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
   lockedContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -174,7 +241,7 @@ const styles = StyleSheet.create({
     color: '#9E9E9E',
     textAlign: 'center',
     lineHeight: 22,
-    marginBottom: 32,
+    marginBottom: 20,
   },
   lockedButton: {
     backgroundColor: '#7ED4C0',
@@ -189,7 +256,22 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#FFFFFF',
   },
-  // 일반 화면 — marginHorizontal: wp(5) 반응형
+  lockedSecondaryButton: {
+    marginTop: 10,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#7ED4C0',
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    minWidth: 180,
+    alignItems: 'center',
+  },
+  lockedSecondaryButtonText: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#7ED4C0',
+  },
   profileCard: {
     marginHorizontal: wp(5),
     marginTop: 16,
@@ -222,7 +304,6 @@ const styles = StyleSheet.create({
     color: '#9E9E9E',
     marginTop: 4,
   },
-  // 과목 카드 — marginHorizontal: wp(5) 반응형
   subjectCard: {
     marginHorizontal: wp(5),
     marginTop: 12,
