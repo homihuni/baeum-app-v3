@@ -8,10 +8,17 @@ import { db } from '../../utils/firebase';
 import { checkSerialExpiry } from '../../utils/firestore';
 import { useFocusEffect } from '@react-navigation/native';
 import { resolveAvatar } from '../../utils/avatars';
+import { SUBJECT_ICONS, SUBJECT_LABELS } from '../../utils/subjects';
 import { wp, SCREEN_WIDTH } from '../../utils/responsive';
 
 // 배너/카드 좌우 여백: 화면 폭의 5% (375px 기준 약 19px, 태블릿에서 비례 확대)
 const BANNER_MARGIN = wp(5);
+type SubjectKey = keyof typeof SUBJECT_ICONS;
+
+const getSubjectsForGrade = (grade: number): SubjectKey[] => {
+  if (grade <= 2) return ['korean', 'math', 'integrated'];
+  return ['korean', 'math', 'science', 'social', 'english'];
+};
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -28,12 +35,13 @@ export default function HomeScreen() {
   const [monthlyAverage, setMonthlyAverage] = useState(0);
   const [accessDays, setAccessDays] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
+  const [todaySubjects, setTodaySubjects] = useState<Set<string>>(new Set());
   const [showExpiryModal, setShowExpiryModal] = useState(false);
   const [expiryMessage, setExpiryMessage] = useState('');
   const [banners, setBanners] = useState<any[]>([]);
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
   const scrollViewRef = useRef<ScrollView>(null);
-  const bannerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const bannerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const characters = ['학', '습', '하', '기', ' 🏆'];
   const charAnims = useRef(characters.map(() => new Animated.Value(0))).current;
@@ -226,8 +234,8 @@ export default function HomeScreen() {
           }
         });
         if (freeChild) {
-          await AsyncStorage.setItem('childId', freeChild.id);
-          await AsyncStorage.setItem('childName', freeChild.name);
+          await AsyncStorage.setItem('childId', (freeChild as { id: string; name: string }).id);
+          await AsyncStorage.setItem('childName', (freeChild as { id: string; name: string }).name);
           loadChildData();
           loadMonthlyData();
           refreshChildAvatar();
@@ -266,6 +274,11 @@ export default function HomeScreen() {
       const q = query(recordsRef, where('date', '>=', monthStr + '-01'), where('date', '<=', monthStr + '-31'));
       const snapshot = await getDocs(q);
       const daysSet = new Set<number>();
+      const todaySubjectSet = new Set<string>();
+      const now = new Date();
+      const kstTime = now.getTime() + (9 * 60 * 60 * 1000);
+      const kstDate = new Date(kstTime);
+      const todayStr = kstDate.getUTCFullYear() + '-' + String(kstDate.getUTCMonth() + 1).padStart(2, '0') + '-' + String(kstDate.getUTCDate()).padStart(2, '0');
       let problems = 0;
       let correct = 0;
       let totalScore = 0;
@@ -274,6 +287,9 @@ export default function HomeScreen() {
         const data = docSnap.data();
         const day = parseInt(data.date.split('-')[2]);
         daysSet.add(day);
+        if (data.date === todayStr && data.subject) {
+          todaySubjectSet.add(data.subject);
+        }
         if (data.totalQuestions !== undefined) {
           problems += data.totalQuestions;
           correct += data.correctCount || 0;
@@ -288,13 +304,14 @@ export default function HomeScreen() {
       setAccessDays(daysSet.size);
       setTotalProblems(problems);
       setCorrectCount(correct);
+      setTodaySubjects(todaySubjectSet);
       setMonthlyAverage(scoreCount > 0 ? Math.round(totalScore / scoreCount) : 0);
     } catch (error) {
       console.log('Load error:', error);
     }
   };
 
-  const weekDays = ['일', '월', '화', '수', '목', '금', '토'];
+  const weekDays = ['월', '화', '수', '목', '금', '토', '일'];
   const firstDay = new Date(currentYear, currentMonth - 1, 1).getDay();
   const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
   const todayYear = new Date().getFullYear();
@@ -377,155 +394,141 @@ export default function HomeScreen() {
   };
 
   const displayName = childName.length > 5 ? childName.substring(0, 5) + '..' : childName;
+  const gradeNumber = Number(childGrade) || 1;
+  const missionSubjects = getSubjectsForGrade(gradeNumber);
+  const completedMissionCount = missionSubjects.filter((subjectKey) => todaySubjects.has(subjectKey)).length;
+  const mondayOffset = (today.getDay() + 6) % 7;
+  const weekStampDays = ['월', '화', '수', '목', '금', '토', '일'].map((label, index) => {
+    const date = new Date(today.getFullYear(), today.getMonth(), today.getDate() - mondayOffset + index);
+    return {
+      label,
+      day: date.getDate(),
+      isCurrentMonth: date.getFullYear() === currentYear && date.getMonth() + 1 === currentMonth,
+      isToday: date.toDateString() === today.toDateString(),
+    };
+  });
 
   return (
-    <SafeLayout backgroundColor="#F5F5F5">
+    <SafeLayout backgroundColor="#FFFDF7">
       <ScrollView
         showsVerticalScrollIndicator={false}
         style={styles.scrollView}
-        contentContainerStyle={{ paddingBottom: 16 }}
+        contentContainerStyle={styles.homeContent}
       >
-        {/* 1. PROFILE HEADER BAR */}
-        <View style={styles.profileHeader}>
-          <View style={styles.profileLeft}>
-            <Image source={childAvatar} style={styles.avatarImage} />
-            <Text style={styles.profileName}>{displayName || '김배움'}</Text>
-            <View style={[styles.badge, { backgroundColor: TIER_COLORS[childTier] || '#E0E0E0' }]}>
-              <Text style={[styles.badgeText, { color: TIER_TEXT_COLORS[childTier] || '#666666' }]}>
-                {TIER_LABELS[childTier] || '무료회원'}
-              </Text>
-            </View>
-          </View>
+        <View style={styles.topTitleRow}>
+          <View style={styles.topTitleSpacer} />
+          <Text style={styles.appTitle}>제철배움</Text>
           <Text style={styles.bellIcon}>🔔</Text>
         </View>
 
-        {/* 2. BANNER AREA */}
-        {banners.length > 0 ? (
-          <View style={styles.bannerContainer}>
-            <ScrollView
-              ref={scrollViewRef}
-              horizontal
-              pagingEnabled
-              showsHorizontalScrollIndicator={false}
-              onMomentumScrollEnd={handleBannerScroll}
-              scrollEventThrottle={16}
-            >
-              {banners.map((banner) => (
-                <TouchableOpacity
-                  key={banner.id}
-                  activeOpacity={0.9}
-                  onPress={() => handleBannerPress(banner)}
-                >
-                  <Image
-                    source={{ uri: banner.imageUrl }}
-                    style={styles.bannerImage}
-                    resizeMode="cover"
-                  />
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-            {banners.length > 1 && (
-              <View style={styles.indicatorContainer}>
-                {banners.map((_, index) => (
-                  <View
-                    key={index}
-                    style={[styles.indicator, currentBannerIndex === index && styles.indicatorActive]}
-                  />
-                ))}
+        <View style={styles.heroProfile}>
+          <Image source={childAvatar} style={styles.heroAvatar} />
+          <View style={styles.heroTextBox}>
+            <Text style={styles.heroGreeting}>
+              <Text style={styles.heroName}>{childName || '학생'}</Text> 님, 반가워요!
+            </Text>
+            <Text style={styles.heroSubText}>오늘도 즐겁게 배워볼까요?</Text>
+          </View>
+        </View>
+
+        <View style={styles.heroBadgeRow}>
+          <View style={styles.gradePill}>
+            <Text style={styles.gradePillText}>{gradeNumber}학년</Text>
+          </View>
+          <View style={styles.memberPill}>
+            <Text style={styles.memberPillText}>⭐ {TIER_LABELS[childTier] || '무료회원'}</Text>
+          </View>
+        </View>
+
+        <View style={styles.missionCard}>
+          <View style={styles.missionLeft}>
+            <Text style={styles.missionRibbon}>오늘의 제철 미션</Text>
+            <Text style={styles.missionTitle}>오늘의 {missionSubjects.length}과목 미션을 완료해보세요!</Text>
+            <Text style={styles.missionProgress}>
+              <Text style={styles.missionProgressNumber}>{completedMissionCount}</Text>
+              {' / '}{missionSubjects.length} 과목 완료
+            </Text>
+            <TouchableOpacity style={styles.missionButton} onPress={() => router.replace('/(tabs)/study')}>
+              <Text style={styles.missionButtonText}>미션 보기 〉</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.missionSubjects}>
+            {missionSubjects.map((subjectKey) => (
+              <View key={subjectKey} style={styles.missionSubjectItem}>
+                <Image source={SUBJECT_ICONS[subjectKey]} style={styles.missionSubjectIcon} />
+                <Text style={styles.missionSubjectLabel}>{SUBJECT_LABELS[subjectKey]}</Text>
+                <Text style={[styles.missionCheck, todaySubjects.has(subjectKey) && styles.missionCheckDone]}>
+                  {todaySubjects.has(subjectKey) ? '✓' : '◌'}
+                </Text>
               </View>
-            )}
-          </View>
-        ) : (
-          <View style={styles.banner}>
-            <Text style={styles.bannerTitle}>배움학습 소식</Text>
-            <Text style={styles.bannerSubtitle}>매일 학습하고 성장해요!</Text>
-          </View>
-        )}
-
-        {/* 3. MONTHLY STATS ROW */}
-        <View style={styles.statsCard}>
-          <View style={styles.statColumn}>
-            <Text style={styles.statLabel}>이번달 접속</Text>
-            <Text style={[styles.statValue, { color: '#7ED4C0' }]}>{accessDays}일</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statColumn}>
-            <Text style={styles.statLabel}>학습결과</Text>
-            <Text style={[styles.statValue, { color: '#FF6B6B' }]}>{monthlyAverage}점</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statColumn}>
-            <Text style={styles.statLabel}>문제풀이수</Text>
-            <Text style={[styles.statValue, { color: '#87CEEB' }]}>{totalProblems}개</Text>
-          </View>
-        </View>
-
-        {/* 4. CALENDAR */}
-        <View style={styles.calendarCard}>
-          {/* Calendar Header */}
-          <View style={styles.calendarHeader}>
-            <TouchableOpacity onPress={previousMonth}>
-              <Text style={styles.arrowText}>{'<'}</Text>
-            </TouchableOpacity>
-            <View style={styles.monthTitleContainer}>
-              <Text style={styles.monthTitle}>{currentYear}년 {currentMonth}월</Text>
-              {!isCurrentMonth && (
-                <TouchableOpacity onPress={goToCurrentMonth} style={styles.currentMonthButton}>
-                  <Text style={styles.currentMonthText}>이번 달</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-            <TouchableOpacity onPress={nextMonth} disabled={isCurrentMonth}>
-              <Text style={[styles.arrowText, isCurrentMonth && { color: '#D0D0D0' }]}>{'>'}</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Week Days Header */}
-          <View style={styles.weekRow}>
-            {weekDays.map((day, index) => {
-              let color = '#9E9E9E';
-              if (index === 0) color = '#FF6B6B';
-              else if (index === 6) color = '#4A90D9';
-              return (
-                <View key={index} style={styles.dayCell}>
-                  <Text style={[styles.weekDayText, { color }]}>{day}</Text>
-                </View>
-              );
-            })}
-          </View>
-
-          {/* Calendar Days */}
-          <View style={styles.daysGrid}>
-            {renderCalendarDays()}
-          </View>
-
-          {/* Calendar Legend */}
-          <View style={styles.legendRow}>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: '#4CAF50' }]} />
-              <Text style={styles.legendText}>완료</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: '#FF6B6B' }]} />
-              <Text style={styles.legendText}>미완료</Text>
-            </View>
-          </View>
-        </View>
-
-      </ScrollView>
-
-      {/* 5. LEARN BUTTON - FIXED AT BOTTOM */}
-      <View style={styles.learnButtonContainer}>
-        <TouchableOpacity style={styles.learnButton} onPress={() => router.replace('/(tabs)/study')}>
-          <Animated.View style={{ transform: [{ scale: scaleAnim }], flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
-            {characters.map((char, index) => (
-              <Animated.Text key={index} style={[styles.learnButtonText, { opacity: charAnims[index] }]}>
-                {char}
-              </Animated.Text>
             ))}
-          </Animated.View>
-        </TouchableOpacity>
-      </View>
+          </View>
+        </View>
+
+        <View style={styles.weekCard}>
+          <Text style={styles.sectionTitle}>이번 주 별 스탬프</Text>
+          <View style={styles.weekStampBox}>
+            {weekStampDays.map((item) => (
+              <View key={item.label} style={[styles.weekStampItem, item.isToday && styles.weekStampToday]}>
+                <Text style={styles.weekStampLabel}>{item.label}</Text>
+                <Text style={[styles.weekStampStar, item.isCurrentMonth && studyDays.has(item.day) && styles.weekStampDone]}>
+                  {item.isCurrentMonth && studyDays.has(item.day) ? '★' : '☆'}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.summaryRow}>
+          <View style={styles.summaryCard}>
+            <Text style={styles.sectionTitle}>이번 달 학습 요약</Text>
+            <View style={styles.summaryStats}>
+              <View style={styles.summaryColumn}>
+                <Text style={styles.summaryLabel}>학습한 날</Text>
+                <Text style={styles.summaryValue}>{accessDays}<Text style={styles.summaryUnit}>일</Text></Text>
+              </View>
+              <View style={styles.summaryDivider} />
+              <View style={styles.summaryColumn}>
+                <Text style={styles.summaryLabel}>완료한 미션</Text>
+                <Text style={styles.summaryValue}>{totalProblems}<Text style={styles.summaryUnit}>개</Text></Text>
+              </View>
+            </View>
+            <TouchableOpacity style={styles.summaryMessage} onPress={() => router.push('/(tabs)/growth')}>
+              <Text style={styles.summaryMessageText}>⭐ 이번 달도 잘하고 있어요! 〉</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.calendarCard}>
+            <Text style={styles.sectionTitle}>학습 캘린더</Text>
+            <View style={styles.calendarHeader}>
+              <TouchableOpacity onPress={previousMonth}>
+                <Text style={styles.arrowText}>{'<'}</Text>
+              </TouchableOpacity>
+              <Text style={styles.monthTitle}>{currentMonth}월</Text>
+              <TouchableOpacity onPress={nextMonth} disabled={isCurrentMonth}>
+                <Text style={[styles.arrowText, isCurrentMonth && { color: '#D0D0D0' }]}>{'>'}</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.weekRow}>
+              {weekDays.map((day, index) => {
+                let color = '#9E9E9E';
+                if (index === 0) color = '#FF6B6B';
+                else if (index === 6) color = '#4A90D9';
+                return (
+                  <View key={index} style={styles.dayCell}>
+                    <Text style={[styles.weekDayText, { color }]}>{day}</Text>
+                  </View>
+                );
+              })}
+            </View>
+
+            <View style={styles.daysGrid}>
+              {renderCalendarDays()}
+            </View>
+          </View>
+        </View>
+      </ScrollView>
 
       {/* EXPIRY NOTIFICATION MODAL */}
       <Modal visible={showExpiryModal} transparent={true} animationType="fade">
@@ -558,6 +561,89 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
+  },
+  homeContent: {
+    paddingBottom: 24,
+  },
+  topTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: BANNER_MARGIN,
+    paddingTop: 14,
+    paddingBottom: 12,
+    backgroundColor: '#FFFDF7',
+  },
+  topTitleSpacer: {
+    width: 32,
+  },
+  appTitle: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: '#1F2A24',
+  },
+  heroProfile: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: BANNER_MARGIN,
+    paddingTop: 10,
+    paddingBottom: 14,
+    backgroundColor: '#FFFDF7',
+  },
+  heroAvatar: {
+    width: 82,
+    height: 82,
+    borderRadius: 41,
+    borderWidth: 1,
+    borderColor: '#B8D8BC',
+    marginRight: 16,
+  },
+  heroTextBox: {
+    flex: 1,
+  },
+  heroGreeting: {
+    fontSize: 19,
+    color: '#1F2A24',
+    marginBottom: 8,
+  },
+  heroName: {
+    fontWeight: 'bold',
+  },
+  heroSubText: {
+    fontSize: 14,
+    color: '#1F2A24',
+  },
+  heroBadgeRow: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: BANNER_MARGIN,
+    paddingBottom: 20,
+    backgroundColor: '#FFFDF7',
+  },
+  gradePill: {
+    borderWidth: 1,
+    borderColor: '#DDEBD5',
+    borderRadius: 20,
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    backgroundColor: '#FBFCF6',
+  },
+  gradePillText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#3E8D66',
+  },
+  memberPill: {
+    borderWidth: 1,
+    borderColor: '#E7E2D8',
+    borderRadius: 20,
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    backgroundColor: '#FFFDF9',
+  },
+  memberPillText: {
+    fontSize: 14,
+    color: '#1F2A24',
   },
   // 1. Profile Header — paddingHorizontal: BANNER_MARGIN (반응형)
   profileHeader: {
@@ -599,6 +685,206 @@ const styles = StyleSheet.create({
     color: '#9E9E9E',
   },
   // 2. Banner — marginHorizontal: BANNER_MARGIN (반응형)
+  missionCard: {
+    flexDirection: 'row',
+    marginHorizontal: BANNER_MARGIN,
+    marginTop: 14,
+    borderRadius: 18,
+    padding: 16,
+    backgroundColor: '#F7FBF2',
+    borderWidth: 1,
+    borderColor: '#DDEBD5',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  missionLeft: {
+    flex: 1,
+    paddingRight: 10,
+  },
+  missionRibbon: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#4FA37C',
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: 'bold',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 6,
+    marginBottom: 12,
+  },
+  missionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1F2A24',
+    lineHeight: 26,
+    marginBottom: 10,
+  },
+  missionProgress: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#1F2A24',
+    marginBottom: 12,
+  },
+  missionProgressNumber: {
+    fontSize: 26,
+    color: '#4FA37C',
+  },
+  missionButton: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: '#E7E2D8',
+  },
+  missionButtonText: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#1F2A24',
+  },
+  missionSubjects: {
+    flex: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-end',
+    gap: 8,
+  },
+  missionSubjectItem: {
+    width: 58,
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  missionSubjectIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    marginBottom: 4,
+  },
+  missionSubjectLabel: {
+    fontSize: 11,
+    color: '#333333',
+    textAlign: 'center',
+  },
+  missionCheck: {
+    fontSize: 18,
+    color: '#4FA37C',
+    marginTop: 2,
+  },
+  missionCheckDone: {
+    fontWeight: 'bold',
+  },
+  weekCard: {
+    marginHorizontal: BANNER_MARGIN,
+    marginTop: 16,
+    borderRadius: 18,
+    padding: 16,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#EFE6DA',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#1F2A24',
+    marginBottom: 12,
+  },
+  weekStampBox: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFDF9',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#F1E9DF',
+    overflow: 'hidden',
+  },
+  weekStampItem: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 10,
+  },
+  weekStampToday: {
+    backgroundColor: '#EEF7EE',
+  },
+  weekStampLabel: {
+    fontSize: 12,
+    color: '#1F2A24',
+    marginBottom: 6,
+  },
+  weekStampStar: {
+    fontSize: 28,
+    color: '#D9CEC2',
+  },
+  weekStampDone: {
+    color: '#F7A928',
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginHorizontal: BANNER_MARGIN,
+    marginTop: 16,
+  },
+  summaryCard: {
+    flex: 1,
+    minWidth: 260,
+    borderRadius: 18,
+    padding: 16,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#EFE6DA',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  summaryStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 18,
+  },
+  summaryColumn: {
+    flex: 1,
+  },
+  summaryLabel: {
+    fontSize: 13,
+    color: '#1F2A24',
+    marginBottom: 8,
+  },
+  summaryValue: {
+    fontSize: 30,
+    fontWeight: 'bold',
+    color: '#4FA37C',
+  },
+  summaryUnit: {
+    fontSize: 18,
+  },
+  summaryDivider: {
+    width: 1,
+    height: 46,
+    backgroundColor: '#EADFD4',
+    marginHorizontal: 12,
+  },
+  summaryMessage: {
+    backgroundColor: '#F4F7ED',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+  },
+  summaryMessageText: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#3E8D66',
+  },
   banner: {
     height: 90,
     marginHorizontal: BANNER_MARGIN,
@@ -687,17 +973,18 @@ const styles = StyleSheet.create({
   },
   // 4. Calendar Card — marginHorizontal: BANNER_MARGIN (반응형)
   calendarCard: {
-    marginHorizontal: BANNER_MARGIN,
-    marginTop: 10,
-    marginBottom: 0,
-    borderRadius: 12,
+    flex: 1,
+    minWidth: 260,
+    borderRadius: 18,
     padding: 16,
     backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#EFE6DA',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.05,
     shadowRadius: 4,
-    elevation: 3,
+    elevation: 2,
   },
   calendarHeader: {
     flexDirection: 'row',

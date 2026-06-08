@@ -158,7 +158,7 @@ export default function LoginScreen() {
     <View style={styles.container}>
       {/* 상단: 캐릭터 배경 이미지 */}
       <ImageBackground
-        source={require('../../assets/images/Mobile_app_login_bg.png')}
+        source={require('../../assets/images/Mobile_app_login_hero.png')}
         style={styles.heroSection}
         resizeMode="cover"
       >
