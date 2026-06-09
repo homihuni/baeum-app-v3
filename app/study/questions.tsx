@@ -184,6 +184,7 @@ export default function QuestionsScreen() {
       setIsCorrect(correct);
       setIsAnswered(true);
       playSound(correct);
+      await saveResult(correct ? 1 : 0, correct ? 0 : 1, 1);
       if (correct) setCorrectCount(prev => prev + 1);
       else setWrongCount(prev => prev + 1);
       return;
@@ -196,6 +197,7 @@ export default function QuestionsScreen() {
     setIsCorrect(correct);
     setIsAnswered(true);
     playSound(correct);
+    await saveResult(correct ? 1 : 0, correct ? 0 : 1, 1);
     if (correct) setCorrectCount(prev => prev + 1);
     else setWrongCount(prev => prev + 1);
   };
@@ -231,7 +233,6 @@ export default function QuestionsScreen() {
 
   const handleNext = async () => {
     if (currentIndex + 1 >= problems.length) {
-      await saveResult(correctCount, wrongCount, problems.length);
       router.replace({
         pathname: '/study/complete',
         params: {

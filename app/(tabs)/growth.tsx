@@ -355,50 +355,59 @@ export default function GrowthScreen() {
     );
   }
 
+  const currentMonth = new Date().getMonth() + 1;
+  const todayEntries = Object.entries(todayStats);
+  const totalTodayCorrect = todayEntries.reduce((sum, [, stat]) => sum + stat.correct, 0);
+  const totalTodayWrong = todayEntries.reduce((sum, [, stat]) => sum + stat.wrong, 0);
+
   return (
-    <SafeLayout showHeader headerTitle="성장 리포트">
+    <SafeLayout backgroundColor="#FFFDF7">
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scroll}
       >
-        {/* 자녀 이름 서브타이틀 */}
-        <Text style={styles.subtitle}>{childName || '학생'}의 학습 현황</Text>
-
-        {/* AI 하루 피드백 */}
-        <View style={styles.aiCard}>
-          <Text style={styles.cardTitleSmall}>🤖 AI 하루 피드백</Text>
-          {renderDailyAIComment()}
+        <View style={styles.reportHeader}>
+          <TouchableOpacity style={styles.backCircle} onPress={() => router.replace('/(tabs)/home')}>
+            <Ionicons name="chevron-back" size={28} color="#147B60" />
+          </TouchableOpacity>
+          <Text style={styles.reportTitle}>성장 리포트</Text>
+          <View style={styles.headerSpacer} />
         </View>
 
-        {/* AI 월간 종합 분석 */}
+        <View style={styles.childStatusRow}>
+          <View style={styles.statusDot} />
+          <Text style={styles.subtitle}>{childName || '학생'}의 학습 현황</Text>
+        </View>
+
+        <View style={styles.aiCard}>
+          <View style={styles.aiTitleRow}>
+            <View style={styles.aiBotBadge}>
+              <Ionicons name="sparkles" size={22} color="#2D8CFF" />
+            </View>
+            <Text style={styles.aiCardTitle}>Daily 피드백 by 제철배움 AI</Text>
+          </View>
+          <Text style={styles.cheerTitle}>
+            {monthlyStats.totalProblems > 0 ? '꾸준히 잘하고 있어요!' : '오늘의 첫 미션을 기다리고 있어요!'}
+          </Text>
+          <View style={styles.aiSoftDivider} />
+          <View style={styles.aiFeedbackBox}>
+            {renderDailyAIComment()}
+          </View>
+          <View style={styles.cheerStamp}>
+            <Ionicons name="star" size={22} color="#5CC7B2" />
+            <Text style={styles.cheerStampText}>앞으로도 꾸준히 노력하면 더 잘할 거예요</Text>
+          </View>
+        </View>
+
         {(tier === 'baeum' || tier === 'sky') && (
           <View style={styles.aiCard}>
-            <Text style={styles.cardTitleSmall}>📈 AI 종합 분석 (월간)</Text>
+            <Text style={styles.cardTitleSmall}>📈 AI 월간 응원 카드</Text>
             {renderMonthlyAIComment()}
           </View>
         )}
 
-        {/* 오늘의 학습 */}
         <View style={styles.cardSmall}>
-          <Text style={styles.cardTitleSmall}>📊 오늘의 학습</Text>
-          {Object.keys(todayStats).length === 0 ? (
-            <Text style={styles.emptyText}>오늘 아직 학습 기록이 없어요</Text>
-          ) : (
-            Object.entries(todayStats).map(([subj, stat]) => (
-              <View key={subj} style={styles.subjectRow}>
-                <Text style={styles.subjectNameSmall}>{SUBJECT_LABELS[subj] || subj}</Text>
-                <View style={styles.subjectStats}>
-                  <Text style={styles.correctTextSmall}>✅ {stat.correct}</Text>
-                  <Text style={styles.wrongTextSmall}>❌ {stat.wrong}</Text>
-                </View>
-              </View>
-            ))
-          )}
-        </View>
-
-        {/* 월간 통계 */}
-        <View style={styles.cardSmall}>
-          <Text style={styles.cardTitleSmall}>📅 {new Date().getMonth() + 1}월 학습 통계</Text>
+          <Text style={styles.cardTitleSmall}>📅 {currentMonth}월 학습 통계</Text>
           <View style={styles.statsGrid}>
             <View style={styles.statItem}>
               <Text style={styles.statValueSmall}>{monthlyStats.accessDays}일</Text>
@@ -415,7 +424,6 @@ export default function GrowthScreen() {
           </View>
         </View>
 
-        {/* 연속 학습 */}
         <View style={styles.cardSmall}>
           <Text style={styles.cardTitleSmall}>🔥 연속 학습</Text>
           <Text style={styles.streakValueSmall}>{streakDays}일 연속 학습 중!</Text>
@@ -426,7 +434,29 @@ export default function GrowthScreen() {
           </Text>
         </View>
 
-        {/* 버튼들 — marginHorizontal: wp(4) 반응형 */}
+        <View style={styles.cardSmall}>
+          <Text style={styles.cardTitleSmall}>📊 오늘의 학습</Text>
+          {todayEntries.length === 0 ? (
+            <Text style={styles.emptyText}>오늘 아직 학습 기록이 없어요</Text>
+          ) : (
+            <>
+              {todayEntries.map(([subj, stat]) => (
+                <View key={subj} style={styles.subjectRow}>
+                  <Text style={styles.subjectNameSmall}>{SUBJECT_LABELS[subj] || subj}</Text>
+                  <View style={styles.subjectStats}>
+                    <Text style={styles.correctTextSmall}>참잘 {stat.correct}</Text>
+                    <Text style={styles.wrongTextSmall}>다시 {stat.wrong}</Text>
+                  </View>
+                </View>
+              ))}
+              <View style={styles.todayTotalRow}>
+                <Text style={styles.todayTotalText}>오늘의 도전</Text>
+                <Text style={styles.todayTotalScore}>참잘 {totalTodayCorrect} · 다시 {totalTodayWrong}</Text>
+              </View>
+            </>
+          )}
+        </View>
+
         <TouchableOpacity style={styles.reportBtn} onPress={handleReportPress}>
           <Text style={styles.reportText}>상세 리포트 보기</Text>
         </TouchableOpacity>
@@ -467,9 +497,51 @@ export default function GrowthScreen() {
 }
 
 const styles = StyleSheet.create({
-  // 스크롤 — paddingHorizontal: wp(5) 반응형
-  scroll: { paddingHorizontal: wp(5), paddingTop: 20, paddingBottom: 100 },
-  subtitle: { fontSize: 14, color: '#666', marginBottom: 16 },
+  scroll: { paddingHorizontal: wp(4), paddingTop: 8, paddingBottom: 100 },
+  reportHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 8,
+    paddingBottom: 18,
+  },
+  backCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  reportTitle: {
+    fontSize: 26,
+    fontWeight: '900',
+    color: '#123C2B',
+    textShadowColor: '#BFE8D4',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 0,
+  },
+  headerSpacer: {
+    width: 48,
+  },
+  childStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  statusDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#5CC76B',
+    marginRight: 10,
+  },
+  subtitle: { fontSize: 18, color: '#14251C', fontWeight: 'bold' },
 
   // 잠금 화면 — paddingHorizontal: wp(8) 반응형
   lockedContainer: {
@@ -510,7 +582,74 @@ const styles = StyleSheet.create({
   },
 
   // AI 카드
-  aiCard: { backgroundColor: '#F8F9FA', borderRadius: 12, padding: 16, marginBottom: 12 },
+  aiCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 22,
+    padding: 18,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#F0E9DF',
+    shadowColor: '#000',
+    shadowOffset: {width:0,height:4},
+    shadowOpacity: 0.07,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  aiTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 18,
+  },
+  aiBotBadge: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    backgroundColor: '#EAF5FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  aiCardTitle: {
+    flex: 1,
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#123C2B',
+  },
+  cheerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#111111',
+    lineHeight: 32,
+    marginBottom: 14,
+  },
+  aiSoftDivider: {
+    height: 1,
+    borderStyle: 'dashed',
+    borderWidth: 1,
+    borderColor: '#CDE7E1',
+    marginBottom: 14,
+  },
+  aiFeedbackBox: {
+    minHeight: 34,
+  },
+  cheerStamp: {
+    marginTop: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F2FBF8',
+    borderWidth: 1,
+    borderColor: '#D4EEE7',
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+  },
+  cheerStampText: {
+    marginLeft: 8,
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#16875F',
+  },
   aiCommentContainer: {},
   aiTextFree: { fontSize: 14, color: '#444', lineHeight: 22, marginBottom: 8 },
   blurContainer: { position: 'relative', marginTop: 8 },
@@ -519,18 +658,30 @@ const styles = StyleSheet.create({
   lockMessageContainer: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', gap: 4 },
   lockText1: { fontSize: 13, color: '#666', textAlign: 'center' },
   lockText2: { fontSize: 13, color: '#7ED4C0', fontWeight: 'bold', textAlign: 'center' },
-  aiTextPaid: { fontSize: 14, color: '#444', lineHeight: 22 },
+  aiTextPaid: { fontSize: 15, color: '#333333', lineHeight: 24 },
   aiLoadingContainer: { alignItems: 'center', paddingVertical: 12 },
   aiLoadingText: { fontSize: 12, color: '#999', marginTop: 8 },
-  aiSummaryText: { fontSize: 15, fontWeight: 'bold', color: '#333', lineHeight: 22, marginBottom: 8 },
-  aiDivider: { height: 1, backgroundColor: '#E0E0E0', marginVertical: 10 },
-  aiSubjectText: { fontSize: 13, color: '#555', lineHeight: 20, marginBottom: 4 },
-  aiEncouragementText: { fontSize: 14, fontWeight: 'bold', color: '#7ED4C0', lineHeight: 22, marginTop: 4 },
-  aiTipText: { fontSize: 13, color: '#666', lineHeight: 20, marginTop: 4, fontStyle: 'italic' },
+  aiSummaryText: { fontSize: 16, fontWeight: 'bold', color: '#123C2B', lineHeight: 24, marginBottom: 8 },
+  aiDivider: { height: 1, backgroundColor: '#E7EFEA', marginVertical: 10 },
+  aiSubjectText: { fontSize: 14, color: '#333333', lineHeight: 22, marginBottom: 6 },
+  aiEncouragementText: { fontSize: 15, fontWeight: 'bold', color: '#16875F', lineHeight: 23, marginTop: 4 },
+  aiTipText: { fontSize: 14, color: '#666', lineHeight: 22, marginTop: 4 },
 
   // 일반 카드
-  cardSmall: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 10, shadowColor: '#000', shadowOffset: {width:0,height:1}, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
-  cardTitleSmall: { fontSize: 14, fontWeight: 'bold', color: '#333', marginBottom: 8 },
+  cardSmall: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 18,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#F0E9DF',
+    shadowColor: '#000',
+    shadowOffset: {width:0,height:3},
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  cardTitleSmall: { fontSize: 18, fontWeight: 'bold', color: '#123C2B', marginBottom: 14 },
 
   // 업그레이드 카드
   upgradeCard: { backgroundColor: '#F5F5F5', borderRadius: 12, padding: 16, alignItems: 'center' },
@@ -541,27 +692,47 @@ const styles = StyleSheet.create({
   emptyText: { fontSize: 14, color: '#999', textAlign: 'center', paddingVertical: 12 },
 
   // 오늘의 학습
-  subjectRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
-  subjectNameSmall: { fontSize: 13, fontWeight: '600', color: '#333' },
-  subjectStats: { flexDirection: 'row', gap: 16 },
-  correctTextSmall: { fontSize: 14, color: '#4CAF50', fontWeight: 'bold' },
-  wrongTextSmall: { fontSize: 14, color: '#FF6B6B', fontWeight: 'bold' },
+  subjectRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F0EFEA' },
+  subjectNameSmall: { fontSize: 17, fontWeight: 'bold', color: '#333' },
+  subjectStats: { flexDirection: 'row', gap: 12 },
+  correctTextSmall: { fontSize: 15, color: '#16A66A', fontWeight: 'bold' },
+  wrongTextSmall: { fontSize: 15, color: '#FF5F6D', fontWeight: 'bold' },
+  todayTotalRow: {
+    marginTop: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#FFF9EE',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+  todayTotalText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#B47620',
+  },
+  todayTotalScore: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#123C2B',
+  },
 
   // 월간 통계
   statsGrid: { flexDirection: 'row', justifyContent: 'space-around', marginTop: 4 },
-  statItem: { alignItems: 'center' },
-  statValueSmall: { fontSize: 20, fontWeight: 'bold', color: '#333' },
-  statLabelSmall: { fontSize: 10, color: '#999', marginTop: 2 },
+  statItem: { alignItems: 'center', flex: 1 },
+  statValueSmall: { fontSize: 24, fontWeight: 'bold', color: '#333' },
+  statLabelSmall: { fontSize: 12, color: '#777', marginTop: 5 },
 
   // 연속 학습
-  streakValueSmall: { fontSize: 18, fontWeight: 'bold', color: '#FF9800', textAlign: 'center', marginTop: 4 },
-  streakSubSmall: { fontSize: 12, color: '#666', textAlign: 'center', marginTop: 6 },
+  streakValueSmall: { fontSize: 23, fontWeight: 'bold', color: '#FF9900', textAlign: 'center', marginTop: 4 },
+  streakSubSmall: { fontSize: 14, color: '#666', textAlign: 'center', marginTop: 8 },
 
   // 버튼 — marginHorizontal: wp(4) 반응형
-  reportBtn: { backgroundColor: '#7ED4C0', borderRadius: 12, paddingVertical: 14, marginHorizontal: wp(4), alignItems: 'center', marginBottom: 10, marginTop: 8 },
-  reportText: { fontSize: 16, fontWeight: 'bold', color: '#FFFFFF' },
-  membershipBtn: { backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: '#7ED4C0', borderRadius: 12, paddingVertical: 14, marginHorizontal: wp(4), alignItems: 'center', marginBottom: 20 },
-  membershipText: { fontSize: 16, fontWeight: 'bold', color: '#7ED4C0' },
+  reportBtn: { backgroundColor: '#65D2BB', borderRadius: 18, paddingVertical: 17, alignItems: 'center', marginBottom: 12, marginTop: 2 },
+  reportText: { fontSize: 19, fontWeight: 'bold', color: '#FFFFFF' },
+  membershipBtn: { backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: '#65D2BB', borderRadius: 18, paddingVertical: 16, alignItems: 'center', marginBottom: 20 },
+  membershipText: { fontSize: 18, fontWeight: 'bold', color: '#65BFAE' },
 
   // 모달
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },

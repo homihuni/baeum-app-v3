@@ -75,8 +75,15 @@ export default function MenuScreen() {
   ];
 
   return (
-    <SafeLayout showHeader headerTitle="전체메뉴">
+    <SafeLayout backgroundColor="#FFFDF7">
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
+        <View style={styles.menuHeader}>
+          <TouchableOpacity style={styles.backCircle} onPress={() => router.replace('/(tabs)/home')}>
+            <Ionicons name="chevron-back" size={28} color="#147B60" />
+          </TouchableOpacity>
+          <Text style={styles.menuTitle}>전체메뉴</Text>
+          <View style={styles.headerSpacer} />
+        </View>
 
         {/* 프로필 섹션 */}
         <View style={styles.profileSection}>
@@ -131,6 +138,38 @@ export default function MenuScreen() {
 }
 
 const styles = StyleSheet.create({
+  menuHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: wp(4),
+    paddingTop: 8,
+    paddingBottom: 10,
+  },
+  backCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  menuTitle: {
+    fontSize: 26,
+    fontWeight: '900',
+    color: '#123C2B',
+    textShadowColor: '#BFE8D4',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 0,
+  },
+  headerSpacer: {
+    width: 48,
+  },
   // 프로필 — marginHorizontal: wp(4) 반응형 (16px→31px on tablet)
   profileSection: {
     backgroundColor: '#E8F8F5',

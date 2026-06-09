@@ -10,6 +10,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { resolveAvatar } from '../../utils/avatars';
 import { SUBJECT_ICONS, SUBJECT_LABELS } from '../../utils/subjects';
 import { wp, SCREEN_WIDTH } from '../../utils/responsive';
+import { Ionicons } from '@expo/vector-icons';
 
 // 배너/카드 좌우 여백: 화면 폭의 5% (375px 기준 약 19px, 태블릿에서 비례 확대)
 const BANNER_MARGIN = wp(5);
@@ -50,6 +51,7 @@ export default function HomeScreen() {
   const TIER_LABELS: Record<string, string> = { free: '무료회원', baeum: '배움회원', sky: '스카이회원' };
   const TIER_COLORS: Record<string, string> = { free: '#E0E0E0', baeum: '#4ECDC4', sky: '#87CEEB' };
   const TIER_TEXT_COLORS: Record<string, string> = { free: '#666666', baeum: '#FFFFFF', sky: '#333333' };
+  const MEMBER_TEXT_COLORS: Record<string, string> = { free: '#666666', baeum: '#E978A2', sky: '#55A9D8' };
 
   useEffect(() => {
     loadChildData();
@@ -155,7 +157,6 @@ export default function HomeScreen() {
       setCurrentBannerIndex(prevIndex => {
         const nextIndex = (prevIndex + 1) % totalBanners;
         const screenWidth = Dimensions.get('window').width;
-        // 스타일의 BANNER_MARGIN과 동일한 값으로 배너 폭 계산
         const bannerWidth = screenWidth - 2 * BANNER_MARGIN;
         scrollViewRef.current?.scrollTo({ x: nextIndex * bannerWidth, animated: true });
         return nextIndex;
@@ -181,7 +182,6 @@ export default function HomeScreen() {
 
   const handleBannerScroll = (event: any) => {
     const screenWidth = Dimensions.get('window').width;
-    // 스타일의 BANNER_MARGIN과 동일한 값으로 배너 폭 계산
     const bannerWidth = screenWidth - 2 * BANNER_MARGIN;
     const contentOffsetX = event.nativeEvent.contentOffset.x;
     const index = Math.round(contentOffsetX / bannerWidth);
@@ -417,8 +417,10 @@ export default function HomeScreen() {
       >
         <View style={styles.topTitleRow}>
           <View style={styles.topTitleSpacer} />
-          <Text style={styles.appTitle}>제철배움</Text>
-          <Text style={styles.bellIcon}>🔔</Text>
+          <TouchableOpacity style={styles.notificationButton} activeOpacity={0.8}>
+            <Ionicons name="notifications-outline" size={23} color="#147B60" />
+            <View style={styles.notificationDot} />
+          </TouchableOpacity>
         </View>
 
         <View style={styles.heroProfile}>
@@ -436,20 +438,22 @@ export default function HomeScreen() {
             <Text style={styles.gradePillText}>{gradeNumber}학년</Text>
           </View>
           <View style={styles.memberPill}>
-            <Text style={styles.memberPillText}>⭐ {TIER_LABELS[childTier] || '무료회원'}</Text>
+            <Text style={[styles.memberPillText, { color: MEMBER_TEXT_COLORS[childTier] || '#666666' }]}>
+              {TIER_LABELS[childTier] || '무료회원'}
+            </Text>
           </View>
         </View>
 
         <View style={styles.missionCard}>
           <View style={styles.missionLeft}>
-            <Text style={styles.missionRibbon}>오늘의 제철 미션</Text>
+            <Text style={styles.missionRibbon}>오늘의 배움 미션</Text>
             <Text style={styles.missionTitle}>오늘의 {missionSubjects.length}과목 미션을 완료해보세요!</Text>
             <Text style={styles.missionProgress}>
               <Text style={styles.missionProgressNumber}>{completedMissionCount}</Text>
               {' / '}{missionSubjects.length} 과목 완료
             </Text>
             <TouchableOpacity style={styles.missionButton} onPress={() => router.replace('/(tabs)/study')}>
-              <Text style={styles.missionButtonText}>미션 보기 〉</Text>
+              <Text style={styles.missionButtonText}>학습하기 〉</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.missionSubjects}>
@@ -457,9 +461,13 @@ export default function HomeScreen() {
               <View key={subjectKey} style={styles.missionSubjectItem}>
                 <Image source={SUBJECT_ICONS[subjectKey]} style={styles.missionSubjectIcon} />
                 <Text style={styles.missionSubjectLabel}>{SUBJECT_LABELS[subjectKey]}</Text>
-                <Text style={[styles.missionCheck, todaySubjects.has(subjectKey) && styles.missionCheckDone]}>
-                  {todaySubjects.has(subjectKey) ? '✓' : '◌'}
-                </Text>
+                {todaySubjects.has(subjectKey) ? (
+                  <View style={styles.missionStamp}>
+                    <Text style={styles.missionStampText}>참잘했어요</Text>
+                  </View>
+                ) : (
+                  <View style={styles.missionPending} />
+                )}
               </View>
             ))}
           </View>
@@ -494,7 +502,7 @@ export default function HomeScreen() {
               </View>
             </View>
             <TouchableOpacity style={styles.summaryMessage} onPress={() => router.push('/(tabs)/growth')}>
-              <Text style={styles.summaryMessageText}>⭐ 이번 달도 잘하고 있어요! 〉</Text>
+              <Text style={styles.summaryMessageText}>⭐ 이번달 성장 보러가기 〉</Text>
             </TouchableOpacity>
           </View>
 
@@ -577,10 +585,31 @@ const styles = StyleSheet.create({
   topTitleSpacer: {
     width: 32,
   },
-  appTitle: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: '#1F2A24',
+  notificationButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#DDF2EA',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 7,
+    elevation: 3,
+  },
+  notificationDot: {
+    position: 'absolute',
+    top: 8,
+    right: 9,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#FF6B5F',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
   },
   heroProfile: {
     flexDirection: 'row',
@@ -680,10 +709,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: 'bold',
   },
-  bellIcon: {
-    fontSize: 24,
-    color: '#9E9E9E',
-  },
   // 2. Banner — marginHorizontal: BANNER_MARGIN (반응형)
   missionCard: {
     flexDirection: 'row',
@@ -754,7 +779,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   missionSubjectItem: {
-    width: 58,
+    width: 64,
     alignItems: 'center',
     marginBottom: 6,
   },
@@ -769,13 +794,29 @@ const styles = StyleSheet.create({
     color: '#333333',
     textAlign: 'center',
   },
-  missionCheck: {
-    fontSize: 18,
-    color: '#4FA37C',
-    marginTop: 2,
+  missionStamp: {
+    marginTop: 5,
+    borderWidth: 1.5,
+    borderColor: '#FF9AA8',
+    borderRadius: 12,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    backgroundColor: '#FFF6F7',
+    transform: [{ rotate: '-6deg' }],
   },
-  missionCheckDone: {
+  missionStampText: {
+    fontSize: 8,
     fontWeight: 'bold',
+    color: '#F26B7A',
+  },
+  missionPending: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: '#8BCBB4',
+    marginTop: 7,
   },
   weekCard: {
     marginHorizontal: BANNER_MARGIN,

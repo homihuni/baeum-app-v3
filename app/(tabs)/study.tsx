@@ -11,9 +11,28 @@ import { Ionicons } from '@expo/vector-icons';
 import { wp } from '../../utils/responsive';
 
 const TIER_LABELS: Record<string, string> = { free: '무료회원', baeum: '배움회원', sky: '스카이회원' };
+type SubjectKey = keyof typeof SUBJECT_ICONS;
 
-const getSubjectsForGrade = (grade: number) => {
-  if (grade <= 2) return ['korean', 'math', 'integrated'];
+const SUBJECT_CARD_COLORS: Record<SubjectKey, string> = {
+  korean: '#BDEFD2',
+  math: '#E2CDFB',
+  integrated: '#BFE3FF',
+  english: '#FFD8E6',
+  science: '#CDEFEA',
+  social: '#FFE3B8',
+};
+
+const SUBJECT_BUTTON_COLORS: Record<SubjectKey, string> = {
+  korean: '#63CFA0',
+  math: '#B78AF2',
+  integrated: '#73BFF1',
+  english: '#F497B9',
+  science: '#75CFC3',
+  social: '#F2B766',
+};
+
+const getSubjectsForGrade = (grade: number): SubjectKey[] => {
+  if (grade <= 3) return ['korean', 'math', 'integrated'];
   return ['korean', 'math', 'science', 'social', 'english'];
 };
 
@@ -29,7 +48,7 @@ export default function StudyScreen() {
   const [childAvatar, setChildAvatar] = useState<ImageSourcePropType>(require('../../assets/images/avatar_01.png'));
   const [childGrade, setChildGrade] = useState(1);
   const [childTier, setChildTier] = useState('free');
-  const [subjects, setSubjects] = useState<string[]>([]);
+  const [subjects, setSubjects] = useState<SubjectKey[]>([]);
   const [questionsPerSubject, setQuestionsPerSubject] = useState(3);
   const [isLocked, setIsLocked] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -143,43 +162,63 @@ export default function StudyScreen() {
   }
 
   return (
-    <SafeLayout showHeader headerTitle="학습플랜">
+    <SafeLayout backgroundColor="#FFFDF7">
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
+        <View style={styles.planHeader}>
+          <TouchableOpacity style={styles.backCircle} onPress={() => router.replace('/(tabs)/home')}>
+            <Ionicons name="chevron-back" size={28} color="#147B60" />
+          </TouchableOpacity>
+          <View style={styles.planTitleBox}>
+            <Text style={styles.planTitle}>학습플랜</Text>
+          </View>
+          <View style={styles.headerSpacer} />
+        </View>
+
         <View style={styles.profileCard}>
-          <View style={styles.profileRow}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Image source={childAvatar} style={{ width: 32, height: 32, borderRadius: 16 }} />
+          <View style={styles.profileInfoRow}>
+            <View style={styles.profileBadgeColumn}>
+              <Image source={childAvatar} style={styles.profileAvatar} />
               <Text style={styles.profileName}>{childName || '학생'}</Text>
-            </View>
-            <View style={styles.gradeBadge}>
-              <Text style={styles.gradeText}>{childGrade}학년</Text>
+              <View style={styles.profileMiniRow}>
+                <View style={styles.gradeBadge}>
+                  <Text style={styles.gradeText}>{childGrade}학년</Text>
+                </View>
+                <View style={styles.tierBadge}>
+                  <Text style={styles.tierBadgeText}>{TIER_LABELS[childTier] || '무료회원'}</Text>
+                </View>
+              </View>
             </View>
           </View>
-          <Text style={styles.profileTier}>
-            {TIER_LABELS[childTier] || '무료회원'} · 과목당 {questionsPerSubject}문제
-          </Text>
+          <View style={styles.profileSceneWrap}>
+            <Image source={require('../../assets/images/study_plan_children.png')} style={styles.profileScene} resizeMode="contain" />
+          </View>
         </View>
 
         {subjects.map((subjectKey) => (
           <TouchableOpacity
             key={subjectKey}
-            style={styles.subjectCard}
+            activeOpacity={0.72}
+            style={[styles.subjectCard, { borderColor: SUBJECT_CARD_COLORS[subjectKey] }]}
             onPress={() => router.push({
               pathname: '/study/questions',
               params: { subject: subjectKey, grade: String(childGrade), tier: childTier }
             })}
           >
             <View style={styles.subjectLeft}>
-              <Image source={SUBJECT_ICONS[subjectKey]} style={styles.subjectIcon} />
-              <Text style={styles.subjectName}>{SUBJECT_LABELS[subjectKey]}</Text>
-              <Text style={styles.subjectRemaining}>총 {questionsPerSubject}문제</Text>
+              <View style={styles.subjectIconWrap}>
+                <Image source={SUBJECT_ICONS[subjectKey]} style={styles.subjectIcon} />
+              </View>
+              <View style={styles.subjectTextBox}>
+                <Text style={styles.subjectName}>{SUBJECT_LABELS[subjectKey]}</Text>
+                <Text style={styles.subjectRemaining}>총 {questionsPerSubject}문제</Text>
+              </View>
             </View>
-            <Text style={styles.subjectArrow}>{'>'}</Text>
+            <View style={[styles.subjectArrowCircle, { backgroundColor: SUBJECT_BUTTON_COLORS[subjectKey] }]}>
+              <Ionicons name="chevron-forward" size={26} color="#FFFFFF" />
+            </View>
           </TouchableOpacity>
         ))}
-
-        <Text style={styles.bottomNote}>매일 꾸준히 학습해요!</Text>
 
       </ScrollView>
     </SafeLayout>
@@ -188,8 +227,8 @@ export default function StudyScreen() {
 
 const styles = StyleSheet.create({
   scrollContent: {
-    paddingHorizontal: 0,
-    paddingBottom: 20,
+    paddingHorizontal: wp(4),
+    paddingBottom: 18,
   },
   loadingContainer: {
     flex: 1,
@@ -272,77 +311,194 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#7ED4C0',
   },
-  profileCard: {
-    marginHorizontal: wp(5),
-    marginTop: 16,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-  },
-  profileRow: {
+  planHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingTop: 8,
+    paddingBottom: 12,
+  },
+  backCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  planTitleBox: {
+    alignItems: 'center',
+  },
+  planTitle: {
+    fontSize: 26,
+    fontWeight: '900',
+    color: '#123C2B',
+    textShadowColor: '#BFE8D4',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 0,
+  },
+  headerSpacer: {
+    width: 48,
+  },
+  profileCard: {
+    marginTop: 4,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    paddingVertical: 16,
+    paddingLeft: 10,
+    paddingRight: 16,
+    minHeight: 148,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  profileInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+  },
+  profileBadgeColumn: {
+    alignItems: 'center',
+    width: 126,
+    zIndex: 2,
+  },
+  profileAvatar: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    borderWidth: 1,
+    borderColor: '#D9EBD7',
+  },
+  profileMiniRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 7,
+    gap: 5,
   },
   profileName: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#14251C',
+    marginTop: 7,
+    textAlign: 'center',
   },
   gradeBadge: {
-    backgroundColor: '#F0F0F0',
+    backgroundColor: '#EFF8EF',
+    borderWidth: 1,
+    borderColor: '#D9EBD7',
     paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
+    paddingVertical: 4,
+    borderRadius: 20,
   },
   gradeText: {
-    fontSize: 12,
-    color: '#666',
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#2E8B57',
   },
-  profileTier: {
-    fontSize: 13,
-    color: '#9E9E9E',
-    marginTop: 4,
+  tierBadge: {
+    backgroundColor: '#FFF8FA',
+    borderWidth: 1,
+    borderColor: '#F5D8E2',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  tierBadgeText: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#E978A2',
+  },
+  profileSceneWrap: {
+    position: 'absolute',
+    right: 10,
+    top: 12,
+    width: 230,
+    height: 124,
+    borderTopLeftRadius: 18,
+    overflow: 'hidden',
+  },
+  profileScene: {
+    width: '100%',
+    height: '100%',
+    opacity: 0.96,
   },
   subjectCard: {
-    marginHorizontal: wp(5),
     marginTop: 12,
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 20,
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    minHeight: 104,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    borderWidth: 1.5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    elevation: 2,
   },
   subjectLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    flex: 1,
+    minWidth: 0,
+  },
+  subjectIconWrap: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 18,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#F0ECE5',
   },
   subjectIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 6,
+    width: 52,
+    height: 52,
+    borderRadius: 14,
+  },
+  subjectTextBox: {
+    flex: 1,
+    minWidth: 0,
   },
   subjectName: {
-    fontSize: 16,
+    fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#14251C',
   },
   subjectRemaining: {
-    fontSize: 13,
-    color: '#7ED4C0',
-    marginLeft: 4,
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2FA66F',
+    marginTop: 5,
+  },
+  subjectArrowCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
   },
   subjectArrow: {
     fontSize: 20,
     color: '#9E9E9E',
-  },
-  bottomNote: {
-    fontSize: 13,
-    color: '#9E9E9E',
-    textAlign: 'center',
-    marginTop: 20,
-    marginBottom: 30,
   },
 });
