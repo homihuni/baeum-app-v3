@@ -5,8 +5,6 @@ export const AVATAR_KEYS = [
   'avatar_06', 'avatar_07', 'avatar_08', 'avatar_09', 'avatar_10',
   'avatar_11', 'avatar_12', 'avatar_13', 'avatar_14', 'avatar_15',
   'avatar_16', 'avatar_17', 'avatar_18', 'avatar_19', 'avatar_20',
-  'avatar_21', 'avatar_22', 'avatar_23', 'avatar_24', 'avatar_25',
-  'avatar_26', 'avatar_27', 'avatar_28', 'avatar_29',
 ];
 
 export const AVATAR_MAP: Record<string, ImageSourcePropType> = {
@@ -30,15 +28,6 @@ export const AVATAR_MAP: Record<string, ImageSourcePropType> = {
   avatar_18: require('../assets/images/avatar_18.png'),
   avatar_19: require('../assets/images/avatar_19.png'),
   avatar_20: require('../assets/images/avatar_20.png'),
-  avatar_21: require('../assets/images/avatar_21.png'),
-  avatar_22: require('../assets/images/avatar_22.png'),
-  avatar_23: require('../assets/images/avatar_23.png'),
-  avatar_24: require('../assets/images/avatar_24.png'),
-  avatar_25: require('../assets/images/avatar_25.png'),
-  avatar_26: require('../assets/images/avatar_26.png'),
-  avatar_27: require('../assets/images/avatar_27.png'),
-  avatar_28: require('../assets/images/avatar_28.png'),
-  avatar_29: require('../assets/images/avatar_29.png'),
 };
 
 export const DEFAULT_AVATAR = AVATAR_MAP['avatar_01'];

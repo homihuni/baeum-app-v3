@@ -27,15 +27,6 @@ const AVATARS = [
   require('../../assets/images/avatar_18.png'),
   require('../../assets/images/avatar_19.png'),
   require('../../assets/images/avatar_20.png'),
-  require('../../assets/images/avatar_21.png'),
-  require('../../assets/images/avatar_22.png'),
-  require('../../assets/images/avatar_23.png'),
-  require('../../assets/images/avatar_24.png'),
-  require('../../assets/images/avatar_25.png'),
-  require('../../assets/images/avatar_26.png'),
-  require('../../assets/images/avatar_27.png'),
-  require('../../assets/images/avatar_28.png'),
-  require('../../assets/images/avatar_29.png'),
 ];
 const GRADES = [1, 2, 3, 4, 5, 6];
 
