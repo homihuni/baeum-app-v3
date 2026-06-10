@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Modal, TextInput, Alert, Image, Animated } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, TextInput, Image, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -9,6 +9,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AVATAR_MAP, AVATAR_KEYS } from '../../utils/avatars';
 import { Audio } from 'expo-av';
 import ConfettiCannon from 'react-native-confetti-cannon';
+import { SUBJECT_THEME, GRADE_THEME } from '../../utils/quizTheme';
+import { QUIZ_OBJECT_EMOJI } from '../../utils/quizObjectAssets';
 
 const BouncyButton = ({ onPress, disabled, style, children }: any) => {
   const scale = useRef(new Animated.Value(1)).current;
@@ -16,14 +18,14 @@ const BouncyButton = ({ onPress, disabled, style, children }: any) => {
   const handlePressOut = () => Animated.spring(scale, { toValue: 1, friction: 3, tension: 40, useNativeDriver: true }).start();
 
   return (
-    <Animated.View style={[{ transform: [{ scale }] }, style?.width ? { width: style.width } : {}]}>
+    <Animated.View style={[{ transform: [{ scale }] }, style]}>
       <TouchableOpacity
         activeOpacity={0.8}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         onPress={onPress}
         disabled={disabled}
-        style={[style, { width: '100%' }]}
+        style={styles.bouncyTouchable}
       >
         {children}
       </TouchableOpacity>
@@ -34,6 +36,97 @@ const BouncyButton = ({ onPress, disabled, style, children }: any) => {
 const SUBJECT_LABELS: Record<string, string> = {
   korean: '국어', math: '수학', integrated: '통합교과',
   science: '과학', social: '사회', english: '영어',
+};
+
+type QuizOption = {
+  id: string;
+  text: string;
+  imageUrl?: string;
+  emoji?: string;
+};
+
+const FIRST_GRADE_SAMPLE_PROBLEMS: Record<string, any[]> = {
+  korean: [
+    {
+      id: 'sample-korean-1',
+      question: '그림에 알맞은 문장을 골라 보세요.',
+      choices: [
+        { id: '1', text: '비가 와요.' },
+        { id: '2', text: '눈이 와요.' },
+        { id: '3', text: '해가 떠요.' },
+      ],
+      correctAnswer: '1',
+      explanation: '우산을 쓰고 있으므로 비가 오는 날이에요.',
+      questionType: 'multiple_choice',
+      visual: {
+        type: 'illustration',
+        imageUrl: '',
+        altText: '비 오는 날 우산을 쓰고 있는 아이',
+      },
+    },
+  ],
+  math: [
+    {
+      id: 'sample-math-1',
+      question: '사과는 모두 몇 개인가요?',
+      choices: [
+        { id: '1', text: '4개' },
+        { id: '2', text: '5개' },
+        { id: '3', text: '6개' },
+      ],
+      correctAnswer: '2',
+      explanation: '사과를 하나씩 세어 보면 모두 5개예요.',
+      questionType: 'multiple_choice',
+      visual: {
+        type: 'counting_objects',
+        data: { object: 'apple', count: 5 },
+        altText: '사과 5개',
+      },
+    },
+  ],
+  integrated: [
+    {
+      id: 'sample-integrated-1',
+      question: '비 오는 날 필요한 물건을 골라 보세요.',
+      choices: [
+        { id: '1', text: '우산', emoji: '☂️' },
+        { id: '2', text: '수영복', emoji: '🩱' },
+        { id: '3', text: '목도리', emoji: '🧣' },
+      ],
+      correctAnswer: '1',
+      explanation: '비 오는 날에는 우산을 사용해요.',
+      questionType: 'image_select',
+      visual: { type: 'none' },
+    },
+  ],
+};
+
+const getSampleProblems = (grade: number, subject: string) => {
+  if (grade !== 1) return [];
+  return FIRST_GRADE_SAMPLE_PROBLEMS[subject] || [];
+};
+
+const normalizeOptions = (options: any[]): QuizOption[] => {
+  return (options || []).map((option: any, index: number) => {
+    if (typeof option === 'string') {
+      return { id: String(index), text: option };
+    }
+    return {
+      id: String(option.id ?? index),
+      text: String(option.text ?? option.label ?? option.name ?? ''),
+      imageUrl: option.imageUrl || option.image_url || '',
+      emoji: option.emoji || '',
+    };
+  });
+};
+
+const getAnswerId = (answer: any, options: QuizOption[]) => {
+  if (typeof answer === 'number') return options[answer]?.id || String(answer);
+  const answerText = String(answer ?? '');
+  const optionById = options.find(option => option.id === answerText);
+  if (optionById) return optionById.id;
+  const optionByText = options.find(option => option.text === answerText);
+  return optionByText?.id || answerText;
 };
 
 const seededShuffle = (array: any[], seed: number) => {
@@ -67,6 +160,8 @@ export default function QuestionsScreen() {
   const subject = (params.subject as string) || 'korean';
   const grade = parseInt((params.grade as string) || '1');
   const tier = (params.tier as string) || 'free';
+  const subjectTheme = SUBJECT_THEME[subject] || SUBJECT_THEME.korean;
+  const lowerTheme = GRADE_THEME.lower;
 
   const [problems, setProblems] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -88,9 +183,10 @@ export default function QuestionsScreen() {
         );
         const snap = await getDocs(q);
 
+        const sampleProblems = getSampleProblems(grade, subject);
+
         if (snap.empty) {
-          Alert.alert('디버그 안내', `questions 컬렉션에서 ${subject} 과목의 문제가 비어있습니다.`);
-          setProblems([]);
+          setProblems(sampleProblems);
           return;
         }
 
@@ -101,22 +197,30 @@ export default function QuestionsScreen() {
         });
 
         if (validDocs.length === 0) {
-          Alert.alert('디버그 안내', `해당 과목은 있지만 학년(${grade})과 활성화(true) 조건을 만족하는 문제가 없습니다.`);
-          setProblems([]);
+          setProblems(sampleProblems);
           return;
         }
 
         const allProblems = validDocs.map((doc: any) => {
           const data = doc.data();
+          const choices = normalizeOptions(data.options || []);
+          const correctAnswer = data.type === 'short_answer' ? String(data.answer || '') : getAnswerId(data.answer, choices);
+          const visual = data.visual || {
+            type: data.visual_type || 'none',
+            data: typeof data.visual_data === 'string' ? JSON.parse(data.visual_data) : (data.visual_data || null),
+            imageUrl: data.imageUrl || data.image_url || '',
+            altText: data.altText || data.alt_text || '',
+          };
           return {
             id: doc.id,
             question: String(data.question || ''),
-            choices: data.options || [],
-            correctAnswer: data.type === 'short_answer' ? String(data.answer || '') : (data.options && data.options[data.answer] ? data.options[data.answer] : ''),
+            choices,
+            correctAnswer,
             explanation: String(data.explanation || '해설이 없습니다.'),
-            questionType: data.type === 'multiple_choice' ? 'mcq' : data.type === 'ox' ? 'ox' : data.type === 'short_answer' ? 'short_answer' : 'subjective',
+            questionType: data.type === 'multiple_choice' ? 'multiple_choice' : data.type === 'image_select' ? 'image_select' : data.type === 'ox' ? 'ox' : data.type === 'short_answer' ? 'short_answer' : 'subjective',
             difficulty: data.difficulty || 'medium',
             unit: data.unit || '',
+            visual,
             visualType: data.visual_type || null,
             visualData: typeof data.visual_data === 'string' ? JSON.parse(data.visual_data) : (data.visual_data || null),
             createdAt: data.createdAt || '',
@@ -132,7 +236,8 @@ export default function QuestionsScreen() {
         const todayProblems = allProblems.filter(p => p.questionType !== 'subjective' && p.createdAt.includes(targetDatePart));
         
         // 오늘 날짜의 문제가 없으면 기존 활성 문제들로 대체 (안전망)
-        const targetList = todayProblems.length > 0 ? todayProblems : allProblems.filter(p => p.questionType !== 'subjective');
+        const activeProblems = allProblems.filter(p => p.questionType !== 'subjective');
+        const targetList = todayProblems.length > 0 ? todayProblems : activeProblems.length > 0 ? activeProblems : sampleProblems;
 
         const todaySeed = getTodaySeed(subject);
         const shuffled = seededShuffle(targetList, todaySeed);
@@ -141,8 +246,7 @@ export default function QuestionsScreen() {
         setProblems(shuffled);
       } catch (error: any) {
         console.log('Firestore 로드 에러:', error);
-        Alert.alert('Firestore 로드 에러', error.message || '알 수 없는 오류');
-        setProblems([]);
+        setProblems(getSampleProblems(grade, subject));
       }
     };
     loadProblems();
@@ -184,9 +288,10 @@ export default function QuestionsScreen() {
       setIsCorrect(correct);
       setIsAnswered(true);
       playSound(correct);
-      await saveResult(correct ? 1 : 0, correct ? 0 : 1, 1);
-      if (correct) setCorrectCount(prev => prev + 1);
-      else setWrongCount(prev => prev + 1);
+      if (correct) {
+        await saveResult(1, 0, 1);
+        setCorrectCount(prev => prev + 1);
+      }
       return;
     }
     if (!selectedAnswer) {
@@ -197,9 +302,17 @@ export default function QuestionsScreen() {
     setIsCorrect(correct);
     setIsAnswered(true);
     playSound(correct);
-    await saveResult(correct ? 1 : 0, correct ? 0 : 1, 1);
-    if (correct) setCorrectCount(prev => prev + 1);
-    else setWrongCount(prev => prev + 1);
+    if (correct) {
+      await saveResult(1, 0, 1);
+      setCorrectCount(prev => prev + 1);
+    }
+  };
+
+  const handleRetry = () => {
+    setSelectedAnswer(null);
+    setTextAnswer('');
+    setIsAnswered(false);
+    setIsCorrect(false);
   };
 
   const saveResult = async (correctCount: number, wrongCount: number, totalQuestions: number) => {
@@ -257,6 +370,153 @@ export default function QuestionsScreen() {
     router.replace('/(tabs)/study');
   };
   const handleExitCancel = () => setShowExitModal(false);
+
+  const renderMissionProgressPath = () => {
+    const totalSteps = Math.min(problems.length, 5);
+    return (
+      <View style={styles.missionPath}>
+        <Text style={styles.pathIcon}>🏫</Text>
+        {Array.from({ length: totalSteps }).map((_, index) => {
+          const stepIndex = Math.floor((index / Math.max(totalSteps - 1, 1)) * Math.max(problems.length - 1, 0));
+          const isDone = stepIndex < currentIndex;
+          const isCurrent = stepIndex === currentIndex || (index === totalSteps - 1 && currentIndex >= stepIndex);
+          return (
+            <View key={index} style={styles.pathStepGroup}>
+              <View style={[styles.pathLine, { backgroundColor: isDone ? subjectTheme.primary : '#E9DED3' }]} />
+              <View style={[
+                styles.pathDot,
+                isDone && { backgroundColor: subjectTheme.primary, borderColor: subjectTheme.primary },
+                isCurrent && { backgroundColor: subjectTheme.soft, borderColor: subjectTheme.primary },
+              ]}>
+                <Text style={[styles.pathDotText, { color: isDone ? '#FFFFFF' : subjectTheme.accent }]}>
+                  {isDone ? '✓' : index + 1}
+                </Text>
+              </View>
+            </View>
+          );
+        })}
+        <Text style={styles.pathIcon}>🏁</Text>
+      </View>
+    );
+  };
+
+  const renderVisualRenderer = () => {
+    const visual = currentProblem?.visual;
+    if (!visual || visual.type === 'none') {
+      if (currentProblem?.visualData || currentProblem?.visualType) return renderVisualHint();
+      return (
+        <View style={[styles.visualPlaceholder, { backgroundColor: subjectTheme.soft }]}>
+          <Text style={styles.visualPlaceholderIcon}>🌱</Text>
+          <Text style={styles.visualPlaceholderText}>그림 없이 풀어볼까요?</Text>
+        </View>
+      );
+    }
+
+    if ((visual.type === 'illustration' || visual.type === 'asset') && visual.imageUrl) {
+      return (
+        <View style={styles.visualFrame}>
+          <Image source={{ uri: visual.imageUrl }} style={styles.visualImage} resizeMode="contain" />
+        </View>
+      );
+    }
+
+    if (visual.type === 'illustration' || visual.type === 'asset') {
+      return (
+        <View style={[styles.visualPlaceholder, { backgroundColor: subjectTheme.soft }]}>
+          <Text style={styles.visualPlaceholderIcon}>🖼️</Text>
+          <Text style={styles.visualPlaceholderText}>{visual.altText || '그림을 준비하고 있어요'}</Text>
+        </View>
+      );
+    }
+
+    if (visual.type === 'counting_objects') {
+      const objectKey = visual.data?.object || 'star';
+      const count = Math.min(Number(visual.data?.count || 0), 20);
+      const emoji = QUIZ_OBJECT_EMOJI[objectKey] || '⭐';
+      return (
+        <View style={[styles.countingBox, { backgroundColor: subjectTheme.soft }]}>
+          {Array.from({ length: count }).map((_, index) => (
+            <Text key={index} style={styles.countingEmoji}>{emoji}</Text>
+          ))}
+        </View>
+      );
+    }
+
+    return renderVisualHint();
+  };
+
+  const renderAnswerArea = () => {
+    if (currentProblem.questionType === 'short_answer') {
+      return (
+        <View style={styles.shortAnswerContainer}>
+          <Text style={[styles.shortAnswerLabel, { color: subjectTheme.accent }]}>✏️ 답을 입력하세요</Text>
+          <TextInput
+            style={[styles.shortAnswerInput, { borderColor: subjectTheme.primary }, isAnswered && styles.shortAnswerInputDisabled]}
+            value={textAnswer}
+            onChangeText={setTextAnswer}
+            placeholder="정답을 입력하세요"
+            placeholderTextColor="#9E9E9E"
+            editable={!isAnswered}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+        </View>
+      );
+    }
+
+    if (currentProblem.questionType === 'ox') {
+      const oxChoices = currentProblem.choices.length > 0 ? currentProblem.choices : [{ id: 'O', text: 'O' }, { id: 'X', text: 'X' }];
+      return (
+        <View style={styles.oxRow}>
+          {oxChoices.map((choice: QuizOption) => renderAnswerCard(choice, true))}
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.choicesGridContainer}>
+        {(currentProblem.choices || []).map((choice: QuizOption, index: number) => renderAnswerCard(choice, false, index))}
+      </View>
+    );
+  };
+
+  const renderAnswerCard = (choice: QuizOption, isOx = false, index = 0) => {
+    const isSelected = selectedAnswer === choice.id;
+    const isImageChoice = currentProblem.questionType === 'image_select';
+    const isLong = String(choice.text).length > 12;
+    const cardStyle = [
+      styles.choiceBtn,
+      isOx && styles.oxBtn,
+      isImageChoice && styles.imageChoiceBtn,
+      isLong && styles.choiceFullWidth,
+      isSelected && { borderColor: subjectTheme.primary, backgroundColor: subjectTheme.soft },
+    ];
+
+    return (
+      <BouncyButton
+        key={choice.id}
+        style={cardStyle}
+        onPress={() => handleSelectAnswer(choice.id)}
+        disabled={isAnswered && isCorrect}
+      >
+        {isImageChoice && (
+          <View style={[styles.imageChoiceVisual, { backgroundColor: subjectTheme.soft }]}>
+            {choice.imageUrl ? (
+              <Image source={{ uri: choice.imageUrl }} style={styles.imageChoiceImage} resizeMode="contain" />
+            ) : (
+              <Text style={styles.imageChoiceEmoji}>{choice.emoji || '🎒'}</Text>
+            )}
+          </View>
+        )}
+        <View style={styles.choiceTextRow}>
+          {!isOx && <Text style={[styles.choiceNumber, { backgroundColor: subjectTheme.soft, color: subjectTheme.accent }]}>{index + 1}</Text>}
+          <Text style={[styles.choiceText, { fontSize: isOx ? 40 : lowerTheme.answerFontSize }]} numberOfLines={2} adjustsFontSizeToFit>
+            {choice.text}
+          </Text>
+        </View>
+      </BouncyButton>
+    );
+  };
 
   // ========== 시각자료 렌더링 (완전 구현) ==========
   const renderVisualHint = () => {
@@ -385,146 +645,106 @@ export default function QuestionsScreen() {
     );
   }
 
-  const progress = (currentIndex + 1) / problems.length;
+  const isConfirmEnabled = currentProblem?.questionType === 'short_answer' ? textAnswer.trim().length > 0 : !!selectedAnswer;
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.subjectLabel}>{SUBJECT_LABELS[subject] || subject}</Text>
-        <Text style={styles.progressText}>{currentIndex + 1} / {problems.length}</Text>
+      <View style={[styles.header, { backgroundColor: subjectTheme.soft }]}>
+        <TouchableOpacity style={styles.headerIconBtn} onPress={() => router.replace('/(tabs)/study')}>
+          <Text style={[styles.headerIconText, { color: subjectTheme.accent }]}>‹</Text>
+        </TouchableOpacity>
+        <View style={styles.headerCenter}>
+          <Text style={[styles.subjectLabel, { color: subjectTheme.accent }]}>{subjectTheme.label || SUBJECT_LABELS[subject] || subject}</Text>
+          <Text style={styles.progressText}>{currentIndex + 1} / {problems.length}</Text>
+        </View>
         <TouchableOpacity onPress={handleClose}>
           <Text style={styles.closeBtn}>✕</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.progressBarBg}>
-        <View style={[styles.progressBarFill, { width: `${progress * 100}%` }]} />
-      </View>
+      {renderMissionProgressPath()}
 
       <ScrollView style={styles.scrollArea} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <Text style={styles.questionLabel}>Q{currentIndex + 1}</Text>
-        <Text style={styles.questionText}>{String(currentProblem.question)}</Text>
-
-        {renderVisualHint()}
-
-        {currentProblem.questionType === 'short_answer' ? (
-          <View style={styles.shortAnswerContainer}>
-            <Text style={styles.shortAnswerLabel}>✏️ 답을 입력하세요</Text>
-            <TextInput
-              style={[styles.shortAnswerInput, isAnswered && styles.shortAnswerInputDisabled]}
-              value={textAnswer}
-              onChangeText={setTextAnswer}
-              placeholder="정답을 입력하세요"
-              placeholderTextColor="#9E9E9E"
-              editable={!isAnswered}
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
+        <View style={styles.questionCard}>
+          <View style={[styles.questionBadge, { backgroundColor: subjectTheme.primary }]}>
+            <Text style={styles.questionBadgeText}>Q{currentIndex + 1}</Text>
           </View>
-        ) : (
-          <View style={[
-            styles.choicesContainer,
-            (currentProblem.choices || []).every((c: string) => String(c).length <= 10) && styles.choicesGridContainer
-          ]}>
-            {(currentProblem.choices || []).map((choice: string, index: number) => {
-              const isSelected = selectedAnswer === choice;
-              const isCorrectAnswer = choice === currentProblem.correctAnswer;
-              let choiceStyle = styles.choiceBtn;
-              let choiceTextStyle = styles.choiceText;
+          <Text style={[styles.questionText, { fontSize: lowerTheme.questionFontSize }]}>{String(currentProblem.question)}</Text>
+          <TouchableOpacity style={[styles.listenBtn, { backgroundColor: subjectTheme.soft }]}>
+            <Text style={[styles.listenBtnText, { color: subjectTheme.accent }]}>🔊 문제 듣기</Text>
+          </TouchableOpacity>
+          {renderVisualRenderer()}
+        </View>
 
-              if (isAnswered) {
-                if (isCorrectAnswer) {
-                  choiceStyle = { ...styles.choiceBtn, ...styles.choiceCorrect };
-                  choiceTextStyle = { ...styles.choiceText, ...styles.choiceTextCorrect };
-                } else if (isSelected && !isCorrectAnswer) {
-                  choiceStyle = { ...styles.choiceBtn, ...styles.choiceWrong };
-                  choiceTextStyle = { ...styles.choiceText, ...styles.choiceTextWrong };
-                }
-              } else if (isSelected) {
-                choiceStyle = { ...styles.choiceBtn, ...styles.choiceSelected };
-                choiceTextStyle = { ...styles.choiceText, ...styles.choiceTextSelected };
-              }
-
-              const prefix = currentProblem.questionType === 'ox' ? '' : `${String.fromCharCode(9312 + index)} `;
-
-              const isGrid = (currentProblem.choices || []).every((c: string) => String(c).length <= 10);
-              if (isGrid) {
-                choiceStyle = { ...choiceStyle, ...styles.choiceGridItem };
-              }
-
-              return (
-                <BouncyButton
-                  key={index}
-                  style={choiceStyle}
-                  onPress={() => handleSelectAnswer(choice)}
-                  disabled={isAnswered}
-                >
-                  <Text style={choiceTextStyle} numberOfLines={2} adjustsFontSizeToFit>{prefix}{String(choice)}</Text>
-                </BouncyButton>
-              );
-            })}
-          </View>
-        )}
-
-        {isAnswered && (
-          <View style={styles.resultCard}>
-            <Text style={[styles.resultTitle, { color: isCorrect ? '#4CAF50' : '#FF6B6B' }]}>
-              {isCorrect ? '🎉 정답이에요!' : '😢 틀렸어요'}
-            </Text>
-            <Text style={styles.resultAnswer}>정답: {String(currentProblem.correctAnswer)}</Text>
-            <View style={styles.explanationCard}>
-              <Text style={styles.explanationLabel}>💡 해설</Text>
-              <Text style={styles.explanationText}>{String(currentProblem.explanation)}</Text>
-            </View>
-          </View>
-        )}
+        <View style={styles.answerArea}>
+          {renderAnswerArea()}
+        </View>
       </ScrollView>
 
       <View style={styles.bottomBar}>
-        {!isAnswered ? (
-          <TouchableOpacity style={styles.checkBtn} onPress={handleCheckAnswer}>
-            <Text style={styles.checkBtnText}>정답 확인</Text>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity style={styles.nextBtn} onPress={handleNext}>
-            <Text style={styles.nextBtnText}>
-              {currentIndex + 1 >= problems.length ? '학습 완료' : '다음 문제 →'}
-            </Text>
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity
+          style={[
+            styles.checkBtn,
+            { backgroundColor: isConfirmEnabled && !isAnswered ? subjectTheme.primary : '#DADADA' },
+          ]}
+          onPress={handleCheckAnswer}
+          disabled={!isConfirmEnabled || isAnswered}
+        >
+          <Text style={styles.checkBtnText}>정답 확인</Text>
+        </TouchableOpacity>
       </View>
 
-      {/* 모달들 */}
-      <Modal visible={showExitModal} transparent animationType="fade">
+      {showExitModal && (
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>학습 중단</Text>
-            <Text style={styles.modalMessage}>학습을 중단하시겠어요?\n진행한 문제는 저장됩니다.</Text>
+            <Text style={styles.modalTitle}>학습을 잠깐 멈출까요?</Text>
+            <Text style={styles.modalMessage}>지금까지 맞힌 문제는 저장되어 있어요.</Text>
             <View style={styles.modalButtons}>
               <TouchableOpacity style={styles.modalCancelBtn} onPress={handleExitCancel}>
                 <Text style={styles.modalCancelText}>계속하기</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.modalConfirmBtn} onPress={handleExitConfirm}>
-                <Text style={styles.modalConfirmText}>중단하기</Text>
+              <TouchableOpacity style={[styles.modalConfirmBtn, { backgroundColor: subjectTheme.primary }]} onPress={handleExitConfirm}>
+                <Text style={styles.modalConfirmText}>나가기</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
-      </Modal>
+      )}
 
-      <Modal visible={showNoAnswerModal} transparent animationType="fade">
+      {showNoAnswerModal && (
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>알림</Text>
+            <Text style={styles.modalTitle}>아직 답을 고르지 않았어요</Text>
             <Text style={styles.modalMessage}>답을 선택해주세요.</Text>
             <View style={styles.modalButtons}>
-              <TouchableOpacity style={styles.modalSingleBtn} onPress={() => setShowNoAnswerModal(false)}>
+              <TouchableOpacity style={[styles.modalSingleBtn, { backgroundColor: subjectTheme.primary }]} onPress={() => setShowNoAnswerModal(false)}>
                 <Text style={styles.modalConfirmText}>확인</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
-      </Modal>
+      )}
+
+      {isAnswered && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.feedbackCard}>
+            <Text style={[styles.feedbackTitle, { color: isCorrect ? subjectTheme.accent : '#E56A6A' }]}>
+              {isCorrect ? '정답이에요! 🎉' : '조금만 더 살펴볼까요?'}
+            </Text>
+            <Text style={styles.feedbackText}>
+              {isCorrect ? String(currentProblem.explanation) : '그림과 보기를 천천히 다시 살펴보세요.'}
+            </Text>
+            <TouchableOpacity
+              style={[styles.feedbackButton, { backgroundColor: isCorrect ? subjectTheme.primary : '#FFFFFF', borderColor: subjectTheme.primary }]}
+              onPress={isCorrect ? handleNext : handleRetry}
+            >
+              <Text style={[styles.feedbackButtonText, { color: isCorrect ? '#FFFFFF' : subjectTheme.accent }]}>
+                {isCorrect ? (currentIndex + 1 >= problems.length ? '학습 완료' : '다음 문제') : '다시 풀기'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
 
       {isAnswered && isCorrect && (
         <ConfettiCannon
@@ -541,37 +761,62 @@ export default function QuestionsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFFFF' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12 },
-  subjectLabel: { fontSize: 16, fontWeight: 'bold', color: '#7ED4C0' },
-  progressText: { fontSize: 14, color: '#666' },
-  closeBtn: { fontSize: 22, color: '#9E9E9E' },
+  container: { flex: 1, backgroundColor: '#FFFDF8' },
+  bouncyTouchable: { width: '100%', minHeight: '100%', justifyContent: 'center', alignItems: 'center' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingVertical: 12 },
+  headerIconBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 5, elevation: 2 },
+  headerIconText: { fontSize: 38, fontWeight: '700', marginTop: -3 },
+  headerCenter: { alignItems: 'center', flex: 1 },
+  subjectLabel: { fontSize: 24, fontWeight: '900' },
+  progressText: { fontSize: 15, color: '#6E6A64', fontWeight: '800', marginTop: 2 },
+  closeBtn: { fontSize: 24, color: '#8F8A83', fontWeight: '900', paddingHorizontal: 10 },
   progressBarBg: { height: 4, backgroundColor: '#E0E0E0', marginHorizontal: 20 },
   progressBarFill: { height: 4, backgroundColor: '#7ED4C0', borderRadius: 2 },
+  missionPath: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#FFFDF8' },
+  pathIcon: { fontSize: 24 },
+  pathStepGroup: { flexDirection: 'row', alignItems: 'center' },
+  pathLine: { width: 18, height: 4, borderRadius: 2 },
+  pathDot: { width: 30, height: 30, borderRadius: 15, borderWidth: 2, borderColor: '#E9DED3', backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center' },
+  pathDotText: { fontSize: 12, fontWeight: '900' },
   scrollArea: { flex: 1 },
   scrollContent: { padding: 16, paddingBottom: 24 },
+  questionCard: { backgroundColor: '#FFFFFF', borderRadius: 28, padding: 18, marginBottom: 16, borderWidth: 1, borderColor: '#F0E5D8', shadowColor: '#000', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 3 },
+  questionBadge: { alignSelf: 'center', paddingHorizontal: 16, paddingVertical: 7, borderRadius: 999, marginBottom: 12 },
+  questionBadgeText: { color: '#FFFFFF', fontSize: 16, fontWeight: '900' },
   questionLabel: { fontSize: 13, fontWeight: 'bold', color: '#7ED4C0', marginBottom: 4, textAlign: 'center' },
   questionText: {
-    fontSize: 17,
-    fontWeight: 'bold',
-    color: '#333',
-    lineHeight: 24,
-    marginBottom: 16,
+    fontWeight: '900',
+    color: '#21362E',
+    lineHeight: 36,
+    marginBottom: 12,
     textAlign: 'center',
   },
-  choicesContainer: { gap: 8 },
+  listenBtn: { alignSelf: 'center', borderRadius: 999, paddingHorizontal: 18, paddingVertical: 9, marginBottom: 16 },
+  listenBtnText: { fontSize: 15, fontWeight: '900' },
+  answerArea: { marginTop: 2 },
+  choicesContainer: { gap: 10 },
   choicesGridContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
+    gap: 12,
   },
   choiceBtn: {
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
+    width: '48%',
+    minHeight: 76,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: 22,
+    borderWidth: 2,
+    borderColor: '#EFE4D6',
     backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
   },
   choiceGridItem: {
     width: '48%',
@@ -579,7 +824,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  choiceText: { fontSize: 16, color: '#333' },
+  choiceFullWidth: { width: '100%' },
+  choiceTextRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  choiceNumber: { width: 28, height: 28, borderRadius: 14, textAlign: 'center', lineHeight: 28, fontSize: 15, fontWeight: '900', overflow: 'hidden' },
+  choiceText: { color: '#263A33', fontWeight: '900', textAlign: 'center', flexShrink: 1 },
+  oxRow: { flexDirection: 'row', gap: 12 },
+  oxBtn: { flex: 1, minHeight: 120 },
+  imageChoiceBtn: { minHeight: 142 },
+  imageChoiceVisual: { width: '100%', height: 72, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
+  imageChoiceImage: { width: '90%', height: '90%' },
+  imageChoiceEmoji: { fontSize: 42 },
   choiceSelected: { borderColor: '#7ED4C0', backgroundColor: '#E8F8F5' },
   choiceTextSelected: { color: '#7ED4C0', fontWeight: 'bold' },
   choiceCorrect: { borderColor: '#4CAF50', backgroundColor: '#E8F5E9' },
@@ -592,9 +846,9 @@ const styles = StyleSheet.create({
   explanationCard: { backgroundColor: '#FFFFFF', borderRadius: 8, padding: 12 },
   explanationLabel: { fontSize: 13, fontWeight: 'bold', color: '#7ED4C0', marginBottom: 4 },
   explanationText: { fontSize: 14, color: '#666', lineHeight: 22 },
-  bottomBar: { padding: 20, borderTopWidth: 1, borderTopColor: '#F0F0F0' },
-  checkBtn: { backgroundColor: '#7ED4C0', borderRadius: 16, paddingVertical: 16, alignItems: 'center' },
-  checkBtnText: { fontSize: 16, fontWeight: 'bold', color: '#FFFFFF' },
+  bottomBar: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 22, borderTopWidth: 1, borderTopColor: '#F0E8DD', backgroundColor: '#FFFDF8' },
+  checkBtn: { borderRadius: 22, paddingVertical: 18, alignItems: 'center' },
+  checkBtnText: { fontSize: 19, fontWeight: '900', color: '#FFFFFF' },
   nextBtn: { backgroundColor: '#7ED4C0', borderRadius: 16, paddingVertical: 16, alignItems: 'center' },
   nextBtnText: { fontSize: 16, fontWeight: 'bold', color: '#FFFFFF' },
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
@@ -609,12 +863,24 @@ const styles = StyleSheet.create({
   modalConfirmBtn: { flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: '#7ED4C0', alignItems: 'center' },
   modalConfirmText: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
   modalSingleBtn: { flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: '#7ED4C0', alignItems: 'center' },
+  feedbackCard: { backgroundColor: '#FFFFFF', borderRadius: 28, padding: 24, width: '86%', maxWidth: 420, alignItems: 'center' },
+  feedbackTitle: { fontSize: 25, fontWeight: '900', textAlign: 'center', marginBottom: 12 },
+  feedbackText: { fontSize: 17, color: '#4E4A45', lineHeight: 25, textAlign: 'center', marginBottom: 20 },
+  feedbackButton: { width: '100%', borderRadius: 20, borderWidth: 2, paddingVertical: 16, alignItems: 'center' },
+  feedbackButtonText: { fontSize: 18, fontWeight: '900' },
   shortAnswerContainer: { marginTop: 8 },
   shortAnswerLabel: { fontSize: 14, color: '#7ED4C0', fontWeight: 'bold', marginBottom: 12 },
   shortAnswerInput: { borderWidth: 2, borderColor: '#7ED4C0', borderRadius: 12, padding: 16, fontSize: 18, color: '#333', backgroundColor: '#FFFFFF' },
   shortAnswerInputDisabled: { backgroundColor: '#F5F5F5', borderColor: '#E0E0E0', color: '#999' },
   // 시각자료 스타일
   visualBox: { backgroundColor: '#F8FFFE', borderRadius: 12, padding: 12, marginBottom: 16, alignItems: 'center', borderWidth: 1, borderColor: '#E0F2F1' },
+  visualFrame: { minHeight: 190, borderRadius: 24, backgroundColor: '#F8F8F8', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', marginBottom: 8 },
+  visualImage: { width: '100%', height: 190 },
+  visualPlaceholder: { minHeight: 190, borderRadius: 24, justifyContent: 'center', alignItems: 'center', padding: 18, marginBottom: 8 },
+  visualPlaceholderIcon: { fontSize: 54, marginBottom: 8 },
+  visualPlaceholderText: { fontSize: 17, color: '#6D6760', fontWeight: '800', textAlign: 'center', lineHeight: 24 },
+  countingBox: { minHeight: 190, borderRadius: 24, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: 12, padding: 18, marginBottom: 8 },
+  countingEmoji: { fontSize: 42 },
   boardBox: { backgroundColor: '#2E4A3E', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 10, marginBottom: 12, width: '100%', alignItems: 'center' },
   boardText: { fontSize: 22, fontWeight: 'bold', color: '#FFFFFF', textAlign: 'center' },
   charactersRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 40, marginBottom: 12 },
