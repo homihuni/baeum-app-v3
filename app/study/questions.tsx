@@ -10,7 +10,7 @@ import { AVATAR_MAP, AVATAR_KEYS } from '../../utils/avatars';
 import { Audio } from 'expo-av';
 import ConfettiCannon from 'react-native-confetti-cannon';
 import { SUBJECT_THEME, GRADE_THEME } from '../../utils/quizTheme';
-import { QUIZ_OBJECT_EMOJI } from '../../utils/quizObjectAssets';
+import VisualRenderer from '../../components/quiz/VisualRenderer';
 
 const BouncyButton = ({ onPress, disabled, style, children }: any) => {
   const scale = useRef(new Animated.Value(1)).current;
@@ -49,6 +49,23 @@ const FIRST_GRADE_SAMPLE_PROBLEMS: Record<string, any[]> = {
   korean: [
     {
       id: 'sample-korean-1',
+      question: '받침이 있는 낱말을 읽어 보세요.',
+      choices: [
+        { id: '1', text: '바람' },
+        { id: '2', text: '바다' },
+        { id: '3', text: '나무' },
+      ],
+      correctAnswer: '1',
+      explanation: '바람에는 받침 ㅁ이 있어요.',
+      questionType: 'multiple_choice',
+      visual: {
+        type: 'word_card',
+        text: '바람',
+        emoji: '🌬️',
+      },
+    },
+    {
+      id: 'sample-korean-2',
       question: '그림에 알맞은 문장을 골라 보세요.',
       choices: [
         { id: '1', text: '비가 와요.' },
@@ -79,8 +96,8 @@ const FIRST_GRADE_SAMPLE_PROBLEMS: Record<string, any[]> = {
       questionType: 'multiple_choice',
       visual: {
         type: 'counting_objects',
-        data: { object: 'apple', count: 5 },
-        altText: '사과 5개',
+        object: 'apple',
+        count: 5,
       },
     },
   ],
@@ -402,47 +419,17 @@ export default function QuestionsScreen() {
 
   const renderVisualRenderer = () => {
     const visual = currentProblem?.visual;
-    if (!visual || visual.type === 'none') {
-      if (currentProblem?.visualData || currentProblem?.visualType) return renderVisualHint();
-      return (
-        <View style={[styles.visualPlaceholder, { backgroundColor: subjectTheme.soft }]}>
-          <Text style={styles.visualPlaceholderIcon}>🌱</Text>
-          <Text style={styles.visualPlaceholderText}>그림 없이 풀어볼까요?</Text>
-        </View>
-      );
+    if ((!visual || visual.type === 'none') && (currentProblem?.visualData || currentProblem?.visualType)) {
+      return renderVisualHint();
     }
 
-    if ((visual.type === 'illustration' || visual.type === 'asset') && visual.imageUrl) {
-      return (
-        <View style={styles.visualFrame}>
-          <Image source={{ uri: visual.imageUrl }} style={styles.visualImage} resizeMode="contain" />
-        </View>
-      );
-    }
-
-    if (visual.type === 'illustration' || visual.type === 'asset') {
-      return (
-        <View style={[styles.visualPlaceholder, { backgroundColor: subjectTheme.soft }]}>
-          <Text style={styles.visualPlaceholderIcon}>🖼️</Text>
-          <Text style={styles.visualPlaceholderText}>{visual.altText || '그림을 준비하고 있어요'}</Text>
-        </View>
-      );
-    }
-
-    if (visual.type === 'counting_objects') {
-      const objectKey = visual.data?.object || 'star';
-      const count = Math.min(Number(visual.data?.count || 0), 20);
-      const emoji = QUIZ_OBJECT_EMOJI[objectKey] || '⭐';
-      return (
-        <View style={[styles.countingBox, { backgroundColor: subjectTheme.soft }]}>
-          {Array.from({ length: count }).map((_, index) => (
-            <Text key={index} style={styles.countingEmoji}>{emoji}</Text>
-          ))}
-        </View>
-      );
-    }
-
-    return renderVisualHint();
+    return (
+      <VisualRenderer
+        visual={visual}
+        softColor={subjectTheme.soft}
+        accentColor={subjectTheme.accent}
+      />
+    );
   };
 
   const renderAnswerArea = () => {

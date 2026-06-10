@@ -3,5 +3,5 @@ export const QUIZ_OBJECT_EMOJI: Record<string, string> = {
   pencil: '✏️',
   ball: '⚽',
   star: '⭐',
-  flower: '🌸',
+  flower: '🌼',
 };
