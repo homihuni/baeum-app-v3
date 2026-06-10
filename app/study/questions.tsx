@@ -128,9 +128,10 @@ const normalizeOptions = (options: any[]): QuizOption[] => {
     if (typeof option === 'string') {
       return { id: String(index), text: option };
     }
+    const text = option.text ?? option.label ?? option.name ?? option.value ?? option.content ?? option.choice ?? option.title ?? option.answer ?? '';
     return {
       id: String(option.id ?? index),
-      text: String(option.text ?? option.label ?? option.name ?? ''),
+      text: String(text),
       imageUrl: option.imageUrl || option.image_url || '',
       emoji: option.emoji || '',
     };
@@ -220,7 +221,7 @@ export default function QuestionsScreen() {
 
         const allProblems = validDocs.map((doc: any) => {
           const data = doc.data();
-          const choices = normalizeOptions(data.options || []);
+          const choices = normalizeOptions(data.options || data.choices || []);
           const correctAnswer = data.type === 'short_answer' ? String(data.answer || '') : getAnswerId(data.answer, choices);
           const visual = data.visual || {
             type: data.visual_type || 'none',
@@ -470,7 +471,8 @@ export default function QuestionsScreen() {
   const renderAnswerCard = (choice: QuizOption, isOx = false, index = 0) => {
     const isSelected = selectedAnswer === choice.id;
     const isImageChoice = currentProblem.questionType === 'image_select';
-    const isLong = String(choice.text).length > 12;
+    const displayText = String(choice.text || `보기 ${index + 1}`);
+    const isLong = displayText.length > 12;
     const cardStyle = [
       styles.choiceBtn,
       isOx && styles.oxBtn,
@@ -498,7 +500,7 @@ export default function QuestionsScreen() {
         <View style={styles.choiceTextRow}>
           {!isOx && <Text style={[styles.choiceNumber, { backgroundColor: subjectTheme.soft, color: subjectTheme.accent }]}>{index + 1}</Text>}
           <Text style={[styles.choiceText, { fontSize: isOx ? 40 : lowerTheme.answerFontSize }]} numberOfLines={2} adjustsFontSizeToFit>
-            {choice.text}
+            {displayText}
           </Text>
         </View>
       </BouncyButton>
@@ -766,19 +768,19 @@ const styles = StyleSheet.create({
   pathDot: { width: 30, height: 30, borderRadius: 15, borderWidth: 2, borderColor: '#E9DED3', backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center' },
   pathDotText: { fontSize: 12, fontWeight: '900' },
   scrollArea: { flex: 1 },
-  scrollContent: { padding: 16, paddingBottom: 24 },
-  questionCard: { backgroundColor: '#FFFFFF', borderRadius: 28, padding: 18, marginBottom: 16, borderWidth: 1, borderColor: '#F0E5D8', shadowColor: '#000', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 3 },
-  questionBadge: { alignSelf: 'center', paddingHorizontal: 16, paddingVertical: 7, borderRadius: 999, marginBottom: 12 },
+  scrollContent: { padding: 16, paddingBottom: 110 },
+  questionCard: { backgroundColor: '#FFFFFF', borderRadius: 28, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: '#F0E5D8', shadowColor: '#000', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 3 },
+  questionBadge: { alignSelf: 'center', paddingHorizontal: 16, paddingVertical: 6, borderRadius: 999, marginBottom: 8 },
   questionBadgeText: { color: '#FFFFFF', fontSize: 16, fontWeight: '900' },
   questionLabel: { fontSize: 13, fontWeight: 'bold', color: '#7ED4C0', marginBottom: 4, textAlign: 'center' },
   questionText: {
     fontWeight: '900',
     color: '#21362E',
-    lineHeight: 36,
-    marginBottom: 12,
+    lineHeight: 31,
+    marginBottom: 10,
     textAlign: 'center',
   },
-  listenBtn: { alignSelf: 'center', borderRadius: 999, paddingHorizontal: 18, paddingVertical: 9, marginBottom: 16 },
+  listenBtn: { alignSelf: 'center', borderRadius: 999, paddingHorizontal: 18, paddingVertical: 8, marginBottom: 10 },
   listenBtnText: { fontSize: 15, fontWeight: '900' },
   answerArea: { marginTop: 2 },
   choicesContainer: { gap: 10 },
@@ -790,8 +792,8 @@ const styles = StyleSheet.create({
   },
   choiceBtn: {
     width: '48%',
-    minHeight: 76,
-    paddingVertical: 14,
+    minHeight: 70,
+    paddingVertical: 12,
     paddingHorizontal: 12,
     borderRadius: 22,
     borderWidth: 2,
@@ -833,8 +835,8 @@ const styles = StyleSheet.create({
   explanationCard: { backgroundColor: '#FFFFFF', borderRadius: 8, padding: 12 },
   explanationLabel: { fontSize: 13, fontWeight: 'bold', color: '#7ED4C0', marginBottom: 4 },
   explanationText: { fontSize: 14, color: '#666', lineHeight: 22 },
-  bottomBar: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 22, borderTopWidth: 1, borderTopColor: '#F0E8DD', backgroundColor: '#FFFDF8' },
-  checkBtn: { borderRadius: 22, paddingVertical: 18, alignItems: 'center' },
+  bottomBar: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 16, borderTopWidth: 1, borderTopColor: '#F0E8DD', backgroundColor: '#FFFDF8' },
+  checkBtn: { borderRadius: 22, paddingVertical: 16, alignItems: 'center' },
   checkBtnText: { fontSize: 19, fontWeight: '900', color: '#FFFFFF' },
   nextBtn: { backgroundColor: '#7ED4C0', borderRadius: 16, paddingVertical: 16, alignItems: 'center' },
   nextBtnText: { fontSize: 16, fontWeight: 'bold', color: '#FFFFFF' },

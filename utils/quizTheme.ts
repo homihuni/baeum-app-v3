@@ -23,9 +23,9 @@ export const GRADE_THEME = {
   lower: {
     grades: [1, 2],
     radius: 28,
-    questionFontSize: 28,
-    answerFontSize: 22,
-    optionMinHeight: 76,
+    questionFontSize: 24,
+    answerFontSize: 20,
+    optionMinHeight: 70,
     decorationLevel: 'high',
   },
 };

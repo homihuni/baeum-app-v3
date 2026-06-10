@@ -99,26 +99,26 @@ export default function VisualRenderer({ visual, softColor, accentColor }: Visua
 
 const styles = StyleSheet.create({
   wordCard: {
-    minHeight: 190,
-    borderRadius: 28,
+    minHeight: 142,
+    borderRadius: 24,
     borderWidth: 1.5,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 24,
+    padding: 18,
     marginBottom: 8,
   },
   wordEmoji: {
-    fontSize: 34,
-    marginBottom: 10,
+    fontSize: 28,
+    marginBottom: 6,
   },
   wordText: {
-    fontSize: 54,
+    fontSize: 46,
     fontWeight: '900',
     letterSpacing: 0,
     textAlign: 'center',
   },
   illustrationCard: {
-    minHeight: 190,
+    minHeight: 142,
     borderRadius: 24,
     backgroundColor: '#F8F8F8',
     justifyContent: 'center',
@@ -128,10 +128,10 @@ const styles = StyleSheet.create({
   },
   illustrationImage: {
     width: '100%',
-    height: 190,
+    height: 142,
   },
   placeholder: {
-    minHeight: 190,
+    minHeight: 142,
     borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
@@ -139,18 +139,18 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   placeholderIcon: {
-    fontSize: 54,
-    marginBottom: 8,
+    fontSize: 42,
+    marginBottom: 6,
   },
   placeholderText: {
-    fontSize: 17,
+    fontSize: 15,
     color: '#6D6760',
     fontWeight: '800',
     textAlign: 'center',
     lineHeight: 24,
   },
   countingCard: {
-    minHeight: 190,
+    minHeight: 142,
     borderRadius: 24,
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -161,6 +161,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   countingEmoji: {
-    fontSize: 42,
+    fontSize: 36,
   },
 });
