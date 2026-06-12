@@ -413,7 +413,7 @@ export default function QuestionsScreen() {
             </View>
           );
         })}
-        <Text style={styles.pathIcon}>🏁</Text>
+        <Text style={styles.pathIcon}>🚩</Text>
       </View>
     );
   };
@@ -635,6 +635,13 @@ export default function QuestionsScreen() {
   }
 
   const isConfirmEnabled = currentProblem?.questionType === 'short_answer' ? textAnswer.trim().length > 0 : !!selectedAnswer;
+  const feedbackMessage = (() => {
+    if (!isCorrect) return '그림과 보기를 천천히 다시 살펴보세요.';
+    const raw = String(currentProblem.explanation || '잘했어요. 정답을 바르게 골랐어요.');
+    const main = raw.split(/오답\s*해설|해설[:：]|\n/)[0].trim();
+    const sentence = main.match(/^.*?[.!?。]/)?.[0] || main;
+    return sentence.length > 72 ? sentence.slice(0, 72).trim() + '...' : sentence;
+  })();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -659,9 +666,6 @@ export default function QuestionsScreen() {
             <Text style={styles.questionBadgeText}>Q{currentIndex + 1}</Text>
           </View>
           <Text style={[styles.questionText, { fontSize: lowerTheme.questionFontSize }]}>{String(currentProblem.question)}</Text>
-          <TouchableOpacity style={[styles.listenBtn, { backgroundColor: subjectTheme.soft }]}>
-            <Text style={[styles.listenBtnText, { color: subjectTheme.accent }]}>🔊 문제 듣기</Text>
-          </TouchableOpacity>
           {renderVisualRenderer()}
         </View>
 
@@ -715,13 +719,13 @@ export default function QuestionsScreen() {
       )}
 
       {isAnswered && (
-        <View style={styles.modalOverlay}>
-          <View style={styles.feedbackCard}>
+        <View style={styles.feedbackOverlay}>
+          <View style={[styles.feedbackCard, { borderColor: subjectTheme.soft }]}>
             <Text style={[styles.feedbackTitle, { color: isCorrect ? subjectTheme.accent : '#E56A6A' }]}>
               {isCorrect ? '정답이에요! 🎉' : '조금만 더 살펴볼까요?'}
             </Text>
-            <Text style={styles.feedbackText}>
-              {isCorrect ? String(currentProblem.explanation) : '그림과 보기를 천천히 다시 살펴보세요.'}
+            <Text style={styles.feedbackText} numberOfLines={4} adjustsFontSizeToFit>
+              {feedbackMessage}
             </Text>
             <TouchableOpacity
               style={[styles.feedbackButton, { backgroundColor: isCorrect ? subjectTheme.primary : '#FFFFFF', borderColor: subjectTheme.primary }]}
@@ -751,10 +755,10 @@ export default function QuestionsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFDF8' },
-  bouncyTouchable: { width: '100%', minHeight: '100%', justifyContent: 'center', alignItems: 'center' },
+  bouncyTouchable: { width: '100%', minHeight: 50, justifyContent: 'center', alignItems: 'stretch' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingVertical: 12 },
   headerIconBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 5, elevation: 2 },
-  headerIconText: { fontSize: 38, fontWeight: '700', marginTop: -3 },
+  headerIconText: { width: 44, height: 44, fontSize: 38, lineHeight: 44, fontWeight: '700', textAlign: 'center', textAlignVertical: 'center', includeFontPadding: false },
   headerCenter: { alignItems: 'center', flex: 1 },
   subjectLabel: { fontSize: 24, fontWeight: '900' },
   progressText: { fontSize: 15, color: '#6E6A64', fontWeight: '800', marginTop: 2 },
@@ -788,19 +792,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap: 12,
+    gap: 8,
   },
   choiceBtn: {
     width: '48%',
-    minHeight: 70,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 22,
+    minHeight: 50,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 18,
     borderWidth: 2,
     borderColor: '#EFE4D6',
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'stretch',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.06,
@@ -813,10 +817,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  choiceFullWidth: { width: '100%' },
-  choiceTextRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-  choiceNumber: { width: 28, height: 28, borderRadius: 14, textAlign: 'center', lineHeight: 28, fontSize: 15, fontWeight: '900', overflow: 'hidden' },
-  choiceText: { color: '#263A33', fontWeight: '900', textAlign: 'center', flexShrink: 1 },
+  choiceFullWidth: { width: '100%', minHeight: 52 },
+  choiceTextRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: 10, width: '100%' },
+  choiceNumber: { width: 26, height: 26, borderRadius: 13, textAlign: 'center', lineHeight: 26, fontSize: 14, fontWeight: '900', overflow: 'hidden' },
+  choiceText: { color: '#263A33', fontWeight: '900', textAlign: 'left', flex: 1 },
   oxRow: { flexDirection: 'row', gap: 12 },
   oxBtn: { flex: 1, minHeight: 120 },
   imageChoiceBtn: { minHeight: 142 },
@@ -835,14 +839,15 @@ const styles = StyleSheet.create({
   explanationCard: { backgroundColor: '#FFFFFF', borderRadius: 8, padding: 12 },
   explanationLabel: { fontSize: 13, fontWeight: 'bold', color: '#7ED4C0', marginBottom: 4 },
   explanationText: { fontSize: 14, color: '#666', lineHeight: 22 },
-  bottomBar: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 16, borderTopWidth: 1, borderTopColor: '#F0E8DD', backgroundColor: '#FFFDF8' },
-  checkBtn: { borderRadius: 22, paddingVertical: 16, alignItems: 'center' },
+  bottomBar: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 14, borderTopWidth: 1, borderTopColor: '#F0E8DD', backgroundColor: '#FFFDF8' },
+  checkBtn: { borderRadius: 22, paddingVertical: 14, alignItems: 'center' },
   checkBtnText: { fontSize: 19, fontWeight: '900', color: '#FFFFFF' },
   nextBtn: { backgroundColor: '#7ED4C0', borderRadius: 16, paddingVertical: 16, alignItems: 'center' },
   nextBtnText: { fontSize: 16, fontWeight: 'bold', color: '#FFFFFF' },
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyText: { fontSize: 16, color: '#9E9E9E' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
+  feedbackOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' },
   modalContainer: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 24, width: '85%', maxWidth: 400 },
   modalTitle: { fontSize: 20, fontWeight: 'bold', color: '#333', marginBottom: 12, textAlign: 'center' },
   modalMessage: { fontSize: 15, color: '#666', lineHeight: 22, textAlign: 'center', marginBottom: 24 },
@@ -852,10 +857,10 @@ const styles = StyleSheet.create({
   modalConfirmBtn: { flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: '#7ED4C0', alignItems: 'center' },
   modalConfirmText: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
   modalSingleBtn: { flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: '#7ED4C0', alignItems: 'center' },
-  feedbackCard: { backgroundColor: '#FFFFFF', borderRadius: 28, padding: 24, width: '86%', maxWidth: 420, alignItems: 'center' },
-  feedbackTitle: { fontSize: 25, fontWeight: '900', textAlign: 'center', marginBottom: 12 },
-  feedbackText: { fontSize: 17, color: '#4E4A45', lineHeight: 25, textAlign: 'center', marginBottom: 20 },
-  feedbackButton: { width: '100%', borderRadius: 20, borderWidth: 2, paddingVertical: 16, alignItems: 'center' },
+  feedbackCard: { backgroundColor: '#FFFFFF', borderRadius: 28, borderWidth: 2, padding: 22, width: '86%', maxWidth: 420, maxHeight: '78%', alignItems: 'center' },
+  feedbackTitle: { fontSize: 25, fontWeight: '900', textAlign: 'center', marginBottom: 10 },
+  feedbackText: { fontSize: 16, color: '#4E4A45', lineHeight: 24, textAlign: 'center', marginBottom: 18 },
+  feedbackButton: { width: '100%', borderRadius: 20, borderWidth: 2, paddingVertical: 14, alignItems: 'center' },
   feedbackButtonText: { fontSize: 18, fontWeight: '900' },
   shortAnswerContainer: { marginTop: 8 },
   shortAnswerLabel: { fontSize: 14, color: '#7ED4C0', fontWeight: 'bold', marginBottom: 12 },
