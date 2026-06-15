@@ -38,6 +38,27 @@ const SUBJECT_LABELS: Record<string, string> = {
   science: '과학', social: '사회', english: '영어',
 };
 
+const USE_MOCK_PROBLEMS = false;
+const PROBLEM_CACHE_KEYS = [
+  'problems',
+  'questions',
+  'studyProblems',
+  'dailyProblems',
+  'problemCache',
+  'childProblems',
+];
+const FIRESTORE_TEST_FILTER = {
+  collection: 'questions',
+  grade: 1,
+  semester: 1,
+  unit: '1. 글자를 만들어요',
+  isActive: true,
+};
+
+const normalizeFirestoreSubject = (value: string) => {
+  return SUBJECT_LABELS[value] || value;
+};
+
 type QuizOption = {
   id: string;
   text: string;
@@ -119,8 +140,13 @@ const FIRST_GRADE_SAMPLE_PROBLEMS: Record<string, any[]> = {
 };
 
 const getSampleProblems = (grade: number, subject: string) => {
+  if (!USE_MOCK_PROBLEMS) return [];
   if (grade !== 1) return [];
   return FIRST_GRADE_SAMPLE_PROBLEMS[subject] || [];
+};
+
+const clearProblemCache = async () => {
+  await AsyncStorage.multiRemove(PROBLEM_CACHE_KEYS);
 };
 
 const normalizeOptions = (options: any[]): QuizOption[] => {
@@ -195,34 +221,42 @@ export default function QuestionsScreen() {
   useEffect(() => {
     const loadProblems = async () => {
       try {
+        await clearProblemCache();
+        const normalizedSubject = normalizeFirestoreSubject(subject);
         const q = query(
-          collection(db, 'questions'),
-          where('subject', '==', subject) // 복합 인덱스 에러 우회
+          collection(db, FIRESTORE_TEST_FILTER.collection),
+          where('grade', '==', FIRESTORE_TEST_FILTER.grade),
+          where('semester', '==', FIRESTORE_TEST_FILTER.semester),
+          where('subject', '==', normalizedSubject),
+          where('unit', '==', FIRESTORE_TEST_FILTER.unit),
+          where('is_active', '==', FIRESTORE_TEST_FILTER.isActive)
         );
+        console.log('[ProblemLoad] routeSubject=' + subject);
+        console.log('[ProblemLoad] normalizedSubject=' + normalizedSubject);
+        console.log(`[ProblemLoad] firestoreFilter grade=${FIRESTORE_TEST_FILTER.grade} semester=${FIRESTORE_TEST_FILTER.semester} subject=${normalizedSubject} unit=${FIRESTORE_TEST_FILTER.unit}`);
         const snap = await getDocs(q);
 
         const sampleProblems = getSampleProblems(grade, subject);
 
         if (snap.empty) {
+          console.log('Firestore 조회 결과 0개');
+          console.log('사용한 collection:', FIRESTORE_TEST_FILTER.collection);
+          console.log('사용한 grade:', FIRESTORE_TEST_FILTER.grade);
+          console.log('사용한 semester:', FIRESTORE_TEST_FILTER.semester);
+          console.log('사용한 subject:', normalizedSubject);
+          console.log('사용한 unit:', FIRESTORE_TEST_FILTER.unit);
+          console.log('fallback 사용 여부:', USE_MOCK_PROBLEMS);
+          console.log('[ProblemLoad] source=firestore count=0');
           setProblems(sampleProblems);
           return;
         }
 
-        // 로컬에서 필터링
-        const validDocs = snap.docs.filter((doc: any) => {
-          const d = doc.data();
-          return Number(d.grade) === Number(grade) && d.isActive === true;
-        });
-
-        if (validDocs.length === 0) {
-          setProblems(sampleProblems);
-          return;
-        }
-
-        const allProblems = validDocs.map((doc: any) => {
+        const allProblems = snap.docs.map((doc: any) => {
           const data = doc.data();
           const choices = normalizeOptions(data.options || data.choices || []);
-          const correctAnswer = data.type === 'short_answer' ? String(data.answer || '') : getAnswerId(data.answer, choices);
+          const problemType = data.type || data.questionType || data.question_type || 'multiple_choice';
+          const rawAnswer = data.answer ?? data.correctAnswer ?? data.correct_answer ?? data.correct ?? '';
+          const correctAnswer = problemType === 'short_answer' ? String(rawAnswer || '') : getAnswerId(rawAnswer, choices);
           const visual = data.visual || {
             type: data.visual_type || 'none',
             data: typeof data.visual_data === 'string' ? JSON.parse(data.visual_data) : (data.visual_data || null),
@@ -231,11 +265,11 @@ export default function QuestionsScreen() {
           };
           return {
             id: doc.id,
-            question: String(data.question || ''),
+            question: String(data.question || data.questionText || data.question_text || data.prompt || ''),
             choices,
             correctAnswer,
             explanation: String(data.explanation || '해설이 없습니다.'),
-            questionType: data.type === 'multiple_choice' ? 'multiple_choice' : data.type === 'image_select' ? 'image_select' : data.type === 'ox' ? 'ox' : data.type === 'short_answer' ? 'short_answer' : 'subjective',
+            questionType: problemType === 'multiple_choice' ? 'multiple_choice' : problemType === 'image_select' ? 'image_select' : problemType === 'ox' ? 'ox' : problemType === 'short_answer' ? 'short_answer' : 'multiple_choice',
             difficulty: data.difficulty || 'medium',
             unit: data.unit || '',
             visual,
@@ -245,25 +279,13 @@ export default function QuestionsScreen() {
           };
         });
 
-        const now = new Date();
-        const kstTime = now.getTime() + (9 * 60 * 60 * 1000);
-        const kstDate = new Date(kstTime);
-        const dateTokens = kstDate.toDateString().split(' '); // e.g. ["Thu", "Apr", "30", "2026"]
-        const targetDatePart = `${dateTokens[1]} ${dateTokens[2]} ${dateTokens[3]}`; // "Apr 30 2026"
-
-        const todayProblems = allProblems.filter(p => p.questionType !== 'subjective' && p.createdAt.includes(targetDatePart));
-        
-        // 오늘 날짜의 문제가 없으면 기존 활성 문제들로 대체 (안전망)
-        const activeProblems = allProblems.filter(p => p.questionType !== 'subjective');
-        const targetList = todayProblems.length > 0 ? todayProblems : activeProblems.length > 0 ? activeProblems : sampleProblems;
-
-        const todaySeed = getTodaySeed(subject);
-        const shuffled = seededShuffle(targetList, todaySeed);
-        
-        // [테스트용] 모든 회원 등급 제한 해제 (전체 문제 제공)
-        setProblems(shuffled);
+        console.log(`[ProblemLoad] source=firestore count=${allProblems.length}`);
+        console.log('[ProblemLoad] ids=' + allProblems.map(p => p.id).join(','));
+        console.log('[ProblemLoad] firstQuestion=' + String(allProblems[0]?.question || ''));
+        setProblems(allProblems);
       } catch (error: any) {
         console.log('Firestore 로드 에러:', error);
+        console.log('fallback 사용 여부:', USE_MOCK_PROBLEMS);
         setProblems(getSampleProblems(grade, subject));
       }
     };
