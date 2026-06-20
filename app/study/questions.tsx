@@ -49,10 +49,7 @@ const PROBLEM_CACHE_KEYS = [
 ];
 const FIRESTORE_TEST_FILTER = {
   collection: 'questions',
-  grade: 1,
   semester: 1,
-  unit: '1. 글자를 만들어요',
-  isActive: true,
 };
 
 const normalizeFirestoreSubject = (value: string) => {
@@ -173,6 +170,37 @@ const getAnswerId = (answer: any, options: QuizOption[]) => {
   return optionByText?.id || answerText;
 };
 
+
+const getUploadedQuestionAnswer = (data: any, choices: QuizOption[]) => {
+  if (typeof data.answer_index === 'number') {
+    return choices[data.answer_index]?.id || String(data.answer_index);
+  }
+  return getAnswerId(data.answer ?? data.correctAnswer ?? data.correct_answer ?? data.correct ?? '', choices);
+};
+
+const getUploadedQuestionVisual = (data: any) => {
+  const visualData = typeof data.visual_data === 'string' ? JSON.parse(data.visual_data) : (data.visual_data || null);
+  const imageUrl = data.image_sector?.image_url || data.imageUrl || data.image_url || '';
+
+  if (data.image_sector?.enabled && imageUrl) {
+    return {
+      type: 'illustration',
+      imageUrl,
+      altText: visualData?.target_word ? `${visualData.target_word} 그림` : '문제 그림',
+    };
+  }
+
+  if (data.visual_type === 'word_card') {
+    return {
+      type: 'word_card',
+      text: visualData?.target_syllable || visualData?.answer_value || visualData?.word || '',
+    };
+  }
+
+  return {
+    type: 'none',
+  };
+};
 const seededShuffle = (array: any[], seed: number) => {
   const arr = [...array];
   let s = seed;
@@ -225,15 +253,13 @@ export default function QuestionsScreen() {
         const normalizedSubject = normalizeFirestoreSubject(subject);
         const q = query(
           collection(db, FIRESTORE_TEST_FILTER.collection),
-          where('grade', '==', FIRESTORE_TEST_FILTER.grade),
+          where('grade', '==', grade),
           where('semester', '==', FIRESTORE_TEST_FILTER.semester),
           where('subject', '==', normalizedSubject),
-          where('unit', '==', FIRESTORE_TEST_FILTER.unit),
-          where('is_active', '==', FIRESTORE_TEST_FILTER.isActive)
         );
         console.log('[ProblemLoad] routeSubject=' + subject);
         console.log('[ProblemLoad] normalizedSubject=' + normalizedSubject);
-        console.log(`[ProblemLoad] firestoreFilter grade=${FIRESTORE_TEST_FILTER.grade} semester=${FIRESTORE_TEST_FILTER.semester} subject=${normalizedSubject} unit=${FIRESTORE_TEST_FILTER.unit}`);
+        console.log(`[ProblemLoad] firestoreFilter collection=${FIRESTORE_TEST_FILTER.collection} grade=${grade} semester=${FIRESTORE_TEST_FILTER.semester} subject=${normalizedSubject}`);
         const snap = await getDocs(q);
 
         const sampleProblems = getSampleProblems(grade, subject);
@@ -241,10 +267,9 @@ export default function QuestionsScreen() {
         if (snap.empty) {
           console.log('Firestore 조회 결과 0개');
           console.log('사용한 collection:', FIRESTORE_TEST_FILTER.collection);
-          console.log('사용한 grade:', FIRESTORE_TEST_FILTER.grade);
+          console.log('사용한 grade:', grade);
           console.log('사용한 semester:', FIRESTORE_TEST_FILTER.semester);
           console.log('사용한 subject:', normalizedSubject);
-          console.log('사용한 unit:', FIRESTORE_TEST_FILTER.unit);
           console.log('fallback 사용 여부:', USE_MOCK_PROBLEMS);
           console.log('[ProblemLoad] source=firestore count=0');
           setProblems(sampleProblems);
@@ -255,29 +280,29 @@ export default function QuestionsScreen() {
           const data = doc.data();
           const choices = normalizeOptions(data.options || data.choices || []);
           const problemType = data.type || data.questionType || data.question_type || 'multiple_choice';
-          const rawAnswer = data.answer ?? data.correctAnswer ?? data.correct_answer ?? data.correct ?? '';
-          const correctAnswer = problemType === 'short_answer' ? String(rawAnswer || '') : getAnswerId(rawAnswer, choices);
-          const visual = data.visual || {
-            type: data.visual_type || 'none',
-            data: typeof data.visual_data === 'string' ? JSON.parse(data.visual_data) : (data.visual_data || null),
-            imageUrl: data.imageUrl || data.image_url || '',
-            altText: data.altText || data.alt_text || '',
-          };
+          const rawAnswer = data.answer ?? data.correctAnswer ?? data.correct_answer ?? data.correct ?? data.visual_data?.answer_value ?? '';
+          const correctAnswer = problemType === 'short_answer' ? String(rawAnswer || '') : getUploadedQuestionAnswer(data, choices);
+          const visualData = typeof data.visual_data === 'string' ? JSON.parse(data.visual_data) : (data.visual_data || null);
+          const visual = data.visual || getUploadedQuestionVisual(data);
           return {
             id: doc.id,
+            questionId: data.question_id || doc.id,
             question: String(data.question || data.questionText || data.question_text || data.prompt || ''),
             choices,
             correctAnswer,
             explanation: String(data.explanation || '해설이 없습니다.'),
             questionType: problemType === 'multiple_choice' ? 'multiple_choice' : problemType === 'image_select' ? 'image_select' : problemType === 'ox' ? 'ox' : problemType === 'short_answer' ? 'short_answer' : 'multiple_choice',
             difficulty: data.difficulty || 'medium',
+            grade: data.grade || grade,
+            semester: data.semester || FIRESTORE_TEST_FILTER.semester,
+            subject: data.subject || normalizedSubject,
             unit: data.unit || '',
             visual,
             visualType: data.visual_type || null,
-            visualData: typeof data.visual_data === 'string' ? JSON.parse(data.visual_data) : (data.visual_data || null),
+            visualData,
             createdAt: data.createdAt || '',
           };
-        });
+        }).sort((a: any, b: any) => String(a.questionId || a.id).localeCompare(String(b.questionId || b.id)));
 
         console.log(`[ProblemLoad] source=firestore count=${allProblems.length}`);
         console.log('[ProblemLoad] ids=' + allProblems.map(p => p.id).join(','));
@@ -673,7 +698,8 @@ export default function QuestionsScreen() {
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <Text style={[styles.subjectLabel, { color: subjectTheme.accent }]}>{subjectTheme.label || SUBJECT_LABELS[subject] || subject}</Text>
-          <Text style={styles.progressText}>{currentIndex + 1} / {problems.length}</Text>
+          <Text style={styles.progressText}>{currentProblem.grade}학년 {currentProblem.semester}학기 · {currentIndex + 1} / {problems.length}</Text>
+          {!!currentProblem.unit && <Text style={styles.unitText} numberOfLines={1}>{currentProblem.unit}</Text>}
         </View>
         <TouchableOpacity onPress={handleClose}>
           <Text style={styles.closeBtn}>✕</Text>
@@ -784,6 +810,7 @@ const styles = StyleSheet.create({
   headerCenter: { alignItems: 'center', flex: 1 },
   subjectLabel: { fontSize: 24, fontWeight: '900' },
   progressText: { fontSize: 15, color: '#6E6A64', fontWeight: '800', marginTop: 2 },
+  unitText: { maxWidth: 260, fontSize: 12, color: '#8F8A83', fontWeight: '700', marginTop: 1 },
   closeBtn: { fontSize: 24, color: '#8F8A83', fontWeight: '900', paddingHorizontal: 10 },
   progressBarBg: { height: 4, backgroundColor: '#E0E0E0', marginHorizontal: 20 },
   progressBarFill: { height: 4, backgroundColor: '#7ED4C0', borderRadius: 2 },

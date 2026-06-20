@@ -50,7 +50,9 @@ export default function VisualRenderer({ visual, softColor, accentColor }: Visua
     return (
       <View style={[styles.wordCard, { backgroundColor: softColor, borderColor: accentColor }]}>
         {emoji ? <Text style={styles.wordEmoji}>{emoji}</Text> : null}
-        <Text style={[styles.wordText, { color: accentColor }]}>{text}</Text>
+        <View style={styles.wordInnerBox}>
+          <Text style={[styles.wordText, { color: accentColor }]}>{text}</Text>
+        </View>
       </View>
     );
   }
@@ -61,13 +63,15 @@ export default function VisualRenderer({ visual, softColor, accentColor }: Visua
 
     if (imageUrl && !imageFailed) {
       return (
-        <View style={styles.illustrationCard}>
-          <Image
-            source={{ uri: imageUrl }}
-            style={styles.illustrationImage}
-            resizeMode="contain"
-            onError={() => setImageFailed(true)}
-          />
+        <View style={[styles.illustrationCard, { borderColor: accentColor }]}>
+          <View style={styles.illustrationInnerBox}>
+            <Image
+              source={{ uri: imageUrl }}
+              style={styles.illustrationImage}
+              resizeMode="contain"
+              onError={() => setImageFailed(true)}
+            />
+          </View>
         </View>
       );
     }
@@ -99,39 +103,70 @@ export default function VisualRenderer({ visual, softColor, accentColor }: Visua
 
 const styles = StyleSheet.create({
   wordCard: {
-    minHeight: 142,
-    borderRadius: 24,
-    borderWidth: 1.5,
+    minHeight: 150,
+    borderRadius: 28,
+    borderWidth: 2.5,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 18,
+    marginTop: 6,
     marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  wordInnerBox: {
+    width: '100%',
+    minHeight: 92,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255,255,255,0.72)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   wordEmoji: {
-    fontSize: 28,
-    marginBottom: 6,
+    fontSize: 36,
+    marginBottom: 8,
   },
   wordText: {
-    fontSize: 46,
+    fontSize: 58,
     fontWeight: '900',
     letterSpacing: 0,
     textAlign: 'center',
   },
   illustrationCard: {
-    minHeight: 142,
-    borderRadius: 24,
-    backgroundColor: '#F8F8F8',
+    minHeight: 210,
+    borderRadius: 30,
+    borderWidth: 2.5,
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
+    marginTop: 6,
     marginBottom: 8,
+    padding: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  illustrationInnerBox: {
+    width: '100%',
+    minHeight: 170,
+    borderRadius: 24,
+    backgroundColor: '#FFF8FB',
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
   },
   illustrationImage: {
     width: '100%',
-    height: 142,
+    height: 170,
   },
   placeholder: {
-    minHeight: 142,
+    minHeight: 150,
     borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
@@ -139,7 +174,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   placeholderIcon: {
-    fontSize: 42,
+    fontSize: 38,
     marginBottom: 6,
   },
   placeholderText: {
@@ -150,7 +185,7 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   countingCard: {
-    minHeight: 142,
+    minHeight: 150,
     borderRadius: 24,
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -161,6 +196,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   countingEmoji: {
-    fontSize: 36,
+    fontSize: 38,
   },
 });
