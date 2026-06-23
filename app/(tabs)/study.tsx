@@ -12,6 +12,7 @@ import { wp } from '../../utils/responsive';
 
 const TIER_LABELS: Record<string, string> = { free: '무료회원', baeum: '배움회원', sky: '스카이회원' };
 type SubjectKey = keyof typeof SUBJECT_ICONS;
+const SHOW_ALL_UPLOADED_QUESTIONS_FOR_TEST = true;
 
 const SUBJECT_CARD_COLORS: Record<SubjectKey, string> = {
   korean: '#BDEFD2',
@@ -37,6 +38,7 @@ const getSubjectsForGrade = (grade: number): SubjectKey[] => {
 };
 
 const getQuestionsPerSubject = (tier: string) => {
+  if (SHOW_ALL_UPLOADED_QUESTIONS_FOR_TEST) return 999;
   if (tier === 'sky') return 10;
   if (tier === 'baeum') return 5;
   return 3;
@@ -93,7 +95,7 @@ export default function StudyScreen() {
       setChildAvatar(resolveAvatar(data.avatar));
       setChildName(data.name || '학생');
 
-      if (data.isLocked === true || data.tier === 'expired') {
+      if (!SHOW_ALL_UPLOADED_QUESTIONS_FOR_TEST && (data.isLocked === true || data.tier === 'expired')) {
         setIsLocked(true);
         return;
       } else {
@@ -211,7 +213,9 @@ export default function StudyScreen() {
               </View>
               <View style={styles.subjectTextBox}>
                 <Text style={styles.subjectName}>{SUBJECT_LABELS[subjectKey]}</Text>
-                <Text style={styles.subjectRemaining}>총 {questionsPerSubject}문제</Text>
+                <Text style={styles.subjectRemaining}>
+                  {SHOW_ALL_UPLOADED_QUESTIONS_FOR_TEST ? '업로드된 문제 전체' : `총 ${questionsPerSubject}문제`}
+                </Text>
               </View>
             </View>
             <View style={[styles.subjectArrowCircle, { backgroundColor: SUBJECT_BUTTON_COLORS[subjectKey] }]}>
