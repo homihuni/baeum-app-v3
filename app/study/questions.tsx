@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, TextInput, Image, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -546,7 +546,7 @@ export default function QuestionsScreen() {
         )}
         <View style={styles.choiceTextRow}>
           {!isOx && <Text style={[styles.choiceNumber, { backgroundColor: subjectTheme.soft, color: subjectTheme.accent }]}>{index + 1}</Text>}
-          <Text style={[styles.choiceText, { fontSize: isOx ? 40 : lowerTheme.answerFontSize }]} numberOfLines={2} adjustsFontSizeToFit>
+          <Text style={[styles.choiceText, { fontSize: isOx ? 40 : lowerTheme.answerFontSize }]} numberOfLines={3} adjustsFontSizeToFit>
             {displayText}
           </Text>
         </View>
@@ -869,7 +869,7 @@ const styles = StyleSheet.create({
   choiceFullWidth: { width: '100%', minHeight: 52 },
   choiceTextRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: 10, width: '100%' },
   choiceNumber: { width: 26, height: 26, borderRadius: 13, textAlign: 'center', lineHeight: 26, fontSize: 14, fontWeight: '900', overflow: 'hidden' },
-  choiceText: { color: '#263A33', fontWeight: '900', textAlign: 'left', flex: 1 },
+  choiceText: { color: '#263A33', fontWeight: '900', textAlign: 'left', flex: 1, lineHeight: 24 },
   oxRow: { flexDirection: 'row', gap: 12 },
   oxBtn: { flex: 1, minHeight: 120 },
   imageChoiceBtn: { minHeight: 142 },
@@ -947,3 +947,4 @@ const styles = StyleSheet.create({
   compareVs: { fontSize: 18, fontWeight: 'bold', color: '#999' },
   sentenceText: { fontSize: 22, fontWeight: 'bold', color: '#333', textAlign: 'center', lineHeight: 32 },
 });
+
