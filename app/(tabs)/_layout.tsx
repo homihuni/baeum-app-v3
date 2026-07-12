@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { View, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const ACTIVE = '#5BBFAA';
+const ACTIVE = '#1DA884';
 const INACTIVE = '#B0BEC5';
 
 function TabIcon({ children, label, focused }: { children: React.ReactNode; label: string; focused: boolean }) {
@@ -63,7 +63,7 @@ export default function TabLayout() {
         name="study"
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon label="스터디" focused={focused}>
+            <TabIcon label="학습" focused={focused}>
               <Ionicons name={focused ? 'book' : 'book-outline'} size={20} color={focused ? ACTIVE : INACTIVE} />
             </TabIcon>
           ),
@@ -83,7 +83,7 @@ export default function TabLayout() {
         name="menu"
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon label="전체메뉴" focused={focused}>
+            <TabIcon label="메뉴" focused={focused}>
             <Ionicons name={focused ? 'grid' : 'grid-outline'} size={22} color={focused ? ACTIVE : INACTIVE} />
             </TabIcon>
           ),

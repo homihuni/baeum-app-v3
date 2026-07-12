@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Pressable, Alert, Animated, Image, Linking, Dimensions, ImageSourcePropType } from 'react-native';
 import SafeLayout from '../../components/SafeLayout';
 import { useRouter } from 'expo-router';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
@@ -11,6 +11,7 @@ import { resolveAvatar } from '../../utils/avatars';
 import { SUBJECT_ICONS, SUBJECT_LABELS } from '../../utils/subjects';
 import { wp, SCREEN_WIDTH } from '../../utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
+import { resolveHomeTheme } from '../../utils/homeTheme';
 
 // 배너/카드 좌우 여백: 화면 폭의 5% (375px 기준 약 19px, 태블릿에서 비례 확대)
 const BANNER_MARGIN = wp(5);
@@ -30,6 +31,7 @@ export default function HomeScreen() {
   const [childName, setChildName] = useState('');
   const [childGrade, setChildGrade] = useState('');
   const [childTier, setChildTier] = useState('free');
+  const [selectedHomeThemeId, setSelectedHomeThemeId] = useState('auto');
   const [childAvatar, setChildAvatar] = useState<ImageSourcePropType>(require('../../assets/images/avatar_01.png'));
   const [studyDays, setStudyDays] = useState<Set<number>>(new Set());
   const [totalProblems, setTotalProblems] = useState(0);
@@ -103,9 +105,11 @@ export default function HomeScreen() {
       const childId = await AsyncStorage.getItem('childId');
       const grade = await AsyncStorage.getItem('childGrade');
       const tier = await AsyncStorage.getItem('childTier');
+      const savedHomeThemeId = await AsyncStorage.getItem('selectedHomeThemeId');
 
       if (grade) setChildGrade(grade);
       if (tier) setChildTier(tier);
+      if (savedHomeThemeId) setSelectedHomeThemeId(savedHomeThemeId);
 
       if (parentId && childId) {
         const childDoc = await getDoc(doc(db, 'Parents', parentId, 'Children', childId));
@@ -113,6 +117,7 @@ export default function HomeScreen() {
           const childData = childDoc.data();
           if (childData.avatar) setChildAvatar(resolveAvatar(childData.avatar));
           if (childData.name) setChildName(childData.name);
+          if (childData.homeThemeId) setSelectedHomeThemeId(childData.homeThemeId);
         }
       }
     } catch (error) {
@@ -257,6 +262,7 @@ export default function HomeScreen() {
           if (childData.avatar) setChildAvatar(resolveAvatar(childData.avatar));
           if (childData.name) setChildName(childData.name);
           if (childData.tier) setChildTier(childData.tier);
+          if (childData.homeThemeId) setSelectedHomeThemeId(childData.homeThemeId);
         }
       }
     } catch (error) {
@@ -395,6 +401,7 @@ export default function HomeScreen() {
 
   const displayName = childName.length > 5 ? childName.substring(0, 5) + '..' : childName;
   const gradeNumber = Number(childGrade) || 1;
+  const homeTheme = useMemo(() => resolveHomeTheme(selectedHomeThemeId, today), [selectedHomeThemeId]);
   const missionSubjects = getSubjectsForGrade(gradeNumber);
   const completedMissionCount = missionSubjects.filter((subjectKey) => todaySubjects.has(subjectKey)).length;
   const mondayOffset = (today.getDay() + 6) % 7;
@@ -409,7 +416,7 @@ export default function HomeScreen() {
   });
 
   return (
-    <SafeLayout backgroundColor="#FFFDF7">
+    <SafeLayout backgroundColor={homeTheme.backgroundColor}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         style={styles.scrollView}
@@ -418,42 +425,73 @@ export default function HomeScreen() {
         <View style={styles.topTitleRow}>
           <View style={styles.topTitleSpacer} />
           <TouchableOpacity style={styles.notificationButton} activeOpacity={0.8}>
-            <Ionicons name="notifications-outline" size={23} color="#147B60" />
+            <Ionicons name="notifications-outline" size={23} color={homeTheme.primaryColor} />
             <View style={styles.notificationDot} />
           </TouchableOpacity>
         </View>
 
-        <View style={styles.heroProfile}>
+        <View
+          style={[
+            styles.heroProfile,
+            {
+              backgroundColor: homeTheme.heroBackgroundColor,
+              borderColor: homeTheme.borderColor,
+            },
+          ]}
+        >
+          <View style={[styles.heroWave, { backgroundColor: homeTheme.heroWaveColor }]} />
+          <View style={styles.heroForestBack} />
+          <View style={styles.heroForestFront} />
+          <View style={styles.heroTreeLeft}>
+            <View style={styles.heroTreeTrunk} />
+            <View style={styles.heroTreeCrownLarge} />
+            <View style={styles.heroTreeCrownSmall} />
+          </View>
+          <View style={styles.heroTreeRight}>
+            <View style={styles.heroTreeTrunk} />
+            <View style={styles.heroTreeCrownLarge} />
+            <View style={styles.heroTreeCrownSmall} />
+          </View>
+          <View style={[styles.heroFlower, styles.heroFlowerOne, { backgroundColor: homeTheme.decorationColor }]} />
+          <View style={[styles.heroFlower, styles.heroFlowerTwo, { backgroundColor: homeTheme.accentColor }]} />
+          <View style={[styles.heroFlower, styles.heroFlowerThree, { backgroundColor: homeTheme.decorationColor }]} />
           <Image source={childAvatar} style={styles.heroAvatar} />
           <View style={styles.heroTextBox}>
             <Text style={styles.heroGreeting}>
-              <Text style={styles.heroName}>{childName || '학생'}</Text> 님, 반가워요!
+              안녕, <Text style={styles.heroName}>{childName || '학생'}</Text>!
             </Text>
-            <Text style={styles.heroSubText}>오늘도 즐겁게 배워볼까요?</Text>
+            <Text style={styles.heroSubText}>{homeTheme.message}</Text>
+            <View style={styles.heroBadgeRow}>
+              <View style={[styles.gradePill, { borderColor: homeTheme.borderColor }]}>
+                <Text style={[styles.gradePillText, { color: homeTheme.primaryColor }]}>{gradeNumber}학년</Text>
+              </View>
+              <View style={styles.memberPill}>
+                <Text style={[styles.memberPillText, { color: MEMBER_TEXT_COLORS[childTier] || '#666666' }]}>
+                  {TIER_LABELS[childTier] || '무료회원'}
+                </Text>
+              </View>
+            </View>
           </View>
         </View>
 
-        <View style={styles.heroBadgeRow}>
-          <View style={styles.gradePill}>
-            <Text style={styles.gradePillText}>{gradeNumber}학년</Text>
-          </View>
-          <View style={styles.memberPill}>
-            <Text style={[styles.memberPillText, { color: MEMBER_TEXT_COLORS[childTier] || '#666666' }]}>
-              {TIER_LABELS[childTier] || '무료회원'}
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.missionCard}>
+        <View
+          style={[
+            styles.missionCard,
+            {
+              backgroundColor: homeTheme.primarySoftColor,
+              borderColor: homeTheme.borderColor,
+            },
+          ]}
+        >
           <View style={styles.missionLeft}>
-            <Text style={styles.missionRibbon}>오늘의 배움 미션</Text>
-            <Text style={styles.missionTitle}>오늘의 {missionSubjects.length}과목 미션을 완료해보세요!</Text>
+            <Text style={[styles.missionRibbon, { backgroundColor: homeTheme.primaryColor }]}>오늘의 배움 미션</Text>
+            <Text style={styles.missionTitle}>오늘은 {missionSubjects.length}과목을 조금씩 풀어볼 거예요.</Text>
             <Text style={styles.missionProgress}>
-              <Text style={styles.missionProgressNumber}>{completedMissionCount}</Text>
+              <Text style={[styles.missionProgressNumber, { color: homeTheme.primaryColor }]}>{completedMissionCount}</Text>
               {' / '}{missionSubjects.length} 과목 완료
             </Text>
-            <TouchableOpacity style={styles.missionButton} onPress={() => router.replace('/(tabs)/study')}>
-              <Text style={styles.missionButtonText}>학습하기 〉</Text>
+            <TouchableOpacity style={[styles.missionButton, { backgroundColor: homeTheme.primaryColor }]} onPress={() => router.replace('/(tabs)/study')}>
+              <Text style={styles.missionButtonText}>오늘의 배움 시작하기</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.missionSubjects}>
@@ -474,7 +512,7 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.weekCard}>
-          <Text style={styles.sectionTitle}>이번 주 별 스탬프</Text>
+          <Text style={styles.sectionTitle}>이번 주 별 스티커</Text>
           <View style={styles.weekStampBox}>
             {weekStampDays.map((item) => (
               <View key={item.label} style={[styles.weekStampItem, item.isToday && styles.weekStampToday]}>
@@ -578,12 +616,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: BANNER_MARGIN,
-    paddingTop: 14,
-    paddingBottom: 12,
-    backgroundColor: '#FFFDF7',
+    paddingTop: 12,
+    paddingBottom: 8,
+    backgroundColor: '#FFFFFF',
   },
   topTitleSpacer: {
-    width: 32,
+    width: 42,
   },
   notificationButton: {
     width: 42,
@@ -614,61 +652,168 @@ const styles = StyleSheet.create({
   heroProfile: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: BANNER_MARGIN,
-    paddingTop: 10,
-    paddingBottom: 14,
-    backgroundColor: '#FFFDF7',
+    marginHorizontal: BANNER_MARGIN,
+    marginTop: 4,
+    borderRadius: 26,
+    borderWidth: 1,
+    paddingHorizontal: 18,
+    paddingVertical: 18,
+    minHeight: 174,
+    overflow: 'hidden',
+    position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  heroWave: {
+    position: 'absolute',
+    left: -24,
+    right: -34,
+    bottom: -30,
+    height: 104,
+    borderTopLeftRadius: 120,
+    borderTopRightRadius: 120,
+    opacity: 0.8,
+  },
+  heroForestBack: {
+    position: 'absolute',
+    right: -36,
+    bottom: 22,
+    width: 230,
+    height: 88,
+    borderTopLeftRadius: 120,
+    borderTopRightRadius: 120,
+    backgroundColor: '#BDEBD9',
+    opacity: 0.58,
+  },
+  heroForestFront: {
+    position: 'absolute',
+    left: 36,
+    right: 28,
+    bottom: -10,
+    height: 68,
+    borderTopLeftRadius: 90,
+    borderTopRightRadius: 90,
+    backgroundColor: '#A9E0C3',
+    opacity: 0.5,
+  },
+  heroTreeLeft: {
+    position: 'absolute',
+    left: 32,
+    bottom: 26,
+    width: 54,
+    height: 78,
+    opacity: 0.48,
+  },
+  heroTreeRight: {
+    position: 'absolute',
+    right: 26,
+    bottom: 32,
+    width: 58,
+    height: 86,
+    opacity: 0.42,
+  },
+  heroTreeTrunk: {
+    position: 'absolute',
+    left: 24,
+    bottom: 0,
+    width: 8,
+    height: 34,
+    borderRadius: 4,
+    backgroundColor: '#8BB983',
+  },
+  heroTreeCrownLarge: {
+    position: 'absolute',
+    left: 4,
+    top: 18,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#74C99C',
+  },
+  heroTreeCrownSmall: {
+    position: 'absolute',
+    left: 16,
+    top: 0,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#8DD9B0',
+  },
+  heroFlower: {
+    position: 'absolute',
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    opacity: 0.75,
+  },
+  heroFlowerOne: {
+    left: 116,
+    bottom: 32,
+  },
+  heroFlowerTwo: {
+    right: 112,
+    bottom: 44,
+  },
+  heroFlowerThree: {
+    right: 70,
+    bottom: 24,
   },
   heroAvatar: {
     width: 82,
     height: 82,
     borderRadius: 41,
-    borderWidth: 1,
-    borderColor: '#B8D8BC',
+    borderWidth: 3,
+    borderColor: '#DFF5EA',
     marginRight: 16,
+    backgroundColor: '#FFFFFF',
+    zIndex: 2,
   },
   heroTextBox: {
     flex: 1,
+    zIndex: 2,
   },
   heroGreeting: {
-    fontSize: 19,
-    color: '#1F2A24',
+    fontSize: 21,
+    color: '#12243A',
     marginBottom: 8,
+    fontWeight: '800',
   },
   heroName: {
     fontWeight: 'bold',
   },
   heroSubText: {
     fontSize: 14,
-    color: '#1F2A24',
+    color: '#5D6B63',
+    lineHeight: 20,
   },
   heroBadgeRow: {
     flexDirection: 'row',
     gap: 8,
-    paddingHorizontal: BANNER_MARGIN,
-    paddingBottom: 20,
-    backgroundColor: '#FFFDF7',
+    marginTop: 14,
   },
   gradePill: {
     borderWidth: 1,
-    borderColor: '#DDEBD5',
+    borderColor: '#BEEAD8',
     borderRadius: 20,
     paddingHorizontal: 18,
     paddingVertical: 8,
-    backgroundColor: '#FBFCF6',
+    backgroundColor: '#FFFFFF',
   },
   gradePillText: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#3E8D66',
+    color: '#169B75',
   },
   memberPill: {
     borderWidth: 1,
-    borderColor: '#E7E2D8',
+    borderColor: '#F0E2CA',
     borderRadius: 20,
     paddingHorizontal: 18,
     paddingVertical: 8,
-    backgroundColor: '#FFFDF9',
+    backgroundColor: '#FFFFFF',
   },
   memberPillText: {
     fontSize: 14,
@@ -714,11 +859,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginHorizontal: BANNER_MARGIN,
     marginTop: 14,
-    borderRadius: 18,
+    borderRadius: 22,
     padding: 16,
-    backgroundColor: '#F7FBF2',
+    backgroundColor: '#F1FBF6',
     borderWidth: 1,
-    borderColor: '#DDEBD5',
+    borderColor: '#BEEAD8',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
@@ -731,45 +876,43 @@ const styles = StyleSheet.create({
   },
   missionRibbon: {
     alignSelf: 'flex-start',
-    backgroundColor: '#4FA37C',
+    backgroundColor: '#1DA884',
     color: '#FFFFFF',
     fontSize: 13,
     fontWeight: 'bold',
     paddingHorizontal: 12,
     paddingVertical: 5,
-    borderRadius: 6,
+    borderRadius: 12,
     marginBottom: 12,
   },
   missionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#1F2A24',
+    color: '#12243A',
     lineHeight: 26,
     marginBottom: 10,
   },
   missionProgress: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#1F2A24',
+    color: '#12243A',
     marginBottom: 12,
   },
   missionProgressNumber: {
     fontSize: 26,
-    color: '#4FA37C',
+    color: '#1DA884',
   },
   missionButton: {
     alignSelf: 'flex-start',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#19B88F',
     borderRadius: 18,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: '#E7E2D8',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
   },
   missionButtonText: {
     fontSize: 13,
     fontWeight: 'bold',
-    color: '#1F2A24',
+    color: '#FFFFFF',
   },
   missionSubjects: {
     flex: 1,
@@ -821,7 +964,7 @@ const styles = StyleSheet.create({
   weekCard: {
     marginHorizontal: BANNER_MARGIN,
     marginTop: 16,
-    borderRadius: 18,
+    borderRadius: 22,
     padding: 16,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
@@ -834,8 +977,8 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#1F2A24',
+    fontWeight: '900',
+    color: '#12243A',
     marginBottom: 12,
   },
   weekStampBox: {

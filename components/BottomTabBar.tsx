@@ -3,14 +3,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, usePathname } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const ACTIVE = '#5BBFAA';
+const ACTIVE = '#1DA884';
 const INACTIVE = '#B0BEC5';
 
 const TABS = [
   { key: 'home', label: '홈', icon: 'home', iconOutline: 'home-outline', route: '/(tabs)/home' },
-  { key: 'study', label: '스터디', icon: 'book', iconOutline: 'book-outline', route: '/(tabs)/study' },
+  { key: 'study', label: '학습', icon: 'book', iconOutline: 'book-outline', route: '/(tabs)/study' },
   { key: 'growth', label: '성장', icon: 'star', iconOutline: 'star-outline', route: '/(tabs)/growth' },
-{ key: 'menu', label: '전체메뉴', icon: 'grid', iconOutline: 'grid-outline', route: '/(tabs)/menu' },
+{ key: 'menu', label: '메뉴', icon: 'grid', iconOutline: 'grid-outline', route: '/(tabs)/menu' },
 ];
 
 // 설정/공지 등 하위 페이지는 전체메뉴 탭을 활성화
@@ -36,10 +36,10 @@ export default function BottomTabBar() {
       {TABS.map((tab) => {
         const focused = isActive(tab.key);
         return (
-          <TouchableOpacity key={tab.key} style={styles.tab} onPress={() => router.replace(tab.route)}>
+          <TouchableOpacity key={tab.key} style={styles.tab} onPress={() => router.replace(tab.route as any)}>
             <View style={styles.iconWrapper}>
               <Ionicons
-                name={focused ? tab.icon : tab.iconOutline}
+                name={(focused ? tab.icon : tab.iconOutline) as any}
                 size={20}
                 color={focused ? ACTIVE : INACTIVE}
               />

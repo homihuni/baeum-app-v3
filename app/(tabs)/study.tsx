@@ -164,7 +164,7 @@ export default function StudyScreen() {
   }
 
   return (
-    <SafeLayout backgroundColor="#FFFDF7">
+    <SafeLayout backgroundColor="#FFF9EC">
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
         <View style={styles.planHeader}>
@@ -172,28 +172,30 @@ export default function StudyScreen() {
             <Ionicons name="chevron-back" size={28} color="#147B60" />
           </TouchableOpacity>
           <View style={styles.planTitleBox}>
-            <Text style={styles.planTitle}>학습플랜</Text>
+            <Text style={styles.planTitle}>오늘의 학습</Text>
+            <Text style={styles.planSubtitle}>과목을 골라 차근차근 풀어요</Text>
           </View>
           <View style={styles.headerSpacer} />
         </View>
 
         <View style={styles.profileCard}>
-          <View style={styles.profileInfoRow}>
-            <View style={styles.profileBadgeColumn}>
-              <Image source={childAvatar} style={styles.profileAvatar} />
-              <Text style={styles.profileName}>{childName || '학생'}</Text>
-              <View style={styles.profileMiniRow}>
-                <View style={styles.gradeBadge}>
-                  <Text style={styles.gradeText}>{childGrade}학년</Text>
-                </View>
-                <View style={styles.tierBadge}>
-                  <Text style={styles.tierBadgeText}>{TIER_LABELS[childTier] || '무료회원'}</Text>
-                </View>
+          <View style={styles.profileBadgeColumn}>
+            <Image source={childAvatar} style={styles.profileAvatar} />
+          </View>
+          <View style={styles.profileTextBox}>
+            <Text style={styles.profileEyebrow}>오늘은 {subjects.length}과목에 도전해요</Text>
+            <Text style={styles.profileName}>{childName || '학생'}의 배움 미션</Text>
+            <Text style={styles.profileMessage}>
+              문제를 풀고 바로 확인하면서 별 스티커를 모아보세요.
+            </Text>
+            <View style={styles.profileMiniRow}>
+              <View style={styles.gradeBadge}>
+                <Text style={styles.gradeText}>{childGrade}학년</Text>
+              </View>
+              <View style={styles.tierBadge}>
+                <Text style={styles.tierBadgeText}>{TIER_LABELS[childTier] || '무료회원'}</Text>
               </View>
             </View>
-          </View>
-          <View style={styles.profileSceneWrap}>
-            <Image source={require('../../assets/images/study_plan_children.png')} style={styles.profileScene} resizeMode="contain" />
           </View>
         </View>
 
@@ -232,7 +234,7 @@ export default function StudyScreen() {
 const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: wp(4),
-    paddingBottom: 18,
+    paddingBottom: 22,
   },
   loadingContainer: {
     flex: 1,
@@ -319,8 +321,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 8,
-    paddingBottom: 12,
+    paddingTop: 12,
+    paddingBottom: 14,
   },
   backCircle: {
     width: 48,
@@ -339,12 +341,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   planTitle: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: '900',
-    color: '#123C2B',
-    textShadowColor: '#BFE8D4',
+    color: '#12243A',
+    textShadowColor: '#CFF3E3',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 0,
+  },
+  planSubtitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1DA884',
+    marginTop: 4,
+    textAlign: 'center',
   },
   headerSpacer: {
     width: 48,
@@ -352,12 +361,13 @@ const styles = StyleSheet.create({
   profileCard: {
     marginTop: 4,
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    paddingVertical: 16,
-    paddingLeft: 10,
-    paddingRight: 16,
-    minHeight: 148,
-    overflow: 'hidden',
+    borderRadius: 24,
+    padding: 18,
+    minHeight: 150,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#F0E2CA',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.08,
@@ -371,15 +381,32 @@ const styles = StyleSheet.create({
   },
   profileBadgeColumn: {
     alignItems: 'center',
-    width: 126,
-    zIndex: 2,
+    justifyContent: 'center',
+    width: 78,
+    marginRight: 14,
   },
   profileAvatar: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    borderWidth: 1,
-    borderColor: '#D9EBD7',
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    borderWidth: 3,
+    borderColor: '#DFF5EA',
+    backgroundColor: '#FFFFFF',
+  },
+  profileTextBox: {
+    flex: 1,
+    minWidth: 0,
+  },
+  profileEyebrow: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#EAF9F2',
+    color: '#159B75',
+    fontSize: 12,
+    fontWeight: '900',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    marginBottom: 9,
   },
   profileMiniRow: {
     flexDirection: 'row',
@@ -388,37 +415,42 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   profileName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#14251C',
-    marginTop: 7,
-    textAlign: 'center',
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#12243A',
+  },
+  profileMessage: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#66746D',
+    lineHeight: 19,
+    marginTop: 6,
   },
   gradeBadge: {
-    backgroundColor: '#EFF8EF',
+    backgroundColor: '#F5FEF9',
     borderWidth: 1,
-    borderColor: '#D9EBD7',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    borderColor: '#CBEFDE',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: 20,
   },
   gradeText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: 'bold',
-    color: '#2E8B57',
+    color: '#159B75',
   },
   tierBadge: {
-    backgroundColor: '#FFF8FA',
+    backgroundColor: '#FFF8EE',
     borderWidth: 1,
-    borderColor: '#F5D8E2',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    borderColor: '#F0E2CA',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: 20,
   },
   tierBadgeText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: 'bold',
-    color: '#E978A2',
+    color: '#D9812D',
   },
   profileSceneWrap: {
     position: 'absolute',
@@ -437,10 +469,10 @@ const styles = StyleSheet.create({
   subjectCard: {
     marginTop: 12,
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    borderRadius: 22,
     paddingVertical: 16,
     paddingHorizontal: 18,
-    minHeight: 104,
+    minHeight: 98,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -458,9 +490,9 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   subjectIconWrap: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+    width: 64,
+    height: 64,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 18,
@@ -469,8 +501,8 @@ const styles = StyleSheet.create({
     borderColor: '#F0ECE5',
   },
   subjectIcon: {
-    width: 52,
-    height: 52,
+    width: 48,
+    height: 48,
     borderRadius: 14,
   },
   subjectTextBox: {
@@ -478,14 +510,14 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   subjectName: {
-    fontSize: 24,
+    fontSize: 23,
     fontWeight: 'bold',
-    color: '#14251C',
+    color: '#12243A',
   },
   subjectRemaining: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
-    color: '#2FA66F',
+    color: '#1DA884',
     marginTop: 5,
   },
   subjectArrowCircle: {
