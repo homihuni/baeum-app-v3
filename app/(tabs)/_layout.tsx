@@ -2,6 +2,9 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { View, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useCallback, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 
 const ACTIVE = '#1DA884';
 const INACTIVE = '#B0BEC5';
@@ -30,6 +33,32 @@ function TabIcon({ children, label, focused }: { children: React.ReactNode; labe
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
+  const [childGrade, setChildGrade] = useState(1);
+
+  useFocusEffect(
+    useCallback(() => {
+      let isMounted = true;
+
+      const loadChildGrade = async () => {
+        try {
+          const storedGrade = await AsyncStorage.getItem('childGrade');
+          if (isMounted) {
+            setChildGrade(Number(storedGrade) || 1);
+          }
+        } catch (error) {
+          console.log('tab child grade load error:', error);
+        }
+      };
+
+      loadChildGrade();
+
+      return () => {
+        isMounted = false;
+      };
+    }, [])
+  );
+
+  const showPlayTab = childGrade <= 2;
 
   return (
     <Tabs screenOptions={{
@@ -75,6 +104,17 @@ export default function TabLayout() {
           tabBarIcon: ({ focused }) => (
             <TabIcon label="성장" focused={focused}>
               <Ionicons name={focused ? 'star' : 'star-outline'} size={22} color={focused ? ACTIVE : INACTIVE} />
+            </TabIcon>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="play"
+        options={{
+          href: showPlayTab ? undefined : null,
+          tabBarIcon: ({ focused }) => (
+            <TabIcon label="놀이" focused={focused}>
+              <Ionicons name={focused ? 'sparkles' : 'sparkles-outline'} size={21} color={focused ? ACTIVE : INACTIVE} />
             </TabIcon>
           ),
         }}

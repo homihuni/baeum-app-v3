@@ -644,7 +644,7 @@ const styles = StyleSheet.create({
     marginHorizontal: BANNER_MARGIN,
     marginTop: 4,
     borderRadius: 26,
-    borderWidth: 1,
+    borderWidth: 0,
     paddingHorizontal: 18,
     paddingVertical: 20,
     minHeight: 212,
