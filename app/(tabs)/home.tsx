@@ -13,6 +13,8 @@ import { wp, SCREEN_WIDTH } from '../../utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import { resolveHomeTheme } from '../../utils/homeTheme';
 
+const SUMMER_BEACH_REALISTIC = require('../../assets/images/home_summer_beach_banner.png');
+
 // 배너/카드 좌우 여백: 화면 폭의 5% (375px 기준 약 19px, 태블릿에서 비례 확대)
 const BANNER_MARGIN = wp(5);
 type SubjectKey = keyof typeof SUBJECT_ICONS;
@@ -434,27 +436,14 @@ export default function HomeScreen() {
           style={[
             styles.heroProfile,
             {
-              backgroundColor: homeTheme.heroBackgroundColor,
-              borderColor: homeTheme.borderColor,
+              backgroundColor: '#FFFFFF',
+              borderColor: '#FFFFFF',
             },
           ]}
         >
-          <View style={[styles.heroWave, { backgroundColor: homeTheme.heroWaveColor }]} />
-          <View style={styles.heroForestBack} />
-          <View style={styles.heroForestFront} />
-          <View style={styles.heroTreeLeft}>
-            <View style={styles.heroTreeTrunk} />
-            <View style={styles.heroTreeCrownLarge} />
-            <View style={styles.heroTreeCrownSmall} />
+          <View pointerEvents="none" style={styles.heroBeachBackdrop}>
+            <Image source={SUMMER_BEACH_REALISTIC} style={styles.heroBeachArtwork} resizeMode="contain" />
           </View>
-          <View style={styles.heroTreeRight}>
-            <View style={styles.heroTreeTrunk} />
-            <View style={styles.heroTreeCrownLarge} />
-            <View style={styles.heroTreeCrownSmall} />
-          </View>
-          <View style={[styles.heroFlower, styles.heroFlowerOne, { backgroundColor: homeTheme.decorationColor }]} />
-          <View style={[styles.heroFlower, styles.heroFlowerTwo, { backgroundColor: homeTheme.accentColor }]} />
-          <View style={[styles.heroFlower, styles.heroFlowerThree, { backgroundColor: homeTheme.decorationColor }]} />
           <Image source={childAvatar} style={styles.heroAvatar} />
           <View style={styles.heroTextBox}>
             <Text style={styles.heroGreeting}>
@@ -630,7 +619,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: '#DDF2EA',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
@@ -657,15 +646,139 @@ const styles = StyleSheet.create({
     borderRadius: 26,
     borderWidth: 1,
     paddingHorizontal: 18,
-    paddingVertical: 18,
-    minHeight: 174,
+    paddingVertical: 20,
+    minHeight: 212,
     overflow: 'hidden',
     position: 'relative',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
+  },
+  heroForestArtwork: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: 0.94,
+  },
+  heroBeachBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  heroBeachArtwork: {
+    width: '100%',
+    height: '100%',
+    opacity: 0.98,
+  },
+  heroBeachScene: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  heroBeachSky: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '56%',
+    backgroundColor: '#9FD8FF',
+  },
+  heroBeachCloudLarge: {
+    position: 'absolute',
+    left: 18,
+    top: 34,
+    width: 122,
+    height: 34,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.82)',
+  },
+  heroBeachCloudSmall: {
+    position: 'absolute',
+    right: 70,
+    top: 28,
+    width: 90,
+    height: 26,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.76)',
+  },
+  heroBeachSea: {
+    position: 'absolute',
+    top: '50%',
+    left: 0,
+    right: 0,
+    height: '20%',
+    backgroundColor: '#51C9E8',
+  },
+  heroBeachSeaHighlight: {
+    position: 'absolute',
+    top: '54%',
+    left: 0,
+    right: 0,
+    height: 10,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+  },
+  heroBeachSeaFoam: {
+    position: 'absolute',
+    top: '66%',
+    left: -20,
+    right: -20,
+    height: 18,
+    borderTopLeftRadius: 50,
+    borderTopRightRadius: 50,
+    backgroundColor: 'rgba(255,255,255,0.88)',
+  },
+  heroBeachSand: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '30%',
+    backgroundColor: '#F8E2A6',
+  },
+  heroBeachSandShade: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '14%',
+    backgroundColor: '#F1D48B',
+  },
+  heroBeachIslandLeft: {
+    position: 'absolute',
+    left: 0,
+    top: '47%',
+    width: 116,
+    height: 20,
+    borderTopRightRadius: 30,
+    backgroundColor: '#85C58C',
+  },
+  heroBeachIslandRight: {
+    position: 'absolute',
+    right: 0,
+    top: '47%',
+    width: 120,
+    height: 18,
+    borderTopLeftRadius: 30,
+    backgroundColor: '#8DCC93',
+  },
+  heroBeachPalmLeft: {
+    position: 'absolute',
+    left: 18,
+    top: '39%',
+    width: 22,
+    height: 44,
+    borderRadius: 11,
+    backgroundColor: '#7DB07A',
+    transform: [{ rotate: '-10deg' }],
+  },
+  heroBeachPalmRight: {
+    position: 'absolute',
+    right: 24,
+    top: '38%',
+    width: 22,
+    height: 46,
+    borderRadius: 11,
+    backgroundColor: '#7DB07A',
+    transform: [{ rotate: '8deg' }],
   },
   heroWave: {
     position: 'absolute',
@@ -679,41 +792,60 @@ const styles = StyleSheet.create({
   },
   heroForestBack: {
     position: 'absolute',
-    right: -36,
-    bottom: 22,
-    width: 230,
-    height: 88,
+    right: -46,
+    bottom: 28,
+    width: 280,
+    height: 104,
     borderTopLeftRadius: 120,
     borderTopRightRadius: 120,
-    backgroundColor: '#BDEBD9',
-    opacity: 0.58,
+    backgroundColor: '#8ED9B1',
+    opacity: 0.5,
+  },
+  heroForestMiddle: {
+    position: 'absolute',
+    left: 86,
+    right: 42,
+    bottom: 18,
+    height: 94,
+    borderTopLeftRadius: 120,
+    borderTopRightRadius: 120,
+    backgroundColor: '#9AE2BD',
+    opacity: 0.46,
   },
   heroForestFront: {
     position: 'absolute',
-    left: 36,
-    right: 28,
-    bottom: -10,
-    height: 68,
+    left: 18,
+    right: 18,
+    bottom: -12,
+    height: 78,
     borderTopLeftRadius: 90,
     borderTopRightRadius: 90,
-    backgroundColor: '#A9E0C3',
-    opacity: 0.5,
+    backgroundColor: '#79CFA1',
+    opacity: 0.48,
   },
   heroTreeLeft: {
     position: 'absolute',
-    left: 32,
-    bottom: 26,
-    width: 54,
-    height: 78,
-    opacity: 0.48,
+    left: 26,
+    bottom: 24,
+    width: 62,
+    height: 92,
+    opacity: 0.58,
+  },
+  heroTreeCenter: {
+    position: 'absolute',
+    right: 122,
+    bottom: 35,
+    width: 62,
+    height: 92,
+    opacity: 0.42,
   },
   heroTreeRight: {
     position: 'absolute',
-    right: 26,
-    bottom: 32,
-    width: 58,
-    height: 86,
-    opacity: 0.42,
+    right: 20,
+    bottom: 30,
+    width: 66,
+    height: 96,
+    opacity: 0.55,
   },
   heroTreeTrunk: {
     position: 'absolute',
@@ -722,25 +854,47 @@ const styles = StyleSheet.create({
     width: 8,
     height: 34,
     borderRadius: 4,
-    backgroundColor: '#8BB983',
+    backgroundColor: '#75AD76',
   },
   heroTreeCrownLarge: {
     position: 'absolute',
     left: 4,
     top: 18,
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#74C99C',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#38B678',
   },
   heroTreeCrownSmall: {
     position: 'absolute',
     left: 16,
     top: 0,
-    width: 34,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#5DCA91',
+  },
+  heroBushLeft: {
+    position: 'absolute',
+    left: 82,
+    bottom: 14,
+    width: 70,
+    height: 30,
+    borderTopLeftRadius: 35,
+    borderTopRightRadius: 35,
+    backgroundColor: '#49BC7E',
+    opacity: 0.48,
+  },
+  heroBushRight: {
+    position: 'absolute',
+    right: 86,
+    bottom: 12,
+    width: 92,
     height: 34,
-    borderRadius: 17,
-    backgroundColor: '#8DD9B0',
+    borderTopLeftRadius: 46,
+    borderTopRightRadius: 46,
+    backgroundColor: '#4FC587',
+    opacity: 0.44,
   },
   heroFlower: {
     position: 'absolute',
@@ -762,12 +916,12 @@ const styles = StyleSheet.create({
     bottom: 24,
   },
   heroAvatar: {
-    width: 82,
-    height: 82,
-    borderRadius: 41,
-    borderWidth: 3,
-    borderColor: '#DFF5EA',
-    marginRight: 16,
+    width: 118,
+    height: 118,
+    borderRadius: 59,
+    borderWidth: 4,
+    borderColor: '#FFFFFF',
+    marginRight: 18,
     backgroundColor: '#FFFFFF',
     zIndex: 2,
   },
