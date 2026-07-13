@@ -1,5 +1,5 @@
 ﻿import { useCallback, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ImageBackground, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -24,6 +24,13 @@ type Stage = {
   hiddenItems: HiddenItem[];
   scene: 'classroom' | 'garden' | 'playground' | 'beach';
 };
+
+const SCENE_IMAGES = {
+  classroom: require('../../assets/images/hidden_picture_classroom_scene.png'),
+  garden: require('../../assets/images/hidden_picture_garden_scene.png'),
+  playground: require('../../assets/images/hidden_picture_playground_scene.png'),
+  beach: require('../../assets/images/hidden_picture_beach_scene.png'),
+} as const;
 
 const STAGES_BY_GRADE: Record<number, Stage[]> = {
   1: [
@@ -85,67 +92,15 @@ const STAGES_BY_GRADE: Record<number, Stage[]> = {
 };
 
 function SceneArtwork({ scene }: { scene: Stage['scene'] }) {
-  if (scene === 'classroom') {
-    return (
-      <View style={styles.sceneWrap}>
-        <View style={styles.classBoard} />
-        <View style={styles.classShelf} />
-        <View style={[styles.classDesk, { left: '10%', bottom: '18%' }]} />
-        <View style={[styles.classDesk, { left: '38%', bottom: '22%' }]} />
-        <View style={[styles.classDesk, { left: '66%', bottom: '18%' }]} />
-        <View style={styles.classWindow} />
-      </View>
-    );
-  }
-
-  if (scene === 'garden') {
-    return (
-      <View style={styles.sceneWrap}>
-        <View style={styles.gardenSky} />
-        <View style={styles.gardenHill} />
-        <View style={[styles.flower, { left: '16%', bottom: '19%', backgroundColor: '#FF89B5' }]} />
-        <View style={[styles.flower, { left: '34%', bottom: '24%', backgroundColor: '#FDBB4C' }]} />
-        <View style={[styles.flower, { left: '58%', bottom: '18%', backgroundColor: '#A28BFF' }]} />
-        <View style={[styles.flower, { left: '76%', bottom: '23%', backgroundColor: '#FF7F7F' }]} />
-      </View>
-    );
-  }
-
-  if (scene === 'playground') {
-    return (
-      <View style={styles.sceneWrap}>
-        <View style={styles.playSky} />
-        <View style={styles.playCloudLeft} />
-        <View style={styles.playCloudRight} />
-        <View style={styles.playSun} />
-        <View style={styles.playGrass} />
-        <View style={styles.playFence} />
-        <View style={styles.treeTrunk} />
-        <View style={styles.treeLeaf} />
-        <View style={styles.slideTower} />
-        <View style={styles.slideRoof} />
-        <View style={styles.slideLadder} />
-        <View style={styles.slideSlope} />
-        <View style={styles.swingFrameLeft} />
-        <View style={styles.swingFrameRight} />
-        <View style={styles.swingTopBar} />
-        <View style={styles.swingRopeLeft} />
-        <View style={styles.swingRopeRight} />
-        <View style={styles.swingSeat} />
-        <View style={styles.seesawBase} />
-        <View style={styles.seesawBoard} />
-      </View>
-    );
-  }
-
   return (
-    <View style={styles.sceneWrap}>
-      <View style={styles.beachSky} />
-      <View style={styles.beachSea} />
-      <View style={styles.beachSand} />
-      <View style={styles.beachUmbrella} />
-      <View style={styles.beachPalm} />
-    </View>
+    <ImageBackground
+      source={SCENE_IMAGES[scene]}
+      resizeMode="cover"
+      style={styles.sceneWrap}
+      imageStyle={styles.sceneImage}
+    >
+      <View style={styles.sceneOverlay} />
+    </ImageBackground>
   );
 }
 
@@ -411,7 +366,14 @@ const styles = StyleSheet.create({
   },
   sceneWrap: {
     flex: 1,
-    backgroundColor: '#F9FFF9',
+  },
+  sceneImage: {
+    width: '100%',
+    height: '100%',
+  },
+  sceneOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255,255,255,0.08)',
   },
   classBoard: {
     position: 'absolute',
@@ -805,5 +767,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
 });
+
+
 
 
